@@ -357,10 +357,9 @@ where
             operator = operator.replace(".", "_")
 
             operands = lut.get(" ".join(operands), "")
-            operands = (
+            operands = ",".join(
                 ["c." + op for op in operands.split(", ")] if len(operands) > 0 else []
             )
-            operands = f"({", ".join(operands)})"
             width = 8 if (match_value & 3) == 3 else 4
             print(
                 f"            0x{match_value:0{width}x} => return self.{operator}{operands},"
@@ -438,12 +437,11 @@ struct MRv32{extensions}Dispatcher : public Handler
             operator = ".".join(parts)
 
             operands = lut.get(" ".join(operands), "")
-            operands = (
+            operands = ", ".join(
                 ["c." + op.capitalize() for op in operands.split(", ")]
                 if len(operands) > 0
                 else []
             )
-            operands = f"({", ".join(operands)})"
             width = 8 if (match_value & 3) == 3 else 4
             print(
                 f"            case 0x{match_value:0{width}x}: return self.{operator}{operands};"
