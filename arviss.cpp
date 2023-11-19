@@ -1,5 +1,8 @@
 #include "arviss.h"
 
+#include "basic_cpu.h"
+#include "disassembler.h"
+
 #include <format>
 #include <fstream>
 #include <iostream>
@@ -43,7 +46,7 @@ auto main() -> int
         fileHandler.close();
 
         // Create a CPU.
-        RV32iCpu<MIntCpu> cpu;
+        BasicCpu cpu;
 
         // Populate its memory with the contents of the image.
         Address addr = 0;
