@@ -9,4 +9,4 @@ project(arviss_cpp
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
-add_executable(arviss_cpp arviss.cpp arviss.h)
+add_executable(arviss_cpp arviss.cpp arviss.h concepts.h instruction.h types.h)
