@@ -1,5 +1,10 @@
 #include "arviss.h"
 
+#include <format>
+#include <fstream>
+#include <iostream>
+#include <vector>
+
 // This works for IsFloatVm too.
 template<IsIntVm T>
 auto Run(T& t, size_t count) -> void
