@@ -237,7 +237,7 @@ template<typename Handler>
     requires IsRv32iInstructionHandler<Handler>
 struct MRv32iDispatcher : public Handler
 {
-    using Item = typename Handler::Item;
+    using Item = Handler::Item;
 
     // Decodes the input word to an RV32I instruction and dispatches it to a handler.
     // clang-format off
