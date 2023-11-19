@@ -1,19 +1,10 @@
 #pragma once
 
-// A RISC-V instruction set simulator implemented using C++ concepts, using a similar style to the use of Rust traits in
-// https://github.dev/badlydrawnrod/arviss_experiment.
-
 #include "concepts.h"
-#include "dispatcher.h"
-#include "instruction.h"
 #include "types.h"
 
 #include <array>
-#include <concepts>
-#include <cstdint>
 #include <format>
-#include <iostream>
-
 
 // A mixin implementation of RV32i's integer registers.
 class MXRegisters
