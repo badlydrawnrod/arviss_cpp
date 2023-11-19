@@ -1,9 +1,23 @@
 #include "arviss.h"
 
+#include "basic_mem.h"
+#include "disassembler.h"
+
 #include <format>
 #include <fstream>
 #include <iostream>
 #include <vector>
+
+// A mixin CPU with registers and basic memory with a fetch cycle implementation.
+struct MIntCpu : public MXRegisters,      // it has registers
+                 public MFetch<MBasicMem> // it has memory with a fetch cycle implemented on it
+{
+};
+
+// An RV32i CPU with registers, basic memory with a fetch cycle implementation, a handler for integer instructions, and
+// a dispatcher.
+template<IsIntCpu T>
+using RV32iCpu = MRv32iDispatcher<MRv32iHandler<T>>;
 
 // This works for IsFloatVm too.
 template<IsIntVm T>
