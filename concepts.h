@@ -5,6 +5,8 @@
 #include <concepts>
 #include <string>
 
+// TYPES: concepts.
+
 // T is an instruction handler for Rv32i instructions whose member functions do not return a value.
 template<typename T>
 concept IsVoidRv32iInstructionHandler = std::same_as<void, typename T::Item> && requires(T self) {

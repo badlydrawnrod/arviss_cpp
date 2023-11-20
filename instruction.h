@@ -1,9 +1,8 @@
 #pragma once
 
-// A RISC-V instruction set simulator implemented using C++ concepts, using a similar style to the use of Rust traits in
-// https://github.dev/badlydrawnrod/arviss_experiment.
-
 #include "types.h"
+
+// TYPES: not at all specific.
 
 // A helper for breaking down instructions.
 class Instruction

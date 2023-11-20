@@ -2,6 +2,8 @@
 
 #include <cstdint>
 
+// TYPES: All global to the entire shebang.
+
 using Address = std::uint32_t;
 using Reg = std::uint32_t;
 using u8 = std::uint8_t;

@@ -1,7 +1,7 @@
 #include "arviss.h"
 
-#include "basic_cpu.h"
-#include "disassembler.h"
+#include "rv32i_basic_cpu.h"
+#include "rv32i_disassembler.h"
 
 #include <format>
 #include <fstream>
@@ -46,7 +46,7 @@ auto main() -> int
         fileHandler.close();
 
         // Create a CPU.
-        BasicCpu cpu;
+        BasicRv32iCpu cpu;
 
         // Populate its memory with the contents of the image.
         Address addr = 0;
@@ -57,7 +57,7 @@ auto main() -> int
         }
 
         // Trace the execution.
-        // Disassembler dis;
+        // Rv32iDisassembler dis;
         // Run(cpu, dis, 10000);
 
         // Execute some instructions. We should see "Hello world from Rust!" because that's what compiled the image.
