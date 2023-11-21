@@ -5,9 +5,10 @@
 
 #include <array>
 
-// TYPES: building blocks. Can be used, but not mandatory.
+// TYPES: building blocks that satisfy certain concepts. Can be used, but not mandatory.
 
 // A mixin implementation of RV32i's integer registers.
+// Satisfies: HasXRegisters
 class MXRegisters
 {
     std::array<u32, 32> xreg_{};
@@ -23,6 +24,7 @@ public:
 };
 
 // A mixin implementation of the fetch cycle for the given memory implementation.
+// Satisfies: HasFetch
 template<HasMemory Mem>
 class MFetch : public Mem
 {

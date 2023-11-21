@@ -17,6 +17,7 @@ add_executable(arviss_cpp
     instruction.h
     integer_cpu.h
     rv32i_basic_cpu.h
+    rv32i_concepts.h
     rv32i_cpu.h
     rv32i_disassembler.h
     rv32i_dispatcher.h

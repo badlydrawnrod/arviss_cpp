@@ -2,6 +2,7 @@
 
 #include "concepts.h"
 #include "instruction.h"
+#include "rv32i_concepts.h"
 
 // TYPES: dispatcher for handler that satisfies IsRv32iInstructionHandler. RV32i specific.
 // Satifies: TODO: which concepts?

@@ -9,7 +9,7 @@
 #include <vector>
 
 // This works for IsFloatVm too.
-template<IsIntVm T>
+template<IsRv32iVm T>
 auto Run(T& t, size_t count) -> void
 {
     while (count > 0)
@@ -21,7 +21,7 @@ auto Run(T& t, size_t count) -> void
 }
 
 // How do I say that U's instruction handler can't be a subset of T's instruction handler?
-template<IsIntVm T, IsIntTrace U>
+template<IsRv32iVm T, IsRv32iTrace U>
 auto Run(T& t, U& u, size_t count) -> void
 {
     while (count > 0)
