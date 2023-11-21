@@ -5,7 +5,7 @@
 #include <format>
 
 // A mixin implementation of an instruction handler that operates on an integer CPU.
-template<IsIntCpu T>
+template<IsIntegerCore T>
 class MRv32iHandler : public T
 {
     auto Self() -> T& { return static_cast<T&>(*this); }

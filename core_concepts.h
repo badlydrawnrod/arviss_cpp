@@ -43,8 +43,8 @@ concept HasFetch = requires(T t, Address a, u32 r) {
     r = t.Fetch32(Address{}); // Returns the instruction at the given address.
 };
 
-// T has all the pieces of an integer CPU.
+// T has all the pieces of an integer core.
 template<typename T>
-concept IsIntCpu = HasXRegisters<T> // It has integer registers.
+concept IsIntegerCore = HasXRegisters<T> // It has integer registers.
         && HasFetch<T>              // It has a fetch cycle implementation.
         && HasMemory<T>;            // It has memory.

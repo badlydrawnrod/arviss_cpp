@@ -106,9 +106,9 @@ concept IsRv32iInstructionHandler = IsNonVoidRv32iInstructionHandler<T> || IsVoi
 template<typename T>
 concept IsRv32iDispatcher = IsDispatcher<T> && IsRv32iInstructionHandler<T>;
 
-// T is a VM capable of fetching, dispatching and handling RV32i instructions for an integer CPU.
+// T is a VM capable of fetching, dispatching and handling RV32i instructions for an integer core.
 template<typename T>
-concept IsRv32iVm = IsRv32iDispatcher<T> && IsIntCpu<T>;
+concept IsRv32iVm = IsRv32iDispatcher<T> && IsIntegerCore<T>;
 
 // T is a dispatcher for a tracing handler for Rv32i instructions.
 template<typename T>

@@ -7,10 +7,10 @@
 
 // An RV32i CPU with registers, memory with a fetch cycle implementation, a handler for integer instructions, and
 // a dispatcher. RV32i specific.
-template<IsIntCpu T>
+template<IsIntegerCore T>
 using RV32iCpu = MRv32iDispatcher<MRv32iHandler<T>>;
 
 // A mixin RV32i CPU. BYO memory. RV32i specific.
-// A specialization of RV32iCpu for a MIntCpu with an unspecified memory implementation.
+// A specialization of RV32iCpu for a MIntegerCore with an unspecified memory implementation.
 template<HasMemory Mem>
-using AbstractRV32iCpu = RV32iCpu<MIntCpu<Mem>>;
+using AbstractRV32iCpu = RV32iCpu<MIntegerCore<Mem>>;

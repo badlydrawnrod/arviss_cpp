@@ -57,9 +57,9 @@ public:
     }
 };
 
-// A mixin implementation of an integer CPU.
-// Satisfies: HasXRegisters, HasFetch, HasMemory, IsIntCpu
+// A mixin implementation of an integer core.
+// Satisfies: HasXRegisters, HasFetch, HasMemory, IsIntegerCore
 template<HasMemory Mem>
-struct MIntCpu : public MXRegisters, public MFetch<Mem>
+struct MIntegerCore : public MXRegisters, public MFetch<Mem>
 {
 };
