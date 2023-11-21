@@ -1,6 +1,6 @@
 #pragma once
 
-#include "concepts.h"
+#include "core_concepts.h"
 #include "instruction.h"
 #include "rv32i_concepts.h"
 

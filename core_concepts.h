@@ -1,11 +1,11 @@
+// Concepts that relate to a CPU core.
+
 #pragma once
 
 #include "types.h"
 
 #include <concepts>
 #include <string>
-
-// TYPES: concepts.
 
 // T is an instruction dispatcher.
 template<typename T>

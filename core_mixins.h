@@ -1,11 +1,11 @@
+// Building blocks that satisfy core concepts for a CPU core.
+
 #pragma once
 
-#include "concepts.h"
+#include "core_concepts.h"
 #include "types.h"
 
 #include <array>
-
-// TYPES: building blocks that satisfy certain concepts for a CPU core. Can be used, but not mandatory.
 
 // A mixin implementation of RV32i's integer registers.
 // Satisfies: HasXRegisters
@@ -24,7 +24,7 @@ public:
 };
 
 // A mixin implementation of the fetch cycle for the given memory implementation.
-// Satisfies: HasFetch
+// Satisfies: HasFetch, HasMemory
 template<HasMemory Mem>
 class MFetch : public Mem
 {
@@ -55,4 +55,11 @@ public:
         auto& mem_ = static_cast<Mem&>(*this);
         return mem_.Read32(address);
     }
+};
+
+// A mixin implementation of an integer CPU.
+// Satisfies: HasXRegisters, HasFetch, HasMemory, IsIntCpu
+template<HasMemory Mem>
+struct MIntCpu : public MXRegisters, public MFetch<Mem>
+{
 };

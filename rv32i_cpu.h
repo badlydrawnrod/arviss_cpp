@@ -1,8 +1,7 @@
 #pragma once
 
 #include "core_mixins.h"
-#include "concepts.h"
-#include "integer_cpu.h"
+#include "core_concepts.h"
 #include "rv32i_dispatcher.h"
 #include "rv32i_instruction_handler.h"
 
