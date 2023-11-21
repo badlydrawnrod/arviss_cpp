@@ -1,4 +1,4 @@
-#include "rv32i_basic_cpu.h"
+#include "basic_rv32i_cpu.h"
 #include "rv32i_disassembler.h"
 
 #include <format>
