@@ -1,9 +1,12 @@
 #pragma once
 
+#include "core_concepts.h"
 #include "types.h"
 
 #include <concepts>
 #include <string>
+
+// TYPES: RV32i concepts.
 
 // T is an instruction handler for Rv32i instructions whose member functions do not return a value.
 template<typename T>
@@ -99,56 +102,14 @@ concept IsNonVoidRv32iInstructionHandler = !std::same_as<void, typename T::Item>
 template<typename T>
 concept IsRv32iInstructionHandler = IsNonVoidRv32iInstructionHandler<T> || IsVoidRv32iInstructionHandler<T>;
 
-// T is an instruction dispatcher.
-template<typename T>
-concept IsDispatcher = requires(T t) {
-    {
-        t.Dispatch(u32{})
-    } -> std::same_as<typename T::Item>;
-};
-
 // T is an instruction dispatcher for Rv32i instruction handlers.
 template<typename T>
-concept IsIntDispatcher = IsDispatcher<T> && IsRv32iInstructionHandler<T>;
+concept IsRv32iDispatcher = IsDispatcher<T> && IsRv32iInstructionHandler<T>;
 
-// T supports reading from and writing to integer registers.
+// T is a VM capable of fetching, dispatching and handling RV32i instructions for an integer core.
 template<typename T>
-concept HasXRegisters = requires(T t, u32 result) {
-    result = t.Rx(Reg{});
-    t.Wx(Reg{}, u32{});
-};
-
-// T supports reading from and writing to memory.
-template<typename T>
-concept HasMemory = requires(T t, u8 b, u16 h, u32 w) {
-    b = t.Read8(Address{});
-    h = t.Read16(Address{});
-    w = t.Read32(Address{});
-    t.Write8(Address{}, u8{});
-    t.Write16(Address{}, u16{});
-    t.Write32(Address{}, u32{});
-};
-
-// T implements the fetch cycle.
-template<typename T>
-concept HasFetch = requires(T t, Address a, u32 r) {
-    a = t.Pc();               // Returns the contents of the program counter.
-    a = t.Transfer();         // Transfers nextPc to the program counter and returns it.
-    r = t.Fetch();            // Transfer, Fetch32(pc), SetNextPc, return instruction.
-    t.SetNextPc(Address{});   // Sets nextPc.
-    r = t.Fetch32(Address{}); // Returns the instruction at the given address.
-};
-
-// T has all the pieces of an integer CPU.
-template<typename T>
-concept IsIntCpu = HasXRegisters<T> // it has integer registers
-        && HasFetch<T>              // it has a fetch cycle implementation
-        && HasMemory<T>;            // it has memory
-
-// T is a VM capable of fetching, dispatching and handling integer instructions for an integer CPU.
-template<typename T>
-concept IsIntVm = IsDispatcher<T> && IsRv32iInstructionHandler<T> && IsIntCpu<T>;
+concept IsRv32iVm = IsRv32iDispatcher<T> && IsIntegerCore<T>;
 
 // T is a dispatcher for a tracing handler for Rv32i instructions.
 template<typename T>
-concept IsIntTrace = IsDispatcher<T> && IsRv32iInstructionHandler<T> && std::same_as<std::string, typename T::Item>;
+concept IsRv32iTrace = IsRv32iDispatcher<T> && std::same_as<std::string, typename T::Item>;

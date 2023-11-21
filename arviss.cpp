@@ -1,7 +1,5 @@
-#include "arviss.h"
-
-#include "basic_cpu.h"
-#include "disassembler.h"
+#include "basic_rv32i_cpu.h"
+#include "rv32i_disassembler.h"
 
 #include <format>
 #include <fstream>
@@ -9,7 +7,7 @@
 #include <vector>
 
 // This works for IsFloatVm too.
-template<IsIntVm T>
+template<IsRv32iVm T>
 auto Run(T& t, size_t count) -> void
 {
     while (count > 0)
@@ -21,7 +19,7 @@ auto Run(T& t, size_t count) -> void
 }
 
 // How do I say that U's instruction handler can't be a subset of T's instruction handler?
-template<IsIntVm T, IsIntTrace U>
+template<IsRv32iVm T, IsRv32iTrace U>
 auto Run(T& t, U& u, size_t count) -> void
 {
     while (count > 0)
@@ -46,7 +44,7 @@ auto main() -> int
         fileHandler.close();
 
         // Create a CPU.
-        BasicCpu cpu;
+        BasicRv32iCpu cpu;
 
         // Populate its memory with the contents of the image.
         Address addr = 0;
@@ -57,7 +55,7 @@ auto main() -> int
         }
 
         // Trace the execution.
-        // Disassembler dis;
+        // Rv32iDisassembler dis;
         // Run(cpu, dis, 10000);
 
         // Execute some instructions. We should see "Hello world from Rust!" because that's what compiled the image.

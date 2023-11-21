@@ -1,10 +1,12 @@
 #pragma once
 
-#include "dispatcher.h"
+#include "rv32i_dispatcher.h"
 #include "types.h"
 
 #include <format>
 #include <string>
+
+// TYPES: concrete mixin. Handler, specific to Rv32i.
 
 auto Abi(Reg r) -> const char*
 {
@@ -64,4 +66,4 @@ struct MRv32iDisassembler
 };
 
 // A disassembler.
-using Disassembler = MRv32iDispatcher<MRv32iDisassembler>;
+using Rv32iDisassembler = MRv32iDispatcher<MRv32iDisassembler>;

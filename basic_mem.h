@@ -5,6 +5,8 @@
 #include <array>
 #include <iostream>
 
+// TYPES: concrete mixin. Has own state.
+
 // A mixin implementation of simple, unchecked memory.
 class MBasicMem
 {
