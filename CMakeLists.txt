@@ -11,9 +11,9 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 add_executable(arviss_cpp
     arviss.cpp
-    arviss.h
     basic_mem.h
     concepts.h
+    core_mixins.h
     instruction.h
     integer_cpu.h
     rv32i_basic_cpu.h

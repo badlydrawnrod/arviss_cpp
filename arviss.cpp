@@ -1,5 +1,3 @@
-#include "arviss.h"
-
 #include "rv32i_basic_cpu.h"
 #include "rv32i_disassembler.h"
 

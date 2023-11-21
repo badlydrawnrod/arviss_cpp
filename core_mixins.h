@@ -5,7 +5,7 @@
 
 #include <array>
 
-// TYPES: building blocks that satisfy certain concepts. Can be used, but not mandatory.
+// TYPES: building blocks that satisfy certain concepts for a CPU core. Can be used, but not mandatory.
 
 // A mixin implementation of RV32i's integer registers.
 // Satisfies: HasXRegisters
