@@ -5,6 +5,8 @@
 #include "types.h"
 
 #include <concepts>
+#include <expected>
+#include <optional>
 #include <string>
 
 // T is an instruction dispatcher.
@@ -33,6 +35,17 @@ concept HasMemory = requires(T t, u8 b, u16 h, u32 w) {
     t.Write32(Address{}, u32{}); // Writes a word to an address.
 };
 
+// T supports reading from and writing to memory, with a failure path.
+template<typename T>
+concept HasCheckedMemory = requires(T t, MemoryResult<u8> b, MemoryResult<u16> h, MemoryResult<u32> w, MemoryResult<void> e) {
+    b = t.Read8(Address{});          // Reads a byte from an address.
+    h = t.Read16(Address{});         // Reads a halfword from an address.
+    w = t.Read32(Address{});         // Reads a word from an address.
+    e = t.Write8(Address{}, u8{});   // Writes a byte to an address.
+    e = t.Write16(Address{}, u16{}); // Writes a halfword to an address.
+    e = t.Write32(Address{}, u32{}); // Writes a word to an address.
+};
+
 // T implements the fetch cycle.
 template<typename T>
 concept HasFetch = requires(T t, Address a, u32 r) {
@@ -46,5 +59,22 @@ concept HasFetch = requires(T t, Address a, u32 r) {
 // T has all the pieces of an integer core.
 template<typename T>
 concept IsIntegerCore = HasXRegisters<T> // It has integer registers.
-        && HasFetch<T>              // It has a fetch cycle implementation.
-        && HasMemory<T>;            // It has memory.
+        && HasFetch<T>                   // It has a fetch cycle implementation.
+        && HasMemory<T>;                 // It has memory.
+
+// T can handle traps.
+template<typename T>
+concept IsTrapHandler = requires(T t, std::optional<TrapType> optionalCause, TrapType cause, bool b) {
+    optionalCause = t.TrapCause(); // Returns the cause of the current trap, or std::nullopt if not trapped (TODO: alternatively, have a "not trapped" cause).
+    t.ClearTrap();                 // Clears the current trap cause.
+    t.HandleTrap(cause);           // Handles the given trap.
+    b = t.IsTrapped();             // Returns true if the core is trapped.
+};
+
+// T has special handling for ECALL and EBREAK.
+// TODO: is this necessary ... could an instruction handler do it itself?
+template<typename T>
+concept IsEcallHandler = requires(T t) {
+    t.HandleEcall();  // Handles ECALL instructions.
+    t.HandleEbreak(); // Handles EBREAK instructions.
+};
