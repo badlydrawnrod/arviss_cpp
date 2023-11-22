@@ -5,7 +5,6 @@
 #include "types.h"
 
 #include <concepts>
-#include <expected>
 #include <optional>
 #include <string>
 
@@ -33,17 +32,6 @@ concept HasMemory = requires(T t, u8 b, u16 h, u32 w) {
     t.Write8(Address{}, u8{});   // Writes a byte to an address.
     t.Write16(Address{}, u16{}); // Writes a halfword to an address.
     t.Write32(Address{}, u32{}); // Writes a word to an address.
-};
-
-// T supports reading from and writing to memory, with a failure path.
-template<typename T>
-concept HasCheckedMemory = requires(T t, MemoryResult<u8> b, MemoryResult<u16> h, MemoryResult<u32> w, MemoryResult<void> e) {
-    b = t.Read8(Address{});          // Reads a byte from an address.
-    h = t.Read16(Address{});         // Reads a halfword from an address.
-    w = t.Read32(Address{});         // Reads a word from an address.
-    e = t.Write8(Address{}, u8{});   // Writes a byte to an address.
-    e = t.Write16(Address{}, u16{}); // Writes a halfword to an address.
-    e = t.Write32(Address{}, u32{}); // Writes a word to an address.
 };
 
 // T implements the fetch cycle.

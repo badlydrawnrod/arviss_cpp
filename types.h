@@ -1,7 +1,6 @@
 #pragma once
 
 #include <cstdint>
-#include <expected>
 
 // TYPES: All global to the entire shebang.
 
@@ -40,6 +39,3 @@ enum class TrapType
     SupervisorExternalInterrupt,
     MachineExternalInterrupt,
 };
-
-template<typename T>
-using MemoryResult = std::expected<T, Address>;
