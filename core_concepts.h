@@ -5,7 +5,7 @@
 #include "types.h"
 
 #include <concepts>
-#include <string>
+#include <optional>
 
 // T is an instruction dispatcher.
 template<typename T>
@@ -43,8 +43,18 @@ concept HasFetch = requires(T t, Address a, u32 r) {
     r = t.Fetch32(Address{}); // Returns the instruction at the given address.
 };
 
+// T has traps.
+template<typename T>
+concept HasTraps = requires(T t, TrapType type, u32 context, bool b, std::optional<TrapState> c) {
+    b = t.IsTrapped();          // Returns true if a trap is currently active.
+    c = t.TrapCause();          // Returns the cause of the trap.
+    t.RaiseTrap(type);          // It can raise a trap of the given type.
+    t.RaiseTrap(type, context); // It can raise a trap of the given type with the given context.
+};
+
 // T has all the pieces of an integer core.
 template<typename T>
 concept IsIntegerCore = HasXRegisters<T> // It has integer registers.
-        && HasFetch<T>              // It has a fetch cycle implementation.
-        && HasMemory<T>;            // It has memory.
+        && HasTraps<T>                   // It has traps.
+        && HasFetch<T>                   // It has a fetch cycle implementation.
+        && HasMemory<T>;                 // It has memory.

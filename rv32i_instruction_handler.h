@@ -4,7 +4,7 @@
 
 #include <format>
 
-// A mixin implementation of an instruction handler that operates on an integer CPU.
+// A mixin implementation of an instruction handler that operates on an integer core.
 template<IsIntegerCore T>
 class MRv32iHandler : public T
 {
@@ -21,7 +21,11 @@ public:
 
     // Illegal instruction.
 
-    auto Illegal(u32 ins) -> Item { throw std::runtime_error(std::format("Illegal instruction: {:04x}", ins)); }
+    auto Illegal(u32 ins) -> Item
+    {
+        auto& self = Self();
+        self.RaiseTrap(TrapType::IllegalInstruction, ins);
+    }
 
     // B-type instructions.
 
@@ -321,7 +325,15 @@ public:
         // Do nothing.
     }
 
-    auto Ecall() -> Item { throw std::runtime_error("ecall not implemented yet"); }
+    auto Ecall() -> Item
+    {
+        auto& self = Self();
+        self.RaiseTrap(TrapType::EnvironmentCallFromMMode);
+    }
 
-    auto Ebreak() -> Item { throw std::runtime_error("ebreak (breakpoint)"); }
+    auto Ebreak() -> Item
+    {
+        auto& self = Self();
+        self.RaiseTrap(TrapType::Breakpoint);
+    }
 };
