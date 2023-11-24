@@ -10,7 +10,7 @@
 template<IsRv32iVm T>
 auto Run(T& t, size_t count) -> void
 {
-    while (count > 0)
+    while (count > 0 && !t.IsTrapped())
     {
         auto ins = t.Fetch(); // Fetch.
         t.Dispatch(ins);      // Execute.
@@ -22,7 +22,7 @@ auto Run(T& t, size_t count) -> void
 template<IsRv32iVm T, IsRv32iTrace U>
 auto Run(T& t, U& u, size_t count) -> void
 {
-    while (count > 0)
+    while (count > 0 && !t.IsTrapped())
     {
         auto ins = t.Fetch();                                                    // Fetch.
         std::cout << std::format("{:04x}\t", t.Pc()) << u.Dispatch(ins) << '\n'; // Trace.
@@ -54,12 +54,23 @@ auto main() -> int
             ++addr;
         }
 
-        // Trace the execution.
-        // Rv32iDisassembler dis;
-        // Run(cpu, dis, 10000);
-
         // Execute some instructions. We should see "Hello world from Rust!" because that's what compiled the image.
         Run(cpu, 10000);
+
+        if (cpu.IsTrapped())
+        {
+            switch (cpu.TrapCause()->type_)
+            {
+            case TrapType::Breakpoint:
+                std::cerr << "Trapped at breakpoint\n";
+                break;
+            case TrapType::EnvironmentCallFromMMode:
+                std::cerr << "ecall from M mode\n";
+                break;
+            default:
+                std::cerr << "trapped\n";
+            }
+        }
     }
     catch (const std::exception& e)
     {

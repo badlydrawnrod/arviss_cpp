@@ -6,6 +6,7 @@
 #include "types.h"
 
 #include <array>
+#include <optional>
 
 // A mixin implementation of RV32i's integer registers.
 // Satisfies: HasXRegisters
@@ -57,9 +58,22 @@ public:
     }
 };
 
+// A mixin implementation of a trap handler.
+// Satisfies: HasTraps.
+class MTrap
+{
+    std::optional<TrapState> trap_{};
+
+public:
+    auto IsTrapped() const -> bool { return trap_.has_value(); }
+    auto TrapCause() const -> std::optional<TrapState> { return trap_; }
+
+    auto RaiseTrap(TrapType type, u32 context = 0) { trap_ = {.type_ = type, .context_ = context}; }
+};
+
 // A mixin implementation of an integer core.
-// Satisfies: HasXRegisters, HasFetch, HasMemory, IsIntegerCore
+// Satisfies: HasTraps, HasXRegisters, HasFetch, HasMemory, IsIntegerCore
 template<HasMemory Mem>
-struct MIntegerCore : public MXRegisters, public MFetch<Mem>
+struct MIntegerCore : public MTrap, public MXRegisters, public MFetch<Mem>
 {
 };
