@@ -6,7 +6,6 @@
 
 #include <concepts>
 #include <optional>
-#include <string>
 
 // T is an instruction dispatcher.
 template<typename T>
