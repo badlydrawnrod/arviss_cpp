@@ -99,14 +99,14 @@ public:
     {
         // rd <- sx(m8(rs1 + imm_i)), pc += 4
         auto& self = Self();
-        auto byte = self.Read8(self.Rx(rs1) + (iimm));
-        if (byte)
+        const auto address = self.Rx(rs1) + iimm;
+        if (const auto byte = self.Read8(address))
         {
             self.Wx(rd, static_cast<u32>(SExt(*byte)));
         }
         else
         {
-            self.RaiseTrap(TrapType::LoadAccessFault, self.Rx(rs1) + (iimm));
+            self.RaiseTrap(TrapType::LoadAccessFault, address);
         }
     }
 
@@ -114,14 +114,14 @@ public:
     {
         // rd <- sx(m16(rs1 + imm_i)), pc += 4
         auto& self = Self();
-        auto halfWord = self.Read16(self.Rx(rs1) + (iimm));
-        if (halfWord)
+        const auto address = self.Rx(rs1) + iimm;
+        if (const auto halfWord = self.Read16(address))
         {
             self.Wx(rd, static_cast<u32>(SExt(*halfWord)));
         }
         else
         {
-            self.RaiseTrap(TrapType::LoadAccessFault, self.Rx(rs1) + (iimm));
+            self.RaiseTrap(TrapType::LoadAccessFault, address);
         }
     }
 
@@ -129,14 +129,14 @@ public:
     {
         // rd <- sx(m32(rs1 + imm_i)), pc += 4
         auto& self = Self();
-        auto word = self.Read32(self.Rx(rs1) + (iimm));
-        if (word)
+        const auto address = self.Rx(rs1) + iimm;
+        if (const auto word = self.Read32(address))
         {
             self.Wx(rd, *word);
         }
         else
         {
-            self.RaiseTrap(TrapType::LoadAccessFault, self.Rx(rs1) + (iimm));
+            self.RaiseTrap(TrapType::LoadAccessFault, address);
         }
     }
 
@@ -144,14 +144,14 @@ public:
     {
         // rd <- zx(m8(rs1 + imm_i)), pc += 4
         auto& self = Self();
-        auto byte = self.Read8(self.Rx(rs1) + (iimm));
-        if (byte)
+        const auto address = self.Rx(rs1) + iimm;
+        if (const auto byte = self.Read8(address))
         {
             self.Wx(rd, static_cast<u32>(*byte));
         }
         else
         {
-            self.RaiseTrap(TrapType::LoadAccessFault, self.Rx(rs1) + (iimm));
+            self.RaiseTrap(TrapType::LoadAccessFault, address);
         }
     }
 
@@ -159,14 +159,14 @@ public:
     {
         // rd <- zx(m16(rs1 + imm_i)), pc += 4
         auto& self = Self();
-        auto halfWord = self.Read16(self.Rx(rs1) + (iimm));
-        if (halfWord)
+        const auto address = self.Rx(rs1) + iimm;
+        if (const auto halfWord = self.Read16(address))
         {
             self.Wx(rd, static_cast<u32>(*halfWord));
         }
         else
         {
-            self.RaiseTrap(TrapType::LoadAccessFault, self.Rx(rs1) + (iimm));
+            self.RaiseTrap(TrapType::LoadAccessFault, address);
         }
     }
 
@@ -230,10 +230,10 @@ public:
     {
         // m8(rs1 + imm_s) <- rs2[7:0], pc += 4
         auto& self = Self();
-        auto result = self.Write8(self.Rx(rs1) + (simm), self.Rx(rs2) & 0xff);
-        if (!result)
+        const auto address = self.Rx(rs1) + simm;
+        if (!self.Write8(address, self.Rx(rs2) & 0xff))
         {
-            self.RaiseTrap(TrapType::StoreAccessFault, self.Rx(rs1) + (simm));
+            self.RaiseTrap(TrapType::StoreAccessFault, address);
         }
     }
 
@@ -241,10 +241,10 @@ public:
     {
         // m16(rs1 + imm_s) <- rs2[15:0], pc += 4
         auto& self = Self();
-        auto result = self.Write16(self.Rx(rs1) + (simm), self.Rx(rs2) & 0xffff);
-        if (!result)
+        const auto address = self.Rx(rs1) + simm;
+        if (!self.Write16(address, self.Rx(rs2) & 0xffff))
         {
-            self.RaiseTrap(TrapType::StoreAccessFault, self.Rx(rs1) + (simm));
+            self.RaiseTrap(TrapType::StoreAccessFault, address);
         }
     }
 
@@ -252,10 +252,10 @@ public:
     {
         // m32(rs1 + imm_s) <- rs2[31:0], pc += 4
         auto& self = Self();
-        auto result = self.Write32(self.Rx(rs1) + (simm), self.Rx(rs2));
-        if (!result)
+        const auto address = self.Rx(rs1) + simm;
+        if (!self.Write32(address, self.Rx(rs2)))
         {
-            self.RaiseTrap(TrapType::StoreAccessFault, self.Rx(rs1) + (simm));
+            self.RaiseTrap(TrapType::StoreAccessFault, address);
         }
     }
 
