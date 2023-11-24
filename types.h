@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <expected>
 
 // TYPES: All global to the entire shebang.
 
@@ -45,3 +46,17 @@ struct TrapState
     TrapType type_;
     u32 context_;
 };
+
+enum class MemoryError
+{
+    BadLoad,
+    BadStore
+};
+
+template<typename T>
+using MemoryResult = std::expected<T, MemoryError>;
+
+using ByteResult = MemoryResult<u8>;
+using HalfwordResult = MemoryResult<u16>;
+using WordResult = MemoryResult<u32>;
+using WriteResult = MemoryResult<void>;

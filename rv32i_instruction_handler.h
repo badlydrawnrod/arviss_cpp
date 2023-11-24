@@ -82,7 +82,8 @@ public:
         // rd <- sx(m8(rs1 + imm_i)), pc += 4
         auto& self = Self();
         auto byte = self.Read8(self.Rx(rs1) + (iimm));
-        self.Wx(rd, static_cast<u32>(SExt(byte)));
+        if (byte) { self.Wx(rd, static_cast<u32>(SExt(*byte))); }
+        else { self.RaiseTrap(TrapType::LoadAccessFault, self.Rx(rs1) + (iimm)); }
     }
 
     auto Lh(Reg rd, Reg rs1, u32 iimm) -> Item
@@ -90,7 +91,8 @@ public:
         // rd <- sx(m16(rs1 + imm_i)), pc += 4
         auto& self = Self();
         auto halfWord = self.Read16(self.Rx(rs1) + (iimm));
-        self.Wx(rd, static_cast<u32>(SExt(halfWord)));
+        if (halfWord) { self.Wx(rd, static_cast<u32>(SExt(*halfWord))); }
+        else { self.RaiseTrap(TrapType::LoadAccessFault, self.Rx(rs1) + (iimm)); }
     }
 
     auto Lw(Reg rd, Reg rs1, u32 iimm) -> Item
@@ -98,7 +100,8 @@ public:
         // rd <- sx(m32(rs1 + imm_i)), pc += 4
         auto& self = Self();
         auto word = self.Read32(self.Rx(rs1) + (iimm));
-        self.Wx(rd, word);
+        if (word) { self.Wx(rd, *word); }
+        else { self.RaiseTrap(TrapType::LoadAccessFault, self.Rx(rs1) + (iimm)); }
     }
 
     auto Lbu(Reg rd, Reg rs1, u32 iimm) -> Item
@@ -106,7 +109,8 @@ public:
         // rd <- zx(m8(rs1 + imm_i)), pc += 4
         auto& self = Self();
         auto byte = self.Read8(self.Rx(rs1) + (iimm));
-        self.Wx(rd, static_cast<u32>(byte));
+        if (byte) { self.Wx(rd, static_cast<u32>(*byte)); }
+        else { self.RaiseTrap(TrapType::LoadAccessFault, self.Rx(rs1) + (iimm)); }
     }
 
     auto Lhu(Reg rd, Reg rs1, u32 iimm) -> Item
@@ -114,7 +118,8 @@ public:
         // rd <- zx(m16(rs1 + imm_i)), pc += 4
         auto& self = Self();
         auto halfWord = self.Read16(self.Rx(rs1) + (iimm));
-        self.Wx(rd, static_cast<u32>(halfWord));
+        if (halfWord) { self.Wx(rd, static_cast<u32>(*halfWord)); }
+        else { self.RaiseTrap(TrapType::LoadAccessFault, self.Rx(rs1) + (iimm)); }
     }
 
     auto Addi(Reg rd, Reg rs1, u32 iimm) -> Item
@@ -177,21 +182,24 @@ public:
     {
         // m8(rs1 + imm_s) <- rs2[7:0], pc += 4
         auto& self = Self();
-        self.Write8(self.Rx(rs1) + (simm), self.Rx(rs2) & 0xff);
+        auto result = self.Write8(self.Rx(rs1) + (simm), self.Rx(rs2) & 0xff);
+        if (!result) { self.RaiseTrap(TrapType::StoreAccessFault, self.Rx(rs1) + (simm)); }
     }
 
     auto Sh(Reg rs1, Reg rs2, u32 simm) -> Item
     {
         // m16(rs1 + imm_s) <- rs2[15:0], pc += 4
         auto& self = Self();
-        self.Write16(self.Rx(rs1) + (simm), self.Rx(rs2) & 0xffff);
+        auto result = self.Write16(self.Rx(rs1) + (simm), self.Rx(rs2) & 0xffff);
+        if (!result) { self.RaiseTrap(TrapType::StoreAccessFault, self.Rx(rs1) + (simm)); }
     }
 
     auto Sw(Reg rs1, Reg rs2, u32 simm) -> Item
     {
         // m32(rs1 + imm_s) <- rs2[31:0], pc += 4
         auto& self = Self();
-        self.Write32(self.Rx(rs1) + (simm), self.Rx(rs2));
+        auto result = self.Write32(self.Rx(rs1) + (simm), self.Rx(rs2));
+        if (!result) { self.RaiseTrap(TrapType::StoreAccessFault, self.Rx(rs1) + (simm)); }
     }
 
     // U-type instructions.
