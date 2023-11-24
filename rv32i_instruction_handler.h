@@ -33,14 +33,20 @@ public:
     {
         // pc <- pc + ((rs1 == rs2) ? imm_b : 4)
         auto& self = Self();
-        if (self.Rx(rs1) == self.Rx(rs2)) { self.SetNextPc(self.Pc() + (bimm)); }
+        if (self.Rx(rs1) == self.Rx(rs2))
+        {
+            self.SetNextPc(self.Pc() + (bimm));
+        }
     }
 
     auto Bne(Reg rs1, Reg rs2, u32 bimm) -> Item
     {
         // pc <- pc + ((rs1 != rs2) ? imm_b : 4)
         auto& self = Self();
-        if (self.Rx(rs1) != self.Rx(rs2)) { self.SetNextPc(self.Pc() + (bimm)); }
+        if (self.Rx(rs1) != self.Rx(rs2))
+        {
+            self.SetNextPc(self.Pc() + (bimm));
+        }
     }
 
     auto Blt(Reg rs1, Reg rs2, u32 bimm) -> Item
@@ -48,7 +54,10 @@ public:
         // Signed.
         // pc <- pc + ((rs1 < rs2) ? imm_b : 4)
         auto& self = Self();
-        if (static_cast<i32>(self.Rx(rs1)) < static_cast<i32>(self.Rx(rs2))) { self.SetNextPc(self.Pc() + (bimm)); }
+        if (static_cast<i32>(self.Rx(rs1)) < static_cast<i32>(self.Rx(rs2)))
+        {
+            self.SetNextPc(self.Pc() + (bimm));
+        }
     }
 
     auto Bge(Reg rs1, Reg rs2, u32 bimm) -> Item
@@ -56,7 +65,10 @@ public:
         // Signed.
         // pc <- pc + ((rs1 >= rs2) ? imm_b : 4)
         auto& self = Self();
-        if (static_cast<i32>(self.Rx(rs1)) >= static_cast<i32>(self.Rx(rs2))) { self.SetNextPc(self.Pc() + (bimm)); }
+        if (static_cast<i32>(self.Rx(rs1)) >= static_cast<i32>(self.Rx(rs2)))
+        {
+            self.SetNextPc(self.Pc() + (bimm));
+        }
     }
 
     auto Bltu(Reg rs1, Reg rs2, u32 bimm) -> Item
@@ -64,7 +76,10 @@ public:
         // Unsigned.
         // pc <- pc + ((rs1 < rs2) ? imm_b : 4)
         auto& self = Self();
-        if (self.Rx(rs1) < self.Rx(rs2)) { self.SetNextPc(self.Pc() + (bimm)); }
+        if (self.Rx(rs1) < self.Rx(rs2))
+        {
+            self.SetNextPc(self.Pc() + (bimm));
+        }
     }
 
     auto Bgeu(Reg rs1, Reg rs2, u32 bimm) -> Item
@@ -72,7 +87,10 @@ public:
         // Unsigned.
         // pc <- pc + ((rs1 >= rs2) ? imm_b : 4)
         auto& self = Self();
-        if (self.Rx(rs1) >= self.Rx(rs2)) { self.SetNextPc(self.Pc() + (bimm)); }
+        if (self.Rx(rs1) >= self.Rx(rs2))
+        {
+            self.SetNextPc(self.Pc() + (bimm));
+        }
     }
 
     // I-type instructions.
@@ -82,8 +100,14 @@ public:
         // rd <- sx(m8(rs1 + imm_i)), pc += 4
         auto& self = Self();
         auto byte = self.Read8(self.Rx(rs1) + (iimm));
-        if (byte) { self.Wx(rd, static_cast<u32>(SExt(*byte))); }
-        else { self.RaiseTrap(TrapType::LoadAccessFault, self.Rx(rs1) + (iimm)); }
+        if (byte)
+        {
+            self.Wx(rd, static_cast<u32>(SExt(*byte)));
+        }
+        else
+        {
+            self.RaiseTrap(TrapType::LoadAccessFault, self.Rx(rs1) + (iimm));
+        }
     }
 
     auto Lh(Reg rd, Reg rs1, u32 iimm) -> Item
@@ -91,8 +115,14 @@ public:
         // rd <- sx(m16(rs1 + imm_i)), pc += 4
         auto& self = Self();
         auto halfWord = self.Read16(self.Rx(rs1) + (iimm));
-        if (halfWord) { self.Wx(rd, static_cast<u32>(SExt(*halfWord))); }
-        else { self.RaiseTrap(TrapType::LoadAccessFault, self.Rx(rs1) + (iimm)); }
+        if (halfWord)
+        {
+            self.Wx(rd, static_cast<u32>(SExt(*halfWord)));
+        }
+        else
+        {
+            self.RaiseTrap(TrapType::LoadAccessFault, self.Rx(rs1) + (iimm));
+        }
     }
 
     auto Lw(Reg rd, Reg rs1, u32 iimm) -> Item
@@ -100,8 +130,14 @@ public:
         // rd <- sx(m32(rs1 + imm_i)), pc += 4
         auto& self = Self();
         auto word = self.Read32(self.Rx(rs1) + (iimm));
-        if (word) { self.Wx(rd, *word); }
-        else { self.RaiseTrap(TrapType::LoadAccessFault, self.Rx(rs1) + (iimm)); }
+        if (word)
+        {
+            self.Wx(rd, *word);
+        }
+        else
+        {
+            self.RaiseTrap(TrapType::LoadAccessFault, self.Rx(rs1) + (iimm));
+        }
     }
 
     auto Lbu(Reg rd, Reg rs1, u32 iimm) -> Item
@@ -109,8 +145,14 @@ public:
         // rd <- zx(m8(rs1 + imm_i)), pc += 4
         auto& self = Self();
         auto byte = self.Read8(self.Rx(rs1) + (iimm));
-        if (byte) { self.Wx(rd, static_cast<u32>(*byte)); }
-        else { self.RaiseTrap(TrapType::LoadAccessFault, self.Rx(rs1) + (iimm)); }
+        if (byte)
+        {
+            self.Wx(rd, static_cast<u32>(*byte));
+        }
+        else
+        {
+            self.RaiseTrap(TrapType::LoadAccessFault, self.Rx(rs1) + (iimm));
+        }
     }
 
     auto Lhu(Reg rd, Reg rs1, u32 iimm) -> Item
@@ -118,8 +160,14 @@ public:
         // rd <- zx(m16(rs1 + imm_i)), pc += 4
         auto& self = Self();
         auto halfWord = self.Read16(self.Rx(rs1) + (iimm));
-        if (halfWord) { self.Wx(rd, static_cast<u32>(*halfWord)); }
-        else { self.RaiseTrap(TrapType::LoadAccessFault, self.Rx(rs1) + (iimm)); }
+        if (halfWord)
+        {
+            self.Wx(rd, static_cast<u32>(*halfWord));
+        }
+        else
+        {
+            self.RaiseTrap(TrapType::LoadAccessFault, self.Rx(rs1) + (iimm));
+        }
     }
 
     auto Addi(Reg rd, Reg rs1, u32 iimm) -> Item
@@ -183,7 +231,10 @@ public:
         // m8(rs1 + imm_s) <- rs2[7:0], pc += 4
         auto& self = Self();
         auto result = self.Write8(self.Rx(rs1) + (simm), self.Rx(rs2) & 0xff);
-        if (!result) { self.RaiseTrap(TrapType::StoreAccessFault, self.Rx(rs1) + (simm)); }
+        if (!result)
+        {
+            self.RaiseTrap(TrapType::StoreAccessFault, self.Rx(rs1) + (simm));
+        }
     }
 
     auto Sh(Reg rs1, Reg rs2, u32 simm) -> Item
@@ -191,7 +242,10 @@ public:
         // m16(rs1 + imm_s) <- rs2[15:0], pc += 4
         auto& self = Self();
         auto result = self.Write16(self.Rx(rs1) + (simm), self.Rx(rs2) & 0xffff);
-        if (!result) { self.RaiseTrap(TrapType::StoreAccessFault, self.Rx(rs1) + (simm)); }
+        if (!result)
+        {
+            self.RaiseTrap(TrapType::StoreAccessFault, self.Rx(rs1) + (simm));
+        }
     }
 
     auto Sw(Reg rs1, Reg rs2, u32 simm) -> Item
@@ -199,7 +253,10 @@ public:
         // m32(rs1 + imm_s) <- rs2[31:0], pc += 4
         auto& self = Self();
         auto result = self.Write32(self.Rx(rs1) + (simm), self.Rx(rs2));
-        if (!result) { self.RaiseTrap(TrapType::StoreAccessFault, self.Rx(rs1) + (simm)); }
+        if (!result)
+        {
+            self.RaiseTrap(TrapType::StoreAccessFault, self.Rx(rs1) + (simm));
+        }
     }
 
     // U-type instructions.

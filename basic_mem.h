@@ -20,8 +20,14 @@ class MBasicMem
 public:
     auto Read8(Address address) -> ByteResult
     {
-        if (address < mem_.size()) { return mem_[address]; }
-        else if (address == TTY_STATUS) { return 1; }
+        if (address < mem_.size())
+        {
+            return mem_[address];
+        }
+        else if (address == TTY_STATUS)
+        {
+            return 1;
+        }
         return std::unexpected(MemoryError::BadLoad);
     }
 
