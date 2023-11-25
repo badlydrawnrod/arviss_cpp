@@ -33,14 +33,20 @@ public:
     {
         // pc <- pc + ((rs1 == rs2) ? imm_b : 4)
         auto& self = Self();
-        if (self.Rx(rs1) == self.Rx(rs2)) { self.SetNextPc(self.Pc() + (bimm)); }
+        if (self.Rx(rs1) == self.Rx(rs2))
+        {
+            self.SetNextPc(self.Pc() + (bimm));
+        }
     }
 
     auto Bne(Reg rs1, Reg rs2, u32 bimm) -> Item
     {
         // pc <- pc + ((rs1 != rs2) ? imm_b : 4)
         auto& self = Self();
-        if (self.Rx(rs1) != self.Rx(rs2)) { self.SetNextPc(self.Pc() + (bimm)); }
+        if (self.Rx(rs1) != self.Rx(rs2))
+        {
+            self.SetNextPc(self.Pc() + (bimm));
+        }
     }
 
     auto Blt(Reg rs1, Reg rs2, u32 bimm) -> Item
@@ -48,7 +54,10 @@ public:
         // Signed.
         // pc <- pc + ((rs1 < rs2) ? imm_b : 4)
         auto& self = Self();
-        if (static_cast<i32>(self.Rx(rs1)) < static_cast<i32>(self.Rx(rs2))) { self.SetNextPc(self.Pc() + (bimm)); }
+        if (static_cast<i32>(self.Rx(rs1)) < static_cast<i32>(self.Rx(rs2)))
+        {
+            self.SetNextPc(self.Pc() + (bimm));
+        }
     }
 
     auto Bge(Reg rs1, Reg rs2, u32 bimm) -> Item
@@ -56,7 +65,10 @@ public:
         // Signed.
         // pc <- pc + ((rs1 >= rs2) ? imm_b : 4)
         auto& self = Self();
-        if (static_cast<i32>(self.Rx(rs1)) >= static_cast<i32>(self.Rx(rs2))) { self.SetNextPc(self.Pc() + (bimm)); }
+        if (static_cast<i32>(self.Rx(rs1)) >= static_cast<i32>(self.Rx(rs2)))
+        {
+            self.SetNextPc(self.Pc() + (bimm));
+        }
     }
 
     auto Bltu(Reg rs1, Reg rs2, u32 bimm) -> Item
@@ -64,7 +76,10 @@ public:
         // Unsigned.
         // pc <- pc + ((rs1 < rs2) ? imm_b : 4)
         auto& self = Self();
-        if (self.Rx(rs1) < self.Rx(rs2)) { self.SetNextPc(self.Pc() + (bimm)); }
+        if (self.Rx(rs1) < self.Rx(rs2))
+        {
+            self.SetNextPc(self.Pc() + (bimm));
+        }
     }
 
     auto Bgeu(Reg rs1, Reg rs2, u32 bimm) -> Item
@@ -72,7 +87,10 @@ public:
         // Unsigned.
         // pc <- pc + ((rs1 >= rs2) ? imm_b : 4)
         auto& self = Self();
-        if (self.Rx(rs1) >= self.Rx(rs2)) { self.SetNextPc(self.Pc() + (bimm)); }
+        if (self.Rx(rs1) >= self.Rx(rs2))
+        {
+            self.SetNextPc(self.Pc() + (bimm));
+        }
     }
 
     // I-type instructions.
@@ -81,7 +99,8 @@ public:
     {
         // rd <- sx(m8(rs1 + imm_i)), pc += 4
         auto& self = Self();
-        auto byte = self.Read8(self.Rx(rs1) + (iimm));
+        const auto address = self.Rx(rs1) + iimm;
+        const auto byte = self.Read8(address);
         self.Wx(rd, static_cast<u32>(SExt(byte)));
     }
 
@@ -89,7 +108,8 @@ public:
     {
         // rd <- sx(m16(rs1 + imm_i)), pc += 4
         auto& self = Self();
-        auto halfWord = self.Read16(self.Rx(rs1) + (iimm));
+        const auto address = self.Rx(rs1) + iimm;
+        const auto halfWord = self.Read16(address);
         self.Wx(rd, static_cast<u32>(SExt(halfWord)));
     }
 
@@ -97,7 +117,8 @@ public:
     {
         // rd <- sx(m32(rs1 + imm_i)), pc += 4
         auto& self = Self();
-        auto word = self.Read32(self.Rx(rs1) + (iimm));
+        const auto address = self.Rx(rs1) + iimm;
+        const auto word = self.Read32(address);
         self.Wx(rd, word);
     }
 
@@ -105,7 +126,8 @@ public:
     {
         // rd <- zx(m8(rs1 + imm_i)), pc += 4
         auto& self = Self();
-        auto byte = self.Read8(self.Rx(rs1) + (iimm));
+        const auto address = self.Rx(rs1) + iimm;
+        const auto byte = self.Read8(address);
         self.Wx(rd, static_cast<u32>(byte));
     }
 
@@ -113,7 +135,8 @@ public:
     {
         // rd <- zx(m16(rs1 + imm_i)), pc += 4
         auto& self = Self();
-        auto halfWord = self.Read16(self.Rx(rs1) + (iimm));
+        const auto address = self.Rx(rs1) + iimm;
+        const auto halfWord = self.Read16(address);
         self.Wx(rd, static_cast<u32>(halfWord));
     }
 
@@ -177,21 +200,24 @@ public:
     {
         // m8(rs1 + imm_s) <- rs2[7:0], pc += 4
         auto& self = Self();
-        self.Write8(self.Rx(rs1) + (simm), self.Rx(rs2) & 0xff);
+        const auto address = self.Rx(rs1) + simm;
+        self.Write8(address, self.Rx(rs2) & 0xff);
     }
 
     auto Sh(Reg rs1, Reg rs2, u32 simm) -> Item
     {
         // m16(rs1 + imm_s) <- rs2[15:0], pc += 4
         auto& self = Self();
-        self.Write16(self.Rx(rs1) + (simm), self.Rx(rs2) & 0xffff);
+        const auto address = self.Rx(rs1) + simm;
+        self.Write16(address, self.Rx(rs2) & 0xffff);
     }
 
     auto Sw(Reg rs1, Reg rs2, u32 simm) -> Item
     {
         // m32(rs1 + imm_s) <- rs2[31:0], pc += 4
         auto& self = Self();
-        self.Write32(self.Rx(rs1) + (simm), self.Rx(rs2));
+        const auto address = self.Rx(rs1) + simm;
+        self.Write32(address, self.Rx(rs2));
     }
 
     // U-type instructions.

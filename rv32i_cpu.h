@@ -1,7 +1,7 @@
 #pragma once
 
-#include "core_mixins.h"
 #include "core_concepts.h"
+#include "core_mixins.h"
 #include "rv32i_dispatcher.h"
 #include "rv32i_instruction_handler.h"
 

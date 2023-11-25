@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <exception>
 
 // TYPES: All global to the entire shebang.
 
@@ -44,4 +45,14 @@ struct TrapState
 {
     TrapType type_;
     u32 context_;
+};
+
+class TrappedException : public std::exception
+{
+    TrapState cause_;
+
+public:
+    explicit TrappedException(TrapType type) : cause_{.type_ = type, .context_ = 0} {}
+    TrapType Reason() const { return cause_.type_; }
+    u32 Context() const { return cause_.context_; }
 };

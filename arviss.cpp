@@ -55,6 +55,11 @@ auto main() -> int
         }
 
         // Execute some instructions. We should see "Hello world from Rust!" because that's what compiled the image.
+        // Rv32iDisassembler dis;
+        // Run(cpu, dis, 10000);
+        cpu.ClearTraps();
+        cpu.SetNextPc(0);
+
         Run(cpu, 10000);
 
         if (cpu.IsTrapped())

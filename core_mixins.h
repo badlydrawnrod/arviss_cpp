@@ -67,8 +67,8 @@ class MTrap
 public:
     auto IsTrapped() const -> bool { return trap_.has_value(); }
     auto TrapCause() const -> std::optional<TrapState> { return trap_; }
-
     auto RaiseTrap(TrapType type, u32 context = 0) { trap_ = {.type_ = type, .context_ = context}; }
+    auto ClearTraps() { trap_ = {}; }
 };
 
 // A mixin implementation of an integer core.

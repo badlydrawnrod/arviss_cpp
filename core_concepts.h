@@ -35,12 +35,12 @@ concept HasMemory = requires(T t, u8 b, u16 h, u32 w) {
 
 // T implements the fetch cycle.
 template<typename T>
-concept HasFetch = requires(T t, Address a, u32 r) {
+concept HasFetch = requires(T t, Address a, u32 w) {
     a = t.Pc();               // Returns the contents of the program counter.
     a = t.Transfer();         // Transfers nextPc to the program counter and returns it.
-    r = t.Fetch();            // Transfer, Fetch32(pc), SetNextPc, return instruction.
+    w = t.Fetch();            // Transfer, Fetch32(pc), SetNextPc, return instruction.
     t.SetNextPc(Address{});   // Sets nextPc.
-    r = t.Fetch32(Address{}); // Returns the instruction at the given address.
+    w = t.Fetch32(Address{}); // Returns the instruction at the given address.
 };
 
 // T has traps.
@@ -50,6 +50,7 @@ concept HasTraps = requires(T t, TrapType type, u32 context, bool b, std::option
     c = t.TrapCause();          // Returns the cause of the trap.
     t.RaiseTrap(type);          // It can raise a trap of the given type.
     t.RaiseTrap(type, context); // It can raise a trap of the given type with the given context.
+    t.ClearTraps();             // It can clear traps.
 };
 
 // T has all the pieces of an integer core.
