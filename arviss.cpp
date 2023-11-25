@@ -13,11 +13,8 @@ auto Run(T& t, size_t count) -> void
     while (count > 0 && !t.IsTrapped())
     {
         auto ins = t.Fetch(); // Fetch.
-        if (ins)
-        {
-            t.Dispatch(*ins); // Execute.
-            --count;
-        }
+        t.Dispatch(ins);      // Execute.
+        --count;
     }
 }
 
@@ -27,13 +24,10 @@ auto Run(T& t, U& u, size_t count) -> void
 {
     while (count > 0 && !t.IsTrapped())
     {
-        auto ins = t.Fetch(); // Fetch.
-        if (ins)
-        {
-            std::cout << std::format("{:04x}\t", t.Pc()) << u.Dispatch(*ins) << '\n'; // Trace.
-            t.Dispatch(*ins);                                                         // Execute.
-            --count;
-        }
+        auto ins = t.Fetch();                                                    // Fetch.
+        std::cout << std::format("{:04x}\t", t.Pc()) << u.Dispatch(ins) << '\n'; // Trace.
+        t.Dispatch(ins);                                                         // Execute.
+        --count;
     }
 }
 

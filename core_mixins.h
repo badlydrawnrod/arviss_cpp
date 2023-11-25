@@ -41,20 +41,17 @@ public:
         return pc_;
     }
 
-    auto Fetch() -> WordResult
+    auto Fetch() -> u32
     {
         auto pc = Transfer();
         auto ins = Fetch32(pc);
-        if (ins)
-        {
-            SetNextPc(pc + 4);
-        }
+        SetNextPc(pc + 4);
         return ins;
     }
 
     auto SetNextPc(Address address) -> void { nextPc_ = address; }
 
-    auto Fetch32(Address address) -> WordResult
+    auto Fetch32(Address address) -> u32
     {
         auto& mem_ = static_cast<Mem&>(*this);
         return mem_.Read32(address);

@@ -18,7 +18,7 @@ class MBasicMem
     const Address TTY_DATA = 0x8001;
 
 public:
-    auto Read8(Address address) -> ByteResult
+    auto Read8(Address address) -> u8
     {
         if (address < mem_.size())
         {
@@ -28,64 +28,69 @@ public:
         {
             return 1;
         }
-        return std::unexpected(MemoryError::BadLoad);
+        throw TrappedException(TrapType::LoadAccessFault);
     }
 
-    auto Read16(Address address) -> HalfwordResult
+    auto Read16(Address address) -> u16
     {
         if (address < mem_.size() - 1)
         {
             auto* p = reinterpret_cast<u16*>(&mem_[address]);
             return *p;
         }
-        return std::unexpected(MemoryError::BadLoad);
+        throw TrappedException(TrapType::LoadAccessFault);
     }
 
-    auto Read32(Address address) -> WordResult
+    auto Read32(Address address) -> u32
     {
         if (address < mem_.size() - 3)
         {
             auto* p = reinterpret_cast<u32*>(&mem_[address]);
             return *p;
         }
-        return std::unexpected(MemoryError::BadLoad);
+        throw TrappedException(TrapType::LoadAccessFault);
     }
 
-    auto Write8(Address address, u8 byte) -> WriteResult
+    auto Write8(Address address, u8 byte) -> void
     {
         if (address < mem_.size())
         {
             mem_[address] = byte;
-            return {};
         }
         else if (address == TTY_DATA)
         {
             std::cout << static_cast<char>(byte);
             std::flush(std::cout);
-            return {};
         }
-        return std::unexpected(MemoryError::BadStore);
+        else
+        {
+            throw TrappedException(TrapType::StoreAccessFault);
+        }
     }
 
-    auto Write16(Address address, u16 halfWord) -> WriteResult
+    auto Write16(Address address, u16 halfWord) -> void
     {
         if (address < mem_.size() - 1)
         {
             auto* p = reinterpret_cast<u16*>(&mem_[address]);
             *p = halfWord;
-            return {};
         }
-        return std::unexpected(MemoryError::BadStore);
+        else
+        {
+            throw TrappedException(TrapType::StoreAccessFault);
+        }
     }
 
-    auto Write32(Address address, u32 word) -> WriteResult
+    auto Write32(Address address, u32 word) -> void
     {
         if (address < mem_.size() - 3)
         {
             auto* p = reinterpret_cast<u32*>(&mem_[address]);
             *p = word;
-            return {};
         }
-        return std::unexpected(MemoryError::BadStore);
+        else
+        {
+            throw TrappedException(TrapType::StoreAccessFault);
+        }
     }
 };

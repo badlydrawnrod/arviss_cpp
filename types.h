@@ -1,7 +1,7 @@
 #pragma once
 
 #include <cstdint>
-#include <expected>
+#include <exception>
 
 // TYPES: All global to the entire shebang.
 
@@ -47,16 +47,12 @@ struct TrapState
     u32 context_;
 };
 
-enum class MemoryError
+class TrappedException : public std::exception
 {
-    BadLoad,
-    BadStore
+    TrapState cause_;
+
+public:
+    explicit TrappedException(TrapType type) : cause_{.type_ = type, .context_ = 0} {}
+    TrapType Reason() const { return cause_.type_; }
+    u32 Context() const { return cause_.context_; }
 };
-
-template<typename T>
-using MemoryResult = std::expected<T, MemoryError>;
-
-using ByteResult = MemoryResult<u8>;
-using HalfwordResult = MemoryResult<u16>;
-using WordResult = MemoryResult<u32>;
-using WriteResult = MemoryResult<void>;
