@@ -362,7 +362,7 @@ where
             )
             width = 8 if (match_value & 3) == 3 else 4
             print(
-                f"            0x{match_value:0{width}x} => return self.{operator}{operands},"
+                f"            0x{match_value:0{width}x} => return self.({operator}{operands}),"
             )
         print("            _ => {}")
         print("        }")
@@ -444,7 +444,7 @@ struct MRv32{extensions}Dispatcher : public Handler
             )
             width = 8 if (match_value & 3) == 3 else 4
             print(
-                f"            case 0x{match_value:0{width}x}: return self.{operator}{operands};"
+                f"            case 0x{match_value:0{width}x}: return self.{operator}({operands});"
             )
         # print("            _ => {}")
         print("        }")
