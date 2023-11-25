@@ -59,8 +59,7 @@ public:
         }
         else if (address == TTY_DATA)
         {
-            // std::cout << static_cast<char>(byte);
-            // std::flush(std::cout);
+            std::cout << static_cast<char>(byte);
         }
         else
         {
