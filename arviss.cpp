@@ -57,20 +57,27 @@ auto main() -> int
         // Execute some instructions. We should see "Hello world from Rust!" because that's what compiled the image.
         // Rv32iDisassembler dis;
         // Run(cpu, dis, 10000);
-        Run(cpu, 10000);
-
-        if (cpu.IsTrapped())
+        for (auto i = 0; i < 10000000; i++)
         {
-            switch (cpu.TrapCause()->type_)
+            cpu.ClearTraps();
+            cpu.SetNextPc(0);
+
+            Run(cpu, 10000);
+
+            if (cpu.IsTrapped())
             {
-            case TrapType::Breakpoint:
-                std::cerr << "Trapped at breakpoint\n";
-                break;
-            case TrapType::EnvironmentCallFromMMode:
-                std::cerr << "ecall from M mode\n";
-                break;
-            default:
-                std::cerr << "trapped\n";
+                switch (cpu.TrapCause()->type_)
+                {
+                case TrapType::Breakpoint:
+                    // std::cerr << "Trapped at breakpoint\n";
+                    // std::cerr << ".";
+                    break;
+                case TrapType::EnvironmentCallFromMMode:
+                    std::cerr << "ecall from M mode\n";
+                    break;
+                default:
+                    std::cerr << "trapped\n";
+                }
             }
         }
     }

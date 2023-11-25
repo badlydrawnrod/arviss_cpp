@@ -50,6 +50,7 @@ concept HasTraps = requires(T t, TrapType type, u32 context, bool b, std::option
     c = t.TrapCause();          // Returns the cause of the trap.
     t.RaiseTrap(type);          // It can raise a trap of the given type.
     t.RaiseTrap(type, context); // It can raise a trap of the given type with the given context.
+    t.ClearTraps();             // It can clear traps.
 };
 
 // T has all the pieces of an integer core.
