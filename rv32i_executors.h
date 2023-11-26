@@ -1,12 +1,11 @@
 #pragma once
 
 #include "core_concepts.h"
+#include "rv32i_concepts.h"
 
-#include <format>
-
-// A mixin implementation of an instruction handler that operates on an integer core.
+// An Rv32i instruction handler that executes instructions on an integer core.
 template<IsIntegerCore T>
-class MRv32iHandler : public T
+class MRv32iIntegerCoreExecutor : public T
 {
     auto Self() -> T& { return static_cast<T&>(*this); }
 
@@ -365,12 +364,14 @@ public:
 };
 
 template<IsIntegerCore T>
-class MRv32imHandler : public MRv32iHandler<T>
+class MRv32imIntegerCoreExecutor : public MRv32iIntegerCoreExecutor<T>
 {
     auto Self() -> T& { return static_cast<T&>(*this); }
 
 public:
-    using Item = MRv32iHandler<T>::Item;
+    using Item = MRv32iIntegerCoreExecutor<T>::Item;
+
+    // TODO: Implement the 'M' extension.
 
     auto Mul(Reg rd, Reg rs1, Reg rs2) -> Item { auto& self = Self(); }
 
@@ -390,12 +391,12 @@ public:
 };
 
 template<IsIntegerCore T>
-class MRv32icHandler : public MRv32iHandler<T>
+class MRv32icIntegerCoreExecutor : public MRv32iIntegerCoreExecutor<T>
 {
     auto Self() -> T& { return static_cast<T&>(*this); }
 
 public:
-    using Item = MRv32iHandler<T>::Item;
+    using Item = MRv32iIntegerCoreExecutor<T>::Item;
 
     auto C_ebreak() -> Item { this->Ebreak(); }
 

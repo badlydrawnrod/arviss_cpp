@@ -20,5 +20,5 @@ add_executable(arviss_cpp
     rv32i_cpu.h
     rv32i_disassembler.h
     rv32i_dispatcher.h
-    rv32i_instruction_handler.h
+    rv32i_executors.h
     types.h)
