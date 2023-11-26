@@ -364,8 +364,6 @@ public:
     }
 };
 
-// TODO --- move the following to its own file.
-
 template<IsIntegerCore T>
 class MRv32imHandler : public MRv32iHandler<T>
 {
@@ -389,14 +387,6 @@ public:
     auto Rem(Reg rd, Reg rs1, Reg rs2) -> Item { auto& self = Self(); }
 
     auto Remu(Reg rd, Reg rs1, Reg rs2) -> Item { auto& self = Self(); }
-};
-
-// TODO: Does this even belong here?
-enum RegNames
-{
-    ZERO = 0,
-    RA = 1,
-    SP = 2
 };
 
 template<IsIntegerCore T>

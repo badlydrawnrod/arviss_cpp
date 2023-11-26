@@ -8,31 +8,31 @@
 #include "rv32im_dispatcher.h"
 
 // An RV32i CPU with registers, memory with a fetch cycle implementation, a handler for integer instructions, and
-// a dispatcher. RV32i specific.
+// a dispatcher.
 template<IsIntegerCore T>
-using RV32iCpu = MRv32iDispatcher<MRv32iHandler<T>>;
+using Rv32iCpu = MRv32iDispatcher<MRv32iHandler<T>>;
 
-// A mixin RV32i CPU. BYO memory. RV32i specific.
-// A specialization of RV32iCpu for a MIntegerCore with an unspecified memory implementation.
+// A mixin RV32i CPU. BYO memory.
+// A specialization of Rv32iCpu for a MIntegerCore with an unspecified memory implementation.
 template<HasMemory Mem>
-using AbstractRV32iCpu = RV32iCpu<MIntegerCore<Mem>>;
+using Rv32iCpuMIntegerCore = Rv32iCpu<MIntegerCore<Mem>>;
 
 // An RV32im CPU with registers, memory with a fetch cycle implementation, a handler for integer instructions, and
-// a dispatcher. RV32i specific.
+// a dispatcher.
 template<IsIntegerCore T>
-using RV32imCpu = MRv32imDispatcher<MRv32imHandler<T>>;
+using Rv32imCpu = MRv32imDispatcher<MRv32imHandler<T>>;
 
-// A mixin RV32i CPU. BYO memory. RV32im specific.
-// A specialization of RV32imCpu for a MIntegerCore with an unspecified memory implementation.
+// A mixin RV32im CPU. BYO memory.
+// A specialization of Rv32imCpu for a MIntegerCore with an unspecified memory implementation.
 template<HasMemory Mem>
-using AbstractRV32imCpu = RV32imCpu<MIntegerCore<Mem>>;
+using Rv32imCpuMIntegerCore = Rv32imCpu<MIntegerCore<Mem>>;
 
 // An RV32ic CPU with registers, memory with a fetch cycle implementation, a handler for integer instructions, and
-// a dispatcher. RV32i specific.
+// a dispatcher.
 template<IsIntegerCore T>
-using RV32icCpu = MRv32icDispatcher<MRv32icHandler<T>>;
+using Rv32icCpu = MRv32icDispatcher<MRv32icHandler<T>>;
 
-// A mixin RV32ic CPU. BYO memory. RV32ic specific.
-// A specialization of RV32icCpu for a MIntegerCore with an unspecified memory implementation.
+// A mixin RV32ic CPU. BYO memory.
+// A specialization of Rv32icCpu for a MIntegerCore with an unspecified memory implementation.
 template<HasMemory Mem>
-using AbstractRV32icCpu = RV32icCpu<MIntegerCore<Mem>>;
+using Rv32icCpuMIntegerCore = Rv32icCpu<MIntegerCore<Mem>>;

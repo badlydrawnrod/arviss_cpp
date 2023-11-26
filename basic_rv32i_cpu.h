@@ -5,11 +5,11 @@
 
 // TYPES: totally concrete. Tied to a specific memory implementation.
 
-// A basic CPU is an Rv32iCpu with a specific memory implementation.
-using BasicRv32iCpu = AbstractRV32iCpu<MBasicMem>;
+// A basic CPU is an Rv32iCpu with an MIntegerCore with memory implemented as MBasicMem.
+using BasicRv32iCpu = Rv32iCpuMIntegerCore<MBasicMem>;
 
-// An Rv32imCpu with a specific memory implementation.
-using BasicRv32imCpu = AbstractRV32imCpu<MBasicMem>;
+// An Rv32imCpu with an MIntegerCore with memory implemented as MBasicMem.
+using BasicRv32imCpu = Rv32imCpuMIntegerCore<MBasicMem>;
 
-// An Rv32icCpu with a specific memory implementation.
-using BasicRv32icCpu = AbstractRV32icCpu<MBasicMem>;
+// An Rv32icCpu with an MIntegerCore with memory implemented as MBasicMem.
+using BasicRv32icCpu = Rv32icCpuMIntegerCore<MBasicMem>;
