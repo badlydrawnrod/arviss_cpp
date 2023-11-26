@@ -363,3 +363,30 @@ public:
         self.RaiseTrap(TrapType::Breakpoint);
     }
 };
+
+// TODO --- move the following to its own file.
+
+template<IsIntegerCore T>
+class MRv32imHandler : public MRv32iHandler<T>
+{
+    auto Self() -> T& { return static_cast<T&>(*this); }
+
+public:
+    using Item = MRv32iHandler<T>::Item;
+
+    auto Mul(Reg rd, Reg rs1, Reg rs2) -> Item { auto& self = Self(); }
+
+    auto Mulh(Reg rd, Reg rs1, Reg rs2) -> Item { auto& self = Self(); }
+
+    auto Mulhsu(Reg rd, Reg rs1, Reg rs2) -> Item { auto& self = Self(); }
+
+    auto Mulhu(Reg rd, Reg rs1, Reg rs2) -> Item { auto& self = Self(); }
+
+    auto Div(Reg rd, Reg rs1, Reg rs2) -> Item { auto& self = Self(); }
+
+    auto Divu(Reg rd, Reg rs1, Reg rs2) -> Item { auto& self = Self(); }
+
+    auto Rem(Reg rd, Reg rs1, Reg rs2) -> Item { auto& self = Self(); }
+
+    auto Remu(Reg rd, Reg rs1, Reg rs2) -> Item { auto& self = Self(); }
+};

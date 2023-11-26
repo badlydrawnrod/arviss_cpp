@@ -7,7 +7,7 @@
 #include <vector>
 
 // This works for IsFloatVm too.
-template<IsRv32iVm T>
+template<IsRv32imVm T>
 auto Run(T& t, size_t count) -> void
 {
     while (count > 0 && !t.IsTrapped())
@@ -44,7 +44,7 @@ auto main() -> int
         fileHandler.close();
 
         // Create a CPU.
-        BasicRv32iCpu cpu;
+        BasicRv32imCpu cpu;
 
         // Populate its memory with the contents of the image.
         Address addr = 0;

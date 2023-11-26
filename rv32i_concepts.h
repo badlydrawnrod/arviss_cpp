@@ -113,3 +113,51 @@ concept IsRv32iVm = IsRv32iDispatcher<T> && IsIntegerCore<T>;
 // T is a dispatcher for a tracing handler for Rv32i instructions.
 template<typename T>
 concept IsRv32iTrace = IsRv32iDispatcher<T> && std::same_as<std::string, typename T::Item>;
+
+// TODO --- move the following to its own file.
+
+// T is an instruction handler for Rv32m instructions whose member functions do not return a value.
+template<typename T>
+concept IsVoidRv32mInstructionHandler = std::same_as<void, typename T::Item> && requires(T self) {
+    self.Mul(Reg{}, Reg{}, Reg{});
+    self.Mulh(Reg{}, Reg{}, Reg{});
+    self.Mulhsu(Reg{}, Reg{}, Reg{});
+    self.Mulhu(Reg{}, Reg{}, Reg{});
+    self.Div(Reg{}, Reg{}, Reg{});
+    self.Divu(Reg{}, Reg{}, Reg{});
+    self.Rem(Reg{}, Reg{}, Reg{});
+    self.Remu(Reg{}, Reg{}, Reg{});
+};
+
+// T is an instruction handler for Rv32m instructions whose member functions return a value.
+template<typename T>
+concept IsNonVoidRv32mInstructionHandler = !std::same_as<void, typename T::Item> && requires(T self, typename T::Item item) {
+    item = self.Mul(Reg{}, Reg{}, Reg{});
+    item = self.Mulh(Reg{}, Reg{}, Reg{});
+    item = self.Mulhsu(Reg{}, Reg{}, Reg{});
+    item = self.Mulhu(Reg{}, Reg{}, Reg{});
+    item = self.Div(Reg{}, Reg{}, Reg{});
+    item = self.Divu(Reg{}, Reg{}, Reg{});
+    item = self.Rem(Reg{}, Reg{}, Reg{});
+    item = self.Remu(Reg{}, Reg{}, Reg{});
+};
+
+// T is an instruction handler for Rv32m instructions.
+template<typename T>
+concept IsRv32mInstructionHandler = IsNonVoidRv32mInstructionHandler<T> || IsVoidRv32mInstructionHandler<T>;
+
+// T is an instruction dispatcher for Rv32m instruction handlers.
+template<typename T>
+concept IsRv32mDispatcher = IsDispatcher<T> && IsRv32mInstructionHandler<T>;
+
+// T is an instruction handler for RV32im instructions.
+template<typename T>
+concept IsRv32imInstructionHandler = IsRv32iInstructionHandler<T> && IsRv32mInstructionHandler<T>;
+
+// T is an instruction dispatcher for Rv32im instruction handlers.
+template<typename T>
+concept IsRv32imDispatcher = IsDispatcher<T> && IsRv32imInstructionHandler<T>;
+
+// T is a VM capable of fetching, dispatching and handling RV32im instructions for an integer core.
+template<typename T>
+concept IsRv32imVm = IsRv32imDispatcher<T>  && IsIntegerCore<T>;

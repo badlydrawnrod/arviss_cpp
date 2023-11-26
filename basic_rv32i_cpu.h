@@ -7,3 +7,6 @@
 
 // A basic CPU is an Rv32iCpu with a specific memory implementation.
 using BasicRv32iCpu = AbstractRV32iCpu<MBasicMem>;
+
+// An Rv32imCpu with a specific memory implementation.
+using BasicRv32imCpu = AbstractRV32imCpu<MBasicMem>;
