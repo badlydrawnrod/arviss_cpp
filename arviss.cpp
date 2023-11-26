@@ -7,7 +7,7 @@
 #include <vector>
 
 // This works for IsFloatVm too.
-template<IsRv32imVm T>
+template<IsRv32icVm T>
 auto Run(T& t, size_t count) -> void
 {
     while (count > 0 && !t.IsTrapped())
@@ -36,7 +36,7 @@ auto main() -> int
     try
     {
         // Read the image into a buffer.
-        std::ifstream fileHandler("images/hello_world.rv32i", std::ios::in | std::ios::binary | std::ios::ate);
+        std::ifstream fileHandler("images/hello_world.rv32ic", std::ios::in | std::ios::binary | std::ios::ate);
         const size_t fileSize = fileHandler.tellg();
         fileHandler.seekg(0, std::ios::beg);
         std::vector<u8> buf(fileSize);
@@ -44,7 +44,7 @@ auto main() -> int
         fileHandler.close();
 
         // Create a CPU.
-        BasicRv32imCpu cpu;
+        BasicRv32icCpu cpu{};
 
         // Populate its memory with the contents of the image.
         Address addr = 0;

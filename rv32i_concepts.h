@@ -161,3 +161,88 @@ concept IsRv32imDispatcher = IsDispatcher<T> && IsRv32imInstructionHandler<T>;
 // T is a VM capable of fetching, dispatching and handling RV32im instructions for an integer core.
 template<typename T>
 concept IsRv32imVm = IsRv32imDispatcher<T>  && IsIntegerCore<T>;
+
+// T is an instruction handler for Rv32c instructions whose member functions do not return a value.
+
+template<typename T>
+concept IsVoidRv32cInstructionHandler = std::same_as<void, typename T::Item> && requires(T self) {
+    self.C_ebreak();
+    self.C_jr(Reg{});
+    self.C_jalr(Reg{});
+    self.C_nop(u32{});
+    self.C_addi16sp(Reg{});
+    self.C_sub(Reg{}, Reg{});
+    self.C_xor(Reg{}, Reg{});
+    self.C_or(Reg{}, Reg{});
+    self.C_and(Reg{}, Reg{});
+    self.C_andi(Reg{}, u32{});
+    self.C_srli(Reg{}, u32{});
+    self.C_srai(Reg{}, u32{});
+    self.C_mv(Reg{}, Reg{});
+    self.C_add(Reg{}, Reg{});
+    self.C_addi4spn(Reg{}, u32{});
+    self.C_lw(Reg{}, Reg{}, u32{});
+    self.C_sw(Reg{}, Reg{}, u32{});
+    self.C_addi(Reg{}, u32{});
+    self.C_li(Reg{}, u32{});
+    self.C_lui(Reg{}, u32{});
+    self.C_j(u32{});
+    self.C_beqz(Reg{}, u32{});
+    self.C_bnez(Reg{}, u32{});
+    self.C_lwsp(Reg{}, u32{});
+    self.C_swsp(Reg{}, u32{});
+    self.C_jal(u32{});
+    self.C_slli(Reg{}, u32{});
+};
+
+// T is an instruction handler for Rv32c instructions whose member functions return a value.
+template<typename T>
+concept IsNonVoidRv32cInstructionHandler = !std::same_as<void, typename T::Item> && requires(T self, typename T::Item item) {
+    item = self.C_ebreak();
+    item = self.C_jr(Reg{});
+    item = self.C_jalr(Reg{});
+    item = self.C_nop(u32{});
+    item = self.C_addi16sp(Reg{});
+    item = self.C_sub(Reg{}, Reg{});
+    item = self.C_xor(Reg{}, Reg{});
+    item = self.C_or(Reg{}, Reg{});
+    item = self.C_and(Reg{}, Reg{});
+    item = self.C_andi(Reg{}, u32{});
+    item = self.C_srli(Reg{}, u32{});
+    item = self.C_srai(Reg{}, u32{});
+    item = self.C_mv(Reg{}, Reg{});
+    item = self.C_add(Reg{}, Reg{});
+    item = self.C_addi4spn(Reg{}, u32{});
+    item = self.C_lw(Reg{}, Reg{}, u32{});
+    item = self.C_sw(Reg{}, Reg{}, u32{});
+    item = self.C_addi(Reg{}, u32{});
+    item = self.C_li(Reg{}, u32{});
+    item = self.C_lui(Reg{}, u32{});
+    item = self.C_j(u32{});
+    item = self.C_beqz(Reg{}, u32{});
+    item = self.C_bnez(Reg{}, u32{});
+    item = self.C_lwsp(Reg{}, u32{});
+    item = self.C_swsp(Reg{}, u32{});
+    item = self.C_jal(u32{});
+    item = self.C_slli(Reg{}, u32{});
+};
+
+// T is an instruction handler for Rv32c instructions.
+template<typename T>
+concept IsRv32cInstructionHandler = IsNonVoidRv32cInstructionHandler<T> || IsVoidRv32cInstructionHandler<T>;
+
+// T is an instruction dispatcher for Rv32c instruction handlers.
+template<typename T>
+concept IsRv32cDispatcher = IsDispatcher<T> && IsRv32cInstructionHandler<T>;
+
+// T is an instruction handler for RV32ic instructions.
+template<typename T>
+concept IsRv32icInstructionHandler = IsRv32iInstructionHandler<T> && IsRv32cInstructionHandler<T>;
+
+// T is an instruction dispatcher for Rv32ic instruction handlers.
+template<typename T>
+concept IsRv32icDispatcher = IsDispatcher<T> && IsRv32icInstructionHandler<T>;
+
+// T is a VM capable of fetching, dispatching and handling RV32ic instructions for an integer core.
+template<typename T>
+concept IsRv32icVm = IsRv32icDispatcher<T>  && IsIntegerCore<T>;

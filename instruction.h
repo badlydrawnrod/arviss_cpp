@@ -73,7 +73,9 @@ public:
 
     // RV32C
 
-    auto Rdp() -> u32 const { return (ins_ >> 2) & 7; }
+    auto CReg(u32 r) -> u32 const { return 8 + r; }
+
+    auto Rdp() -> u32 const { return CReg((ins_ >> 2) & 7); }
 
     auto Rdn0() -> u32 const { return Rd(); }
 
@@ -81,19 +83,19 @@ public:
 
     auto Rdrs1() -> u32 const { return Rd(); }
 
-    auto Rs1p() -> u32 const { return (ins_ >> 7) & 7; }
+    auto Rs1p() -> u32 const { return CReg((ins_ >> 7) & 7); }
 
-    auto Rs2p() -> u32 const { return (ins_ >> 2) & 7; }
+    auto Rs2p() -> u32 const { return CReg((ins_ >> 2) & 7); }
 
-    auto Rdrs1p() -> u32 const { return (ins_ >> 7) & 7; }
+    auto Rdrs1p() -> u32 const { return CReg((ins_ >> 7) & 7); }
 
-    auto Rs1n0() -> u32 const { return ins_ >> 7; }
+    auto Rs1n0() -> u32 const { return (ins_ >> 7) & 0x1f; }
 
-    auto Rs2n0() -> u32 const { return ins_ >> 2; }
+    auto Rs2n0() -> u32 const { return (ins_ >> 2) & 0x1f; }
 
     auto Rdrs1n0() -> u32 const { return Rd(); }
 
-    auto C_rs2() -> u32 const { return ins_ >> 2; }
+    auto C_rs2() -> u32 const { return (ins_ >> 2) & 0x1f; }
 
     auto C_nzuimm10() -> u32
     {

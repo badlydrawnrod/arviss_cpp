@@ -10,3 +10,6 @@ using BasicRv32iCpu = AbstractRV32iCpu<MBasicMem>;
 
 // An Rv32imCpu with a specific memory implementation.
 using BasicRv32imCpu = AbstractRV32imCpu<MBasicMem>;
+
+// An Rv32icCpu with a specific memory implementation.
+using BasicRv32icCpu = AbstractRV32icCpu<MBasicMem>;

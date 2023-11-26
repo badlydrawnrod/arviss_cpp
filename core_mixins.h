@@ -45,7 +45,17 @@ public:
     {
         auto pc = Transfer();
         auto ins = Fetch32(pc);
-        SetNextPc(pc + 4);
+        if ((ins & 0b11) == 0b11)
+        {
+            // 32-bit instruction.
+            SetNextPc(pc + 4);
+        }
+        else
+        {
+            // 16-bit compressed instruction.
+            SetNextPc(pc + 2);
+            ins = ins & 0xffff;
+        }
         return ins;
     }
 
