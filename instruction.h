@@ -4,24 +4,20 @@
 
 // TYPES: not at all specific.
 
-inline auto Sext(u32 n, i32 topBit) -> u32
-{
-    auto shift = 31 - topBit;
-    return static_cast<u32>((static_cast<i32>(n << shift) >> shift));
-}
-
 // A helper for breaking down instructions.
 class Instruction
 {
     u32 ins_{};
 
-    auto Bits(u32 hi, u32 lo) -> u32
+    // Sign extend.
+    static auto Sext(u32 n, i32 topBit) -> u32
     {
-        auto n = ins_;
-        auto run = (hi - lo) + 1;
-        auto mask = ((1 << run) - 1) << lo;
-        return (n & mask) >> lo;
+        auto shift = 31 - topBit;
+        return static_cast<u32>((static_cast<i32>(n << shift) >> shift));
     }
+
+    // Compact register.
+    static auto CReg(u32 r) -> u32 { return 8 + r; }
 
 public:
     Instruction(u32 ins) : ins_{ins} {};
@@ -72,8 +68,6 @@ public:
     }
 
     // RV32C
-
-    auto CReg(u32 r) -> u32 const { return 8 + r; }
 
     auto Rdp() -> u32 const { return CReg((ins_ >> 2) & 7); }
 
