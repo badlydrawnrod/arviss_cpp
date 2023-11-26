@@ -73,25 +73,25 @@ public:
 
     // RV32C
 
-    auto rdp() -> u32 const { return (ins_ >> 2) & 7; }
+    auto Rdp() -> u32 const { return (ins_ >> 2) & 7; }
 
-    auto rdn0() -> u32 const { return Rd(); }
+    auto Rdn0() -> u32 const { return Rd(); }
 
-    auto rdn2() -> u32 const { return Rd(); }
+    auto Rdn2() -> u32 const { return Rd(); }
 
-    auto rdrs1() -> u32 const { return Rd(); }
+    auto Rdrs1() -> u32 const { return Rd(); }
 
-    auto rs1p() -> u32 const { return (ins_ >> 7) & 7; }
+    auto Rs1p() -> u32 const { return (ins_ >> 7) & 7; }
 
-    auto rs2p() -> u32 const { return (ins_ >> 2) & 7; }
+    auto Rs2p() -> u32 const { return (ins_ >> 2) & 7; }
 
-    auto rdrs1p() -> u32 const { return (ins_ >> 7) & 7; }
+    auto Rdrs1p() -> u32 const { return (ins_ >> 7) & 7; }
 
-    auto rs1n0() -> u32 const { return ins_ >> 7; }
+    auto Rs1n0() -> u32 const { return ins_ >> 7; }
 
-    auto rs2n0() -> u32 const { return ins_ >> 2; }
+    auto Rs2n0() -> u32 const { return ins_ >> 2; }
 
-    auto rdrs1n0() -> u32 const { return Rd(); }
+    auto Rdrs1n0() -> u32 const { return Rd(); }
 
     auto C_rs2() -> u32 const { return ins_ >> 2; }
 
