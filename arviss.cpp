@@ -19,7 +19,7 @@ auto Run(T& t, size_t count) -> void
 }
 
 // How do I say that U's instruction handler can't be a subset of T's instruction handler?
-template<IsRv32iVm T, IsRv32iTrace U>
+template<IsRv32icVm T, IsRv32icTrace U>
 auto Run(T& t, U& u, size_t count) -> void
 {
     while (count > 0 && !t.IsTrapped())
@@ -55,12 +55,11 @@ auto main() -> int
         }
 
         // Execute some instructions. We should see "Hello world from Rust!" because that's what compiled the image.
-        // Rv32iDisassembler dis;
-        // Run(cpu, dis, 10000);
         cpu.ClearTraps();
         cpu.SetNextPc(0);
-
-        Run(cpu, 10000);
+        Rv32icDisassembler dis;
+        Run(cpu, dis, 10000);
+        // Run(cpu, 10000);
 
         if (cpu.IsTrapped())
         {

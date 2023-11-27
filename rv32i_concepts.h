@@ -160,6 +160,10 @@ concept IsRv32imDispatcher = IsDispatcher<T> && IsRv32imInstructionHandler<T>;
 template<typename T>
 concept IsRv32imVm = IsRv32imDispatcher<T> && IsIntegerCore<T>;
 
+// T is a dispatcher for a tracing handler for Rv32im instructions.
+template<typename T>
+concept IsRv32imTrace = IsRv32imDispatcher<T> && std::same_as<std::string, typename T::Item>;
+
 // T is an instruction handler for Rv32c instructions whose member functions do not return a value.
 template<typename T>
 concept IsVoidRv32cInstructionHandler = std::same_as<void, typename T::Item> && requires(T self) {
@@ -243,3 +247,7 @@ concept IsRv32icDispatcher = IsDispatcher<T> && IsRv32icInstructionHandler<T>;
 // T is a VM capable of fetching, dispatching and handling RV32ic instructions for an integer core.
 template<typename T>
 concept IsRv32icVm = IsRv32icDispatcher<T> && IsIntegerCore<T>;
+
+// T is a dispatcher for a tracing handler for Rv32ic instructions.
+template<typename T>
+concept IsRv32icTrace = IsRv32icDispatcher<T> && std::same_as<std::string, typename T::Item>;
