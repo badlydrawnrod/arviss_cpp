@@ -380,21 +380,89 @@ namespace arviss
 
         // TODO: Implement the 'M' extension.
 
-        auto Mul(Reg rd, Reg rs1, Reg rs2) -> Item { auto& self = Self(); }
+        auto Mul(Reg rd, Reg rs1, Reg rs2) -> Item
+        {
+            // rd <- rs1 * rs2, pc += 4
+            auto& self = Self();
+            self.Wx(rd, self.Rx(rs1) * self.Rx(rs2));
+        }
 
-        auto Mulh(Reg rd, Reg rs1, Reg rs2) -> Item { auto& self = Self(); }
+        auto Mulh(Reg rd, Reg rs1, Reg rs2) -> Item
+        {
+            auto& self = Self();
+            auto xreg_rs1 = static_cast<i64>(static_cast<i32>(self.Rx(rs1)));
+            auto xreg_rs2 = static_cast<i64>(static_cast<i32>(self.Rx(rs2)));
+            auto t = (xreg_rs1 * xreg_rs2) >> 32;
+            self.Wx(rd, static_cast<u32>(t));
+        }
 
-        auto Mulhsu(Reg rd, Reg rs1, Reg rs2) -> Item { auto& self = Self(); }
+        auto Mulhsu(Reg rd, Reg rs1, Reg rs2) -> Item
+        {
+            auto& self = Self();
+            auto xreg_rs1 = static_cast<i64>(static_cast<i32>(self.Rx(rs1)));
+            auto xreg_rs2 = static_cast<i64>(static_cast<u64>(self.Rx(rs2)));
+            auto t = (xreg_rs1 * xreg_rs2) >> 32;
+            self.Wx(rd, static_cast<u32>(t));
+        }
 
-        auto Mulhu(Reg rd, Reg rs1, Reg rs2) -> Item { auto& self = Self(); }
+        auto Mulhu(Reg rd, Reg rs1, Reg rs2) -> Item
+        {
+            auto& self = Self();
+            auto xreg_rs1 = static_cast<u64>(self.Rx(rs1));
+            auto xreg_rs2 = static_cast<u64>(self.Rx(rs2));
+            auto t = (xreg_rs1 * xreg_rs2) >> 32;
+            self.Wx(rd, static_cast<u32>(t));
+        }
 
-        auto Div(Reg rd, Reg rs1, Reg rs2) -> Item { auto& self = Self(); }
+        auto Div(Reg rd, Reg rs1, Reg rs2) -> Item
+        {
+            auto& self = Self();
+            auto dividend = static_cast<i32>(self.Rx(rs1));
+            auto divisor = static_cast<i32>(self.Rx(rs2));
+            // Check for signed division overflow.
+            if ((static_cast<u32>(dividend) != 0x80000000) || divisor != -1)
+            {
+                self.Wx(rd, divisor != 0 ? dividend / divisor : std::numeric_limits<u32>::max());
+            }
+            else
+            {
+                // Signed division overflow occurred.
+                self.Wx(rd, static_cast<u32>(dividend));
+            }
+        }
 
-        auto Divu(Reg rd, Reg rs1, Reg rs2) -> Item { auto& self = Self(); }
+        auto Divu(Reg rd, Reg rs1, Reg rs2) -> Item
+        {
+            auto& self = Self();
+            auto dividend = self.Rx(rs1);
+            auto divisor = self.Rx(rs2);
+            self.Wx(rd, divisor != 0 ? dividend / divisor : std::numeric_limits<u32>::max());
+        }
 
-        auto Rem(Reg rd, Reg rs1, Reg rs2) -> Item { auto& self = Self(); }
+        auto Rem(Reg rd, Reg rs1, Reg rs2) -> Item
+        {
+            auto& self = Self();
+            auto dividend = static_cast<i32>(self.Rx(rs1));
+            auto divisor = static_cast<i32>(self.Rx(rs2));
+            // Check for signed division overflow.
+            if ((static_cast<u32>(dividend) != 0x80000000) || divisor != -1)
+            {
+                self.Wx(rd, divisor != 0 ? static_cast<u32>(dividend % divisor) : static_cast<u32>(dividend));
+            }
+            else
+            {
+                // Signed division overflow occurred.
+                self.Wx(rd, 0);
+            }
+        }
 
-        auto Remu(Reg rd, Reg rs1, Reg rs2) -> Item { auto& self = Self(); }
+        auto Remu(Reg rd, Reg rs1, Reg rs2) -> Item
+        {
+            auto& self = Self();
+            auto dividend = self.Rx(rs1);
+            auto divisor = self.Rx(rs2);
+            self.Wx(rd, divisor != 0 ? dividend % divisor : dividend);
+        }
     };
 
     // An Rv32ic instruction handler that executes instructions on an integer core. BYO core.
