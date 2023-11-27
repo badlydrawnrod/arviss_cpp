@@ -6,6 +6,8 @@
 #include <iostream>
 #include <vector>
 
+using namespace arviss;
+
 // This works for IsFloatVm too.
 template<IsRv32icVm T>
 auto Run(T& t, size_t count) -> void

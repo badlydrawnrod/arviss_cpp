@@ -5,91 +5,93 @@
 #include <array>
 #include <iostream>
 
-// TYPES: concrete mixin. Has own state.
-
-// A mixin implementation of simple, checked memory that can signal bad access.
-class BasicMem
+namespace arviss
 {
-    // 32KiB of memory.
-    std::array<u8, 32768> mem_{};
-
-    // Memory mapped I/O.
-    const Address TTY_STATUS = 0x8000;
-    const Address TTY_DATA = 0x8001;
-
-public:
-    auto Read8(Address address) -> u8
+    // A mixin implementation of simple, checked memory that can signal bad access.
+    class BasicMem
     {
-        if (address < mem_.size())
-        {
-            return mem_[address];
-        }
-        else if (address == TTY_STATUS)
-        {
-            return 1;
-        }
-        throw TrappedException(TrapType::LoadAccessFault);
-    }
+        // 32KiB of memory.
+        std::array<u8, 32768> mem_{};
 
-    auto Read16(Address address) -> u16
-    {
-        if (address < mem_.size() - 1)
-        {
-            auto* p = reinterpret_cast<u16*>(&mem_[address]);
-            return *p;
-        }
-        throw TrappedException(TrapType::LoadAccessFault);
-    }
+        // Memory mapped I/O.
+        const Address TTY_STATUS = 0x8000;
+        const Address TTY_DATA = 0x8001;
 
-    auto Read32(Address address) -> u32
-    {
-        if (address < mem_.size() - 3)
+    public:
+        auto Read8(Address address) -> u8
         {
-            auto* p = reinterpret_cast<u32*>(&mem_[address]);
-            return *p;
+            if (address < mem_.size())
+            {
+                return mem_[address];
+            }
+            else if (address == TTY_STATUS)
+            {
+                return 1;
+            }
+            throw TrappedException(TrapType::LoadAccessFault);
         }
-        throw TrappedException(TrapType::LoadAccessFault);
-    }
 
-    auto Write8(Address address, u8 byte) -> void
-    {
-        if (address < mem_.size())
+        auto Read16(Address address) -> u16
         {
-            mem_[address] = byte;
+            if (address < mem_.size() - 1)
+            {
+                auto* p = reinterpret_cast<u16*>(&mem_[address]);
+                return *p;
+            }
+            throw TrappedException(TrapType::LoadAccessFault);
         }
-        else if (address == TTY_DATA)
-        {
-            std::cout << static_cast<char>(byte);
-        }
-        else
-        {
-            throw TrappedException(TrapType::StoreAccessFault);
-        }
-    }
 
-    auto Write16(Address address, u16 halfWord) -> void
-    {
-        if (address < mem_.size() - 1)
+        auto Read32(Address address) -> u32
         {
-            auto* p = reinterpret_cast<u16*>(&mem_[address]);
-            *p = halfWord;
+            if (address < mem_.size() - 3)
+            {
+                auto* p = reinterpret_cast<u32*>(&mem_[address]);
+                return *p;
+            }
+            throw TrappedException(TrapType::LoadAccessFault);
         }
-        else
-        {
-            throw TrappedException(TrapType::StoreAccessFault);
-        }
-    }
 
-    auto Write32(Address address, u32 word) -> void
-    {
-        if (address < mem_.size() - 3)
+        auto Write8(Address address, u8 byte) -> void
         {
-            auto* p = reinterpret_cast<u32*>(&mem_[address]);
-            *p = word;
+            if (address < mem_.size())
+            {
+                mem_[address] = byte;
+            }
+            else if (address == TTY_DATA)
+            {
+                std::cout << static_cast<char>(byte);
+            }
+            else
+            {
+                throw TrappedException(TrapType::StoreAccessFault);
+            }
         }
-        else
+
+        auto Write16(Address address, u16 halfWord) -> void
         {
-            throw TrappedException(TrapType::StoreAccessFault);
+            if (address < mem_.size() - 1)
+            {
+                auto* p = reinterpret_cast<u16*>(&mem_[address]);
+                *p = halfWord;
+            }
+            else
+            {
+                throw TrappedException(TrapType::StoreAccessFault);
+            }
         }
-    }
-};
+
+        auto Write32(Address address, u32 word) -> void
+        {
+            if (address < mem_.size() - 3)
+            {
+                auto* p = reinterpret_cast<u32*>(&mem_[address]);
+                *p = word;
+            }
+            else
+            {
+                throw TrappedException(TrapType::StoreAccessFault);
+            }
+        }
+    };
+
+} // namespace arviss
