@@ -5,7 +5,7 @@
 
 namespace arviss
 {
-    // An Rv32i instruction handler that executes instructions on an integer core.
+    // An Rv32i instruction handler that executes instructions on an integer core. BYO core.
     template<IsIntegerCore T>
     class Rv32iIntegerCoreExecutor : public T
     {
@@ -365,6 +365,7 @@ namespace arviss
         }
     };
 
+    // An Rv32im instruction handler that executes instructions on an integer core. BYO core.
     template<IsIntegerCore T>
     class Rv32imIntegerCoreExecutor : public Rv32iIntegerCoreExecutor<T>
     {
@@ -392,6 +393,7 @@ namespace arviss
         auto Remu(Reg rd, Reg rs1, Reg rs2) -> Item { auto& self = Self(); }
     };
 
+    // An Rv32ic instruction handler that executes instructions on an integer core. BYO core.
     template<IsIntegerCore T>
     class Rv32icIntegerCoreExecutor : public Rv32iIntegerCoreExecutor<T>
     {

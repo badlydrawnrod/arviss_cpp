@@ -26,7 +26,7 @@ namespace arviss
         }
     };
 
-    // A mixin implementation of the fetch cycle for the given memory implementation.
+    // A mixin implementation of the fetch cycle for the given memory implementation. BYO memory.
     // Satisfies: HasFetch, HasMemory
     template<HasMemory Mem>
     class Fetcher : public Mem
