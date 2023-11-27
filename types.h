@@ -15,6 +15,13 @@ using i32 = std::int32_t;
 using u32 = std::uint32_t;
 using f32 = float;
 
+enum RegNames
+{
+    ZERO = 0,
+    RA = 1,
+    SP = 2
+};
+
 enum class TrapType
 {
     // Non-interrupt traps.

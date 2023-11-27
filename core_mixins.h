@@ -10,7 +10,7 @@
 
 // A mixin implementation of RV32i's integer registers.
 // Satisfies: HasXRegisters
-class MXRegisters
+class XRegisters
 {
     std::array<u32, 32> xreg_{};
 
@@ -27,7 +27,7 @@ public:
 // A mixin implementation of the fetch cycle for the given memory implementation.
 // Satisfies: HasFetch, HasMemory
 template<HasMemory Mem>
-class MFetch : public Mem
+class Fetcher : public Mem
 {
     Address pc_{};
     Address nextPc_{};
@@ -45,7 +45,17 @@ public:
     {
         auto pc = Transfer();
         auto ins = Fetch32(pc);
-        SetNextPc(pc + 4);
+        if ((ins & 0b11) == 0b11)
+        {
+            // 32-bit instruction.
+            SetNextPc(pc + 4);
+        }
+        else
+        {
+            // 16-bit compressed instruction.
+            SetNextPc(pc + 2);
+            ins = ins & 0xffff;
+        }
         return ins;
     }
 
@@ -60,7 +70,7 @@ public:
 
 // A mixin implementation of a trap handler.
 // Satisfies: HasTraps.
-class MTrap
+class TrapHandler
 {
     std::optional<TrapState> trap_{};
 
@@ -74,6 +84,6 @@ public:
 // A mixin implementation of an integer core.
 // Satisfies: HasTraps, HasXRegisters, HasFetch, HasMemory, IsIntegerCore
 template<HasMemory Mem>
-struct MIntegerCore : public MTrap, public MXRegisters, public MFetch<Mem>
+struct IntegerCore : public TrapHandler, public XRegisters, public Fetcher<Mem>
 {
 };

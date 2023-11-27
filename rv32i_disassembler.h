@@ -1,6 +1,7 @@
 #pragma once
 
 #include "rv32i_dispatcher.h"
+#include "rv32ic_dispatcher.h"
 #include "types.h"
 
 #include <format>
@@ -17,8 +18,8 @@ auto Abi(Reg r) -> const char*
     return abiNames[r];
 }
 
-// A mixin instruction handler for a disassembler for Rv32i instructions.
-struct MRv32iDisassembler
+// An instruction handler for a disassembler for Rv32i instructions.
+struct Rv32iDisassemblingHandler
 {
     using Item = std::string;
 
@@ -65,5 +66,177 @@ struct MRv32iDisassembler
     auto Ebreak() -> Item { return "ebreak"; }
 };
 
-// A disassembler.
-using Rv32iDisassembler = MRv32iDispatcher<MRv32iDisassembler>;
+// A disassembler for Rv32i instructions.
+using Rv32iDisassembler = Rv32iDispatcher<Rv32iDisassemblingHandler>;
+
+// An instruction handler for a disassembler for Rv32ic instructions. This implementation cheats slightly by delegating to the handler for non-compressed
+// instructions. If you want to see compressed instructions then rewrite it in terms of formatted strings like the parent handler.
+struct Rv32icDisassemblingHandler : public Rv32iDisassemblingHandler
+{
+    using Item = Rv32iDisassemblingHandler::Item;
+
+    auto C_ebreak() -> Item
+    {
+        // ebreak
+        return Ebreak();
+    }
+
+    auto C_jr(Reg rs1n0) -> Item
+    {
+        // jalr x0, 0(rs1)
+        return Jalr(RegNames::ZERO, rs1n0, 0);
+    }
+
+    auto C_jalr(Reg rs1n0) -> Item
+    {
+        // jalr x1, 0(rs1)
+        return Jalr(RegNames::RA, rs1n0, 0);
+    }
+
+    auto C_nop(u32 u) -> Item
+    {
+        // nop
+        return "c_nop";
+    }
+
+    auto C_addi16sp(u32 imm) -> Item
+    {
+        // addi x2, x2, nzimm[9:4]
+        return Addi(RegNames::SP, RegNames::SP, imm);
+    }
+
+    auto C_sub(Reg rdrs1p, Reg rs2p) -> Item
+    {
+        // sub rdp, rdp, rs2p
+        return Sub(rdrs1p, rdrs1p, rs2p);
+    }
+
+    auto C_xor(Reg rdrs1p, Reg rs2p) -> Item
+    {
+        // xor rdp, rdp, rs2p
+        return Xor(rdrs1p, rdrs1p, rs2p);
+    }
+
+    auto C_or(Reg rdrs1p, Reg rs2p) -> Item
+    {
+        // or rdp, rdp, rs2p
+        return Or(rdrs1p, rdrs1p, rs2p);
+    }
+
+    auto C_and(Reg rdrs1p, Reg rs2p) -> Item
+    {
+        // and rdp, rdp, rs2p
+        return And(rdrs1p, rdrs1p, rs2p);
+    }
+
+    auto C_andi(Reg rsrs1p, u32 imm) -> Item
+    {
+        // andi rdp, rdp, imm[5:0]
+        return Andi(rsrs1p, rsrs1p, imm);
+    }
+
+    auto C_srli(Reg rdrs1p, u32 imm) -> Item
+    {
+        // srli rdp, rdp, shamt[5:0]
+        return Srli(rdrs1p, rdrs1p, imm);
+    }
+
+    auto C_srai(Reg rdrs1p, u32 imm) -> Item
+    {
+        // srai rdp, rdp, shamt[5:0]
+        return Srai(rdrs1p, rdrs1p, imm);
+    }
+
+    auto C_mv(Reg rd, Reg rs2n0) -> Item
+    {
+        // add rd, x0, rs2
+        return Add(rd, RegNames::ZERO, rs2n0);
+    }
+
+    auto C_add(Reg rdrs1, Reg rs2n0) -> Item
+    {
+        // add rd, rd, rs2
+        return Add(rdrs1, rdrs1, rs2n0);
+    }
+
+    auto C_addi4spn(Reg rdp, u32 imm) -> Item
+    {
+        // addi rdp, x2, nzuimm[9:2]
+        return Addi(rdp, RegNames::SP, imm);
+    }
+
+    auto C_lw(Reg rdp, Reg rs1p, u32 imm) -> Item
+    {
+        // lw rdp, offset[6:2](rs1p)
+        return Lw(rdp, rs1p, imm);
+    }
+
+    auto C_sw(Reg rs1p, Reg rs2p, u32 imm) -> Item
+    {
+        // sw rs2p, offset[6:2](rs1p)
+        return Sw(rs1p, rs2p, imm);
+    }
+
+    auto C_addi(Reg rdrs1n0, u32 imm) -> Item
+    {
+        // addi rd, rd, nzimm[5:0]
+        return Addi(rdrs1n0, rdrs1n0, imm);
+    }
+
+    auto C_li(Reg rd, u32 imm) -> Item
+    {
+        // addi rd, x0, imm[5:0]
+        return Addi(rd, RegNames::ZERO, imm);
+    }
+
+    auto C_lui(Reg rdn2, u32 imm) -> Item
+    {
+        // lui rd, nzimm[17:12]
+        return Lui(rdn2, imm);
+    }
+
+    auto C_j(u32 imm) -> Item
+    {
+        // jal x0, offset[11:1]
+        return Jal(RegNames::ZERO, imm);
+    }
+
+    auto C_beqz(Reg rs1p, u32 imm) -> Item
+    {
+        // beq rs1p, x0, offset[8:1]
+        return Beq(rs1p, RegNames::ZERO, imm);
+    }
+
+    auto C_bnez(Reg rs1p, u32 imm) -> Item
+    {
+        // bne rs1p, x0, offset[8:1]
+        return Bne(rs1p, RegNames::ZERO, imm);
+    }
+
+    auto C_lwsp(Reg rdn0, u32 imm) -> Item
+    {
+        // lw rd, offset[7:2](x2)
+        return Lw(rdn0, RegNames::SP, imm);
+    }
+
+    auto C_swsp(Reg rs2, u32 imm) -> Item
+    {
+        // sw rs2, offset[7:2](x2)
+        return Sw(RegNames::SP, rs2, imm);
+    }
+
+    auto C_jal(u32 imm) -> Item
+    {
+        // jal x1, offset[11:1]
+        return Jal(RegNames::RA, imm);
+    }
+
+    auto C_slli(Reg rdrs1n0, u32 imm) -> Item
+    {
+        // slli rd, rd, shamt[5:0]
+        return Slli(rdrs1n0, rdrs1n0, imm);
+    }
+};
+
+// A disassembler for Rv32ic instructions.
+using Rv32icDisassembler = Rv32icDispatcher<Rv32icDisassemblingHandler>;
