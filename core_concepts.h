@@ -24,6 +24,13 @@ namespace arviss
         t.Wx(Reg{}, u32{});   // Writes to an integer register.
     };
 
+    // T supports reading from and writing to floating point registers.
+    template<typename T>
+    concept HasFRegisters = requires(T t, f32 result) {
+        result = t.Rf(Reg{}); // Reads from a float register.
+        t.Wf(Reg{}, f32{});   // Writes to a float register.
+    };
+
     // T supports reading from and writing to memory.
     template<typename T>
     concept HasMemory = requires(T t, u8 b, u16 h, u32 w) {
@@ -61,5 +68,10 @@ namespace arviss
             && HasXRegisters<T>         // It has integer registers.
             && HasFetch<T>              // It has a fetch cycle implementation.
             && HasMemory<T>;            // It has memory.
+
+    // T has all the pieces of a floating point core.
+    template<typename T>
+    concept IsFloatCore = IsIntegerCore<T> // It's also an integer core
+            && HasFRegisters<T>;           // It has floating point registers.
 
 } // namespace arviss

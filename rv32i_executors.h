@@ -3,6 +3,10 @@
 #include "core_concepts.h"
 #include "rv32i_concepts.h"
 
+#include <bit>
+#include <cmath>
+#include <limits>
+
 namespace arviss
 {
     // An Rv32i instruction handler that executes instructions on an integer core. BYO core.
@@ -564,6 +568,285 @@ namespace arviss
         {
             // slli rd, rd, shamt[5:0]
             this->Slli(rdrs1n0, rdrs1n0, imm);
+        }
+    };
+
+    // An Rv32imf instruction handler that executes instructions on a floating point core. BYO core.
+    template<IsFloatCore T>
+    class Rv32imfFloatCoreExecutor : public Rv32imIntegerCoreExecutor<T>
+    {
+        auto Self() -> T& { return static_cast<T&>(*this); }
+
+    public:
+        using Item = Rv32imIntegerCoreExecutor<T>::Item;
+
+        auto Fmv_x_w(Reg rd, Reg rs1) -> Item
+        {
+            // bits(rd) <- bits(rs1)
+            auto& self = Self();
+            self.Wx(rd, std::bit_cast<u32>(self.Rf(rs1)));
+        }
+
+        auto Fclass_s(Reg rd, Reg rs1) -> Item
+        {
+            auto& self = Self();
+            auto v = self.Rf(rs1);
+            auto bits = static_cast<u32>(v);
+            u32 result{};
+            if (v == -std::numeric_limits<f32>::infinity())
+            {
+                // Negative infinity.
+                result = 1 << 0;
+            }
+            else if (v == std::numeric_limits<f32>::infinity())
+            {
+                // Positive infinity.
+                result = 1 << 7;
+            }
+            else if (bits == 0x80000000)
+            {
+                // Negative zero.
+                result = 1 << 3;
+            }
+            else if (v == 0.0f)
+            {
+                // Zero.
+                result = 1 << 4;
+            }
+            else if ((bits & 0x7f800000) == 0)
+            {
+                // The exponent is zero.
+                if ((bits & 0x80000000) != 0)
+                {
+                    // Negative subnormal number.
+                    result = 1 << 2;
+                }
+                else
+                {
+                    // Postive subnormal number.
+                    result = 1 << 5;
+                }
+            }
+            else if ((bits & 0x7f800000) == 0x7f800000 && (bits & 0x00400000) != 0)
+            {
+                // Quiet NaN.
+                result = 1 << 9;
+            }
+            else if ((bits & 0x7f800000) == 0x7f800000 && (bits & 0x003fffff) != 0)
+            {
+                // Signalling NaN.
+                result = 1 << 8;
+            }
+            else if (v < 0.0f)
+            {
+                // Negative.
+                result = 1 << 1;
+            }
+            else if (v > 0.0f)
+            {
+                // Positive.
+                result = 1 << 6;
+            }
+            else
+            {
+                result = 0;
+            }
+            self.Wx(rd, result);
+        }
+
+        auto Fmv_w_x(Reg rd, Reg rs1) -> Item
+        {
+            // bits(rd) <- bits(rs1)
+            auto& self = Self();
+            self.Wf(rd, std::bit_cast<f32>(self.Rx(rs1)));
+        }
+
+        auto Fsqrt_s(Reg rd, Reg rs1, u32 imm) -> Item
+        {
+            // rd <- sqrt(rs1)
+            auto& self = Self();
+            auto f = self.Rf(rs1);
+            self.Wf(rd, std::sqrt(f));
+        }
+
+        auto Fcvt_w_s(Reg rd, Reg rs1, u32 imm) -> Item
+        {
+            // rd <- int32_t(rs1)
+            auto& self = Self();
+            auto i = static_cast<i32>(self.Rf(rs1));
+            self.Wx(rd, static_cast<u32>(i));
+        }
+
+        auto Fcvt_wu_s(Reg rd, Reg rs1, u32 imm) -> Item
+        {
+            // rd <- uint32_t(rs1)
+            auto& self = Self();
+            auto i = static_cast<u32>(self.Rf(rs1));
+            self.Wx(rd, i);
+        }
+
+        auto Fcvt_s_w(Reg rd, Reg rs1, u32 imm) -> Item
+        {
+            // rd <- float(int32_t((rs1))
+            auto& self = Self();
+            auto i = static_cast<i32>(self.Rx(rs1));
+            self.Wf(rd, static_cast<f32>(i));
+        }
+
+        auto Fcvt_s_wu(Reg rd, Reg rs1, u32 imm) -> Item
+        {
+            // rd <- float(rs1)
+            auto& self = Self();
+            self.Wf(rd, static_cast<f32>(self.Rx(rs1)));
+        }
+
+        auto Fsgnj_s(Reg rd, Reg rs1, Reg rs2) -> Item
+        {
+            // rd <- abs(rs1) * sgn(rs2)
+            auto& self = Self();
+            auto freg_rs1 = self.Rf(rs1);
+            auto freg_rs2 = self.Rf(rs2);
+            self.Wf(rd, std::abs(freg_rs1) * (freg_rs2 < 0.0f ? -1.0f : 1.0f));
+        }
+
+        auto Fsgnjn_s(Reg rd, Reg rs1, Reg rs2) -> Item
+        {
+            // rd <- abs(rs1) * -sgn(rs2)
+            auto& self = Self();
+            auto freg_rs1 = self.Rf(rs1);
+            auto freg_rs2 = self.Rf(rs2);
+            self.Wf(rd, std::abs(freg_rs1) * (freg_rs2 < 0.0f ? 1.0f : -1.0f));
+        }
+
+        auto Fsgnjx_s(Reg rd, Reg rs1, Reg rs2) -> Item
+        {
+            // rd <- abs(rs1) * (sgn(rs1) == sgn(rs2)) ? 1 : -1
+            auto& self = Self();
+            auto freg_rs1 = self.Rf(rs1);
+            auto freg_rs2 = self.Rf(rs2);
+
+            // The sign bit is the XOR of the sign bits of rs1 and rs2.
+            auto m = ((freg_rs1 < 0.0f && freg_rs2 >= 0.0f) || (freg_rs1 >= 0.0f && freg_rs2 < 0.0f)) ? -1.0f : 1.0f;
+            self.Wf(rd, std::abs(freg_rs1) * m);
+        }
+
+        auto Fmin_s(Reg rd, Reg rs1, Reg rs2) -> Item
+        {
+            // rd <- min(rs1, rs2)
+            auto& self = Self();
+            auto freg_rs1 = self.Rf(rs1);
+            auto freg_rs2 = self.Rf(rs2);
+            self.Wf(rd, std::min(freg_rs1, freg_rs2));
+        }
+
+        auto Fmax_s(Reg rd, Reg rs1, Reg rs2) -> Item
+        {
+            // rd <- max(rs1, rs2)
+            auto& self = Self();
+            auto freg_rs1 = self.Rf(rs1);
+            auto freg_rs2 = self.Rf(rs2);
+            self.Wf(rd, std::max(freg_rs1, freg_rs2));
+        }
+
+        auto Fle_s(Reg rd, Reg rs1, Reg rs2) -> Item
+        {
+            // rd <- (rs1 <= rs2) ? 1 : 0;
+            auto& self = Self();
+            auto freg_rs1 = self.Rf(rs1);
+            auto freg_rs2 = self.Rf(rs2);
+            self.Wx(rd, (freg_rs1 <= freg_rs2) ? 1 : 0);
+        }
+
+        auto Flt_s(Reg rd, Reg rs1, Reg rs2) -> Item
+        {
+            // rd <- (rs1 < rs2) ? 1 : 0;
+            auto& self = Self();
+            auto freg_rs1 = self.Rf(rs1);
+            auto freg_rs2 = self.Rf(rs2);
+            self.Wx(rd, (freg_rs1 < freg_rs2) ? 1 : 0);
+        }
+
+        auto Feq_s(Reg rd, Reg rs1, Reg rs2) -> Item
+        {
+            // rd <- (rs1 == rs2) ? 1 : 0;
+            auto& self = Self();
+            auto freg_rs1 = self.Rf(rs1);
+            auto freg_rs2 = self.Rf(rs2);
+            self.Wx(rd, (freg_rs1 == freg_rs2) ? 1 : 0);
+        }
+
+        auto Fadd_s(Reg rd, Reg rs1, Reg rs2, u32 /*rm*/) -> Item
+        {
+            // rd <- rs1 + rs2
+            auto& self = Self();
+            self.Wf(rd, self.Rf(rs1) + self.Rf(rs2));
+        }
+
+        auto Fsub_s(Reg rd, Reg rs1, Reg rs2, u32 /*rm*/) -> Item
+        {
+            // rd <- rs1 - rs2
+            auto& self = Self();
+            self.Wf(rd, self.Rf(rs1) - self.Rf(rs2));
+        }
+
+        auto Fmul_s(Reg rd, Reg rs1, Reg rs2, u32 /*rm*/) -> Item
+        {
+            // rd <- rs1 * rs2
+            auto& self = Self();
+            self.Wf(rd, self.Rf(rs1) * self.Rf(rs2));
+        }
+
+        auto Fdiv_s(Reg rd, Reg rs1, Reg rs2, u32 /*rm*/) -> Item
+        {
+            // rd <- rs1 / rs2
+            auto& self = Self();
+            self.Wf(rd, self.Rf(rs1) / self.Rf(rs2));
+        }
+
+        auto Flw(Reg rd, Reg rs1, u32 imm) -> Item
+        {
+            // rd <- f32(rs1 + imm_i)
+            auto& self = Self();
+            const auto address = self.Rx(rs1) + imm;
+            const auto word = self.Read32(address);
+            self.Wf(rd, std::bit_cast<f32>(word));
+        }
+
+        auto Fsw(Reg rs1, Reg rs2, u32 imm) -> Item
+        {
+            // f32(rs1 + imm_s) = rs2
+            auto& self = Self();
+            const auto data = std::bit_cast<u32>(self.Rf(rs2));
+            const auto address = self.Rx(rs1) + imm;
+            self.Write32(address, data);
+        }
+
+        auto Fmadd_s(Reg rd, Reg rs1, Reg rs2, Reg rs3, u32 imm) -> Item
+        {
+            // rd <- (rs1 * rs2) + rs3
+            auto& self = Self();
+            self.Wf(rd, (self.Rf(rs1) * self.Rf(rs2)) + self.Rf(rs3));
+        }
+
+        auto Fmsub_s(Reg rd, Reg rs1, Reg rs2, Reg rs3, u32 imm) -> Item
+        {
+            // rd <- (rs1 * rs2) - rs3
+            auto& self = Self();
+            self.Wf(rd, (self.Rf(rs1) * self.Rf(rs2)) - self.Rf(rs3));
+        }
+
+        auto Fnmsub_s(Reg rd, Reg rs1, Reg rs2, Reg rs3, u32 imm) -> Item
+        {
+            // rd <- -(rs1 * rs2) + rs3
+            auto& self = Self();
+            self.Wf(rd, -(self.Rf(rs1) * self.Rf(rs2)) + self.Rf(rs3));
+        }
+
+        auto Fnmadd_s(Reg rd, Reg rs1, Reg rs2, Reg rs3, u32 imm) -> Item
+        {
+            // rd <- -(rs1 * rs2) - rs3
+            auto& self = Self();
+            self.Wf(rd, -(self.Rf(rs1) * self.Rf(rs2)) - self.Rf(rs3));
         }
     };
 

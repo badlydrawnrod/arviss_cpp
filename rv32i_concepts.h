@@ -106,7 +106,7 @@ namespace arviss
     template<typename T>
     concept IsRv32iDispatcher = IsDispatcher<T> && IsRv32iInstructionHandler<T>;
 
-    // T is a VM capable of fetching, dispatching and handling RV32i instructions for an integer core.
+    // T is a dispatcher VM capable of fetching, dispatching and handling RV32i instructions for an integer core.
     template<typename T>
     concept IsRv32iVm = IsRv32iDispatcher<T> && IsIntegerCore<T>;
 
@@ -251,5 +251,95 @@ namespace arviss
     // T is a dispatcher for a tracing handler for Rv32ic instructions.
     template<typename T>
     concept IsRv32icTrace = IsRv32icDispatcher<T> && std::same_as<std::string, typename T::Item>;
+
+    // T is an instruction handler for Rv32f instructions whose member functions do not return a value.
+    template<typename T>
+    concept IsVoidRv32fInstructionHandler = std::same_as<void, typename T::Item> && requires(T self) {
+        self.Fmv_x_w(Reg{}, Reg{});
+        self.Fclass_s(Reg{}, Reg{});
+        self.Fmv_w_x(Reg{}, Reg{});
+        self.Fsqrt_s(Reg{}, Reg{}, u32{});
+        self.Fcvt_w_s(Reg{}, Reg{}, u32{});
+        self.Fcvt_wu_s(Reg{}, Reg{}, u32{});
+        self.Fcvt_s_w(Reg{}, Reg{}, u32{});
+        self.Fcvt_s_wu(Reg{}, Reg{}, u32{});
+        self.Fsgnj_s(Reg{}, Reg{}, Reg{});
+        self.Fsgnjn_s(Reg{}, Reg{}, Reg{});
+        self.Fsgnjx_s(Reg{}, Reg{}, Reg{});
+        self.Fmin_s(Reg{}, Reg{}, Reg{});
+        self.Fmax_s(Reg{}, Reg{}, Reg{});
+        self.Fle_s(Reg{}, Reg{}, Reg{});
+        self.Flt_s(Reg{}, Reg{}, Reg{});
+        self.Feq_s(Reg{}, Reg{}, Reg{});
+        self.Fadd_s(Reg{}, Reg{}, Reg{}, u32{});
+        self.Fsub_s(Reg{}, Reg{}, Reg{}, u32{});
+        self.Fmul_s(Reg{}, Reg{}, Reg{}, u32{});
+        self.Fdiv_s(Reg{}, Reg{}, Reg{}, u32{});
+        self.Flw(Reg{}, Reg{}, u32{});
+        self.Fsw(Reg{}, Reg{}, u32{});
+        self.Fmadd_s(Reg{}, Reg{}, Reg{}, Reg{}, u32{});
+        self.Fmsub_s(Reg{}, Reg{}, Reg{}, Reg{}, u32{});
+        self.Fnmsub_s(Reg{}, Reg{}, Reg{}, Reg{}, u32{});
+        self.Fnmadd_s(Reg{}, Reg{}, Reg{}, Reg{}, u32{});
+    };
+
+    // T is an instruction handler for Rv32f instructions whose member functions return a value.
+    template<typename T>
+    concept IsNonVoidRv32fInstructionHandler = !std::same_as<void, typename T::Item> && requires(T self, typename T::Item item) {
+        item = self.Fmv_x_w(Reg{}, Reg{});
+        item = self.Fclass_s(Reg{}, Reg{});
+        item = self.Fmv_w_x(Reg{}, Reg{});
+        item = self.Fsqrt_s(Reg{}, Reg{}, u32{});
+        item = self.Fcvt_w_s(Reg{}, Reg{}, u32{});
+        item = self.Fcvt_wu_s(Reg{}, Reg{}, u32{});
+        item = self.Fcvt_s_w(Reg{}, Reg{}, u32{});
+        item = self.Fcvt_s_wu(Reg{}, Reg{}, u32{});
+        item = self.Fsgnj_s(Reg{}, Reg{}, Reg{});
+        item = self.Fsgnjn_s(Reg{}, Reg{}, Reg{});
+        item = self.Fsgnjx_s(Reg{}, Reg{}, Reg{});
+        item = self.Fmin_s(Reg{}, Reg{}, Reg{});
+        item = self.Fmax_s(Reg{}, Reg{}, Reg{});
+        item = self.Fle_s(Reg{}, Reg{}, Reg{});
+        item = self.Flt_s(Reg{}, Reg{}, Reg{});
+        item = self.Feq_s(Reg{}, Reg{}, Reg{});
+        item = self.Fadd_s(Reg{}, Reg{}, Reg{}, u32{});
+        item = self.Fsub_s(Reg{}, Reg{}, Reg{}, u32{});
+        item = self.Fmul_s(Reg{}, Reg{}, Reg{}, u32{});
+        item = self.Fdiv_s(Reg{}, Reg{}, Reg{}, u32{});
+        item = self.Flw(Reg{}, Reg{}, u32{});
+        item = self.Fsw(Reg{}, Reg{}, u32{});
+        item = self.Fmadd_s(Reg{}, Reg{}, Reg{}, Reg{}, u32{});
+        item = self.Fmsub_s(Reg{}, Reg{}, Reg{}, Reg{}, u32{});
+        item = self.Fnmsub_s(Reg{}, Reg{}, Reg{}, Reg{}, u32{});
+        item = self.Fnmadd_s(Reg{}, Reg{}, Reg{}, Reg{}, u32{});
+    };
+
+    // T is an instruction handler for Rv32f instructions.
+    template<typename T>
+    concept IsRv32fInstructionHandler = IsVoidRv32fInstructionHandler<T> || IsNonVoidRv32fInstructionHandler<T>;
+
+    // T is an instruction dispatcher for Rv32f instruction handlers.
+    template<typename T>
+    concept IsRv32fDispatcher = IsDispatcher<T> && IsRv32fInstructionHandler<T>;
+
+    // T is an instruction handler for RV32if instructions.
+    template<typename T>
+    concept IsRv32ifInstructionHandler = IsRv32iInstructionHandler<T> && IsRv32fInstructionHandler<T>;
+
+    // T is an instruction handler for RV32imf instructions.
+    template<typename T>
+    concept IsRv32imfInstructionHandler = IsRv32iInstructionHandler<T> && IsRv32mInstructionHandler<T> && IsRv32fInstructionHandler<T>;
+
+    // T is an instruction dispatcher for Rv32imf instruction handlers.
+    template<typename T>
+    concept IsRv32imfDispatcher = IsDispatcher<T> && IsRv32imfInstructionHandler<T>;
+
+    // T is a VM capable of fetching, dispatching and handling RV32imf instructions for a floating point core.
+    template<typename T>
+    concept IsRv32imfVm = IsRv32imfDispatcher<T> && IsFloatCore<T>;
+
+    // T is a dispatcher for a tracing handler for Rv32imf instructions.
+    template<typename T>
+    concept IsRv32imfTrace = IsRv32imfDispatcher<T> && std::same_as<std::string, typename T::Item>;
 
 } // namespace arviss

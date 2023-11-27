@@ -26,6 +26,18 @@ namespace arviss
         }
     };
 
+    // A mixin implementation of RV32f's float registers.
+    // Satisfies: HasFRegisters
+    class FRegisters
+    {
+        std::array<f32, 32> freg_{};
+
+    public:
+        auto Rf(Reg rs) -> f32 { return freg_[rs]; }
+
+        auto Wf(Reg rd, f32 val) -> void { freg_[rd] = val; }
+    };
+
     // A mixin implementation of the fetch cycle for the given memory implementation. BYO memory.
     // Satisfies: HasFetch, HasMemory
     template<HasMemory Mem>
@@ -87,6 +99,13 @@ namespace arviss
     // Satisfies: IsIntegerCore (HasTraps, HasXRegisters, HasFetch, HasMemory)
     template<HasMemory Mem>
     struct IntegerCore : public TrapHandler, public XRegisters, public Fetcher<Mem>
+    {
+    };
+
+    // A mixin implementation of a floating point core. BYO memory.
+    // Satisfies: IsFloatCore (IsIntegerCore + HasFRegisters)
+    template<HasMemory Mem>
+    struct FloatCore : public TrapHandler, public XRegisters, public FRegisters, public Fetcher<Mem>
     {
     };
 
