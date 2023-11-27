@@ -12,7 +12,7 @@
 // A dispatcher for RV32I instructions.
 template<typename Handler>
     requires IsRv32iInstructionHandler<Handler>
-struct MRv32iDispatcher : public Handler
+struct Rv32iDispatcher : public Handler
 {
     using Item = Handler::Item;
 

@@ -5,7 +5,7 @@
 
 // An Rv32i instruction handler that executes instructions on an integer core.
 template<IsIntegerCore T>
-class MRv32iIntegerCoreExecutor : public T
+class Rv32iIntegerCoreExecutor : public T
 {
     auto Self() -> T& { return static_cast<T&>(*this); }
 
@@ -364,12 +364,12 @@ public:
 };
 
 template<IsIntegerCore T>
-class MRv32imIntegerCoreExecutor : public MRv32iIntegerCoreExecutor<T>
+class Rv32imIntegerCoreExecutor : public Rv32iIntegerCoreExecutor<T>
 {
     auto Self() -> T& { return static_cast<T&>(*this); }
 
 public:
-    using Item = MRv32iIntegerCoreExecutor<T>::Item;
+    using Item = Rv32iIntegerCoreExecutor<T>::Item;
 
     // TODO: Implement the 'M' extension.
 
@@ -391,12 +391,12 @@ public:
 };
 
 template<IsIntegerCore T>
-class MRv32icIntegerCoreExecutor : public MRv32iIntegerCoreExecutor<T>
+class Rv32icIntegerCoreExecutor : public Rv32iIntegerCoreExecutor<T>
 {
     auto Self() -> T& { return static_cast<T&>(*this); }
 
 public:
-    using Item = MRv32iIntegerCoreExecutor<T>::Item;
+    using Item = Rv32iIntegerCoreExecutor<T>::Item;
 
     auto C_ebreak() -> Item { this->Ebreak(); }
 

@@ -18,7 +18,7 @@ auto Abi(Reg r) -> const char*
 }
 
 // A mixin instruction handler for a disassembler for Rv32i instructions.
-struct MRv32iDisassembler
+struct Rv32iDisassemblingHandler
 {
     using Item = std::string;
 
@@ -66,4 +66,4 @@ struct MRv32iDisassembler
 };
 
 // A disassembler.
-using Rv32iDisassembler = MRv32iDispatcher<MRv32iDisassembler>;
+using Rv32iDisassembler = Rv32iDispatcher<Rv32iDisassemblingHandler>;

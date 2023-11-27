@@ -385,7 +385,7 @@ def generate_cpp(specs: List[Spec], extensions: str):
 // A dispatcher for RV32{extensions.upper()} instructions.
 template<typename Handler>
     requires {full_bounds}
-struct MRv32{extensions}Dispatcher : public Handler
+struct Rv32{extensions}Dispatcher : public Handler
 {{
     using Item = Handler::Item;
 

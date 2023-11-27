@@ -9,24 +9,24 @@
 
 // An RV32i CPU implementation for an integer core. BYO integer core. BYO memory.
 template<IsIntegerCore T>
-using Rv32iCpu = MRv32iDispatcher<MRv32iIntegerCoreExecutor<T>>;
+using Rv32iCpu = Rv32iDispatcher<Rv32iIntegerCoreExecutor<T>>;
 
 // An RV32im CPU implementation for an integer core. BYO integer core. BYO memory.
 template<IsIntegerCore T>
-using Rv32imCpu = MRv32imDispatcher<MRv32imIntegerCoreExecutor<T>>;
+using Rv32imCpu = Rv32imDispatcher<Rv32imIntegerCoreExecutor<T>>;
 
 // An RV32ic CPU implementation for an integer core. BYO integer core. BYO memory.
 template<IsIntegerCore T>
-using Rv32icCpu = MRv32icDispatcher<MRv32icIntegerCoreExecutor<T>>;
+using Rv32icCpu = Rv32icDispatcher<Rv32icIntegerCoreExecutor<T>>;
 
-// An RV32i CPU implementation for an MIntegerCore. BYO memory.
+// An RV32i CPU implementation for an IntegerCore. BYO memory.
 template<HasMemory Mem>
-using Rv32iCpuMIntegerCore = Rv32iCpu<MIntegerCore<Mem>>;
+using Rv32iCpuMIntegerCore = Rv32iCpu<IntegerCore<Mem>>;
 
-// An RV32im CPU implementation for an MIntegerCore. BYO memory.
+// An RV32im CPU implementation for an IntegerCore. BYO memory.
 template<HasMemory Mem>
-using Rv32imCpuMIntegerCore = Rv32imCpu<MIntegerCore<Mem>>;
+using Rv32imCpuMIntegerCore = Rv32imCpu<IntegerCore<Mem>>;
 
-// An RV32ic CPU implementation for an MIntegerCore. BYO memory.
+// An RV32ic CPU implementation for an IntegerCore. BYO memory.
 template<HasMemory Mem>
-using Rv32icCpuMIntegerCore = Rv32icCpu<MIntegerCore<Mem>>;
+using Rv32icCpuMIntegerCore = Rv32icCpu<IntegerCore<Mem>>;

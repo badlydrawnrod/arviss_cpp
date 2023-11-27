@@ -8,7 +8,7 @@
 // TYPES: concrete mixin. Has own state.
 
 // A mixin implementation of simple, checked memory that can signal bad access.
-class MBasicMem
+class BasicMem
 {
     // 32KiB of memory.
     std::array<u8, 32768> mem_{};
