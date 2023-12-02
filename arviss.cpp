@@ -38,7 +38,8 @@ auto main() -> int
     try
     {
         // Read the image into a buffer.
-        std::ifstream fileHandler("images/hello_world.rv32i", std::ios::in | std::ios::binary | std::ios::ate);
+        // std::ifstream fileHandler("images/hello_world.rv32i", std::ios::in | std::ios::binary | std::ios::ate);
+        std::ifstream fileHandler("examples/bin/hello.bin", std::ios::in | std::ios::binary | std::ios::ate);
         const size_t fileSize = fileHandler.tellg();
         fileHandler.seekg(0, std::ios::beg);
         std::vector<u8> buf(fileSize);
