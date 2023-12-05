@@ -37,8 +37,9 @@ file(MAKE_DIRECTORY ${SAMPLES_BIN})
 add_executable(hello crt0.s main.c printf.c putchar.c)
 target_compile_definitions(hello PRIVATE PRINTF_DISABLE_SUPPORT_FLOAT PRINTF_DISABLE_SUPPORT_LONG_LONG)
 
-# Copy "hello" to the bin directory once built.
+# Copy both the ELF file `hello` and the extracted `hello.bin` file to the bin/ directory once built.
 add_custom_command(TARGET hello
         POST_BUILD
+        COMMAND ${CMAKE_OBJCOPY} ARGS $<TARGET_FILE:hello> -O binary ${SAMPLES_BIN}/hello.bin
         COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:hello> ${SAMPLES_BIN}/hello
         )

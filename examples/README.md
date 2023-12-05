@@ -12,12 +12,10 @@ $ cmake -G Ninja -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=clang-18
 $ cmake --build build
 ```
 
-## Extracting binary from ELF
-Necessary because arviss_cpp doesn't have an ELF-loader yet.
-```
-$ cd arviss_cpp/examples/bin
-$ llvm-objcopy hello -O binary hello.bin
-```
+This will populate the `arviss_cpp/examples/bin` directory with two files:
+
+- `hello` can be loaded by an Arviss VM that has an ELF loader
+- `hello.bin` is a raw image extracted from `hello` using `llvm-objcopy`. It can be loaded by an Arviss VM that does not know how to read ELF files.
 
 ## Running
 Update `arviss_cpp` to set the path to `hello.bin`.
@@ -31,3 +29,5 @@ You may also need to increase the number of iterations passed to `Run()`.
 ```cpp
 Run(cpu, 100000);
 ```
+
+Finally, compile the `arviss` project and run it.
