@@ -30,16 +30,16 @@ set(CMAKE_C_LINK_FLAGS "-Wl,--gc-sections -Wl,-T,,${CMAKE_SOURCE_DIR}/minimal.ld
 project(hello
         LANGUAGES C ASM)
 
-# Create the bin directory when CMake generates the build system.
-set(SAMPLES_BIN "${CMAKE_SOURCE_DIR}/bin")
-file(MAKE_DIRECTORY ${SAMPLES_BIN})
+# Create the images directory when CMake generates the build system.
+set(RISCV_IMAGES "${CMAKE_SOURCE_DIR}/images")
+file(MAKE_DIRECTORY ${RISCV_IMAGES})
 
 add_executable(hello crt0.s main.c printf.c putchar.c)
 target_compile_definitions(hello PRIVATE PRINTF_DISABLE_SUPPORT_FLOAT PRINTF_DISABLE_SUPPORT_LONG_LONG)
 
-# Copy both the ELF file `hello` and the extracted `hello.bin` file to the bin/ directory once built.
+# Copy both the ELF file `hello` and the extracted `hello.bin` file to the ${RISCV_IMAGES}/ directory once built.
 add_custom_command(TARGET hello
         POST_BUILD
-        COMMAND ${CMAKE_OBJCOPY} ARGS $<TARGET_FILE:hello> -O binary ${SAMPLES_BIN}/hello.bin
-        COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:hello> ${SAMPLES_BIN}/hello
+        COMMAND ${CMAKE_OBJCOPY} ARGS $<TARGET_FILE:hello> -O binary ${RISCV_IMAGES}/hello.bin
+        COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:hello> ${RISCV_IMAGES}/hello
         )

@@ -8,7 +8,6 @@
 
 using namespace arviss;
 
-// This works for IsFloatVm too.
 template<IsRv32imfVm T>
 auto Run(T& t, size_t count) -> void
 {
@@ -38,13 +37,12 @@ auto main() -> int
     try
     {
         // Read the image into a buffer.
-        // std::ifstream fileHandler("images/hello_world.rv32i", std::ios::in | std::ios::binary | std::ios::ate);
-        std::ifstream fileHandler("examples/bin/hello.bin", std::ios::in | std::ios::binary | std::ios::ate);
-        const size_t fileSize = fileHandler.tellg();
-        fileHandler.seekg(0, std::ios::beg);
+        std::ifstream fileHandle("examples/images/hello.bin", std::ios::in | std::ios::binary | std::ios::ate);
+        const size_t fileSize = fileHandle.tellg();
+        fileHandle.seekg(0, std::ios::beg);
         std::vector<u8> buf(fileSize);
-        fileHandler.read(reinterpret_cast<char*>(buf.data()), fileSize);
-        fileHandler.close();
+        fileHandle.read(reinterpret_cast<char*>(buf.data()), fileSize);
+        fileHandle.close();
 
         // Create a CPU.
         BasicRv32imfCpu cpu{};
@@ -57,11 +55,9 @@ auto main() -> int
             ++addr;
         }
 
-        // Execute some instructions. We should see "Hello world from Rust!" because that's what compiled the image.
+        // Execute some instructions.
         cpu.ClearTraps();
         cpu.SetNextPc(0);
-        // Rv32imfDisassembler dis;
-        // Run(cpu, dis, 10000);
         Run(cpu, 10000);
 
         if (cpu.IsTrapped())
