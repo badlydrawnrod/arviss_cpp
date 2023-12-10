@@ -357,7 +357,8 @@ The concept `IsRv32iInstructionHandler` is defined in terms of two concepts. For
 ```cpp
 // T is an instruction handler for Rv32i instructions.
 template<typename T>
-concept IsRv32iInstructionHandler = IsNonVoidRv32iInstructionHandler<T> || IsVoidRv32iInstructionHandler<T>;
+concept IsRv32iInstructionHandler = IsNonVoidRv32iInstructionHandler<T>
+                                 || IsVoidRv32iInstructionHandler<T>;
 ```
 
 Here's the latter. For a type T to satisfy `IsVoidRv32iInstructionHandler`, it must have
