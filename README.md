@@ -55,6 +55,8 @@ Where things get a little more interesting is the implementation. In Arviss, nea
 written in terms of C++ concepts, so the idea of what constitutes a CPU and what `Fetch()` and
 `Dispatch()` do, is defined by a number of C++ concepts.
 
+Let's walk through an example to see how concepts are used in Arviss.
+
 Here's the same code again, but this time shown in the context of a function template.
 
 ```cpp
@@ -574,3 +576,14 @@ In this case, the `Item` type is `std::string` rather than `void`. Nonetheless,
 used with a dispatcher such as `Rv32iDispatcher` shown earlier to implement a disassembler. The
 dispatcher doesn't need to know that it's dealing with a disassembler - it only needs to know that
 it's dealing with a type that satisfies `IsRv32iInstructionHandler`.
+
+## Summary
+
+In summary, this C++ implementation of Arviss is written in terms of high level C++ concepts such
+as `IsIntegerCore` and `IsRv32iDispatcher`, which in turn are built in terms of more fine-grained
+C++ concepts such as `IsRv32iInstructionHandler`, `HasMemory` and `HasXRegisters`.
+
+This enables an enormous amount of flexibility so that someone implementing a system that needs a
+virtual RISC-V CPU can choose how to implement each element of that system, and can substitute each
+defined element (concept) in a myriad of ways, as long as the relevant requirements for each concept
+are satisfied.
