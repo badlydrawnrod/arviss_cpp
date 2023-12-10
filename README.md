@@ -535,3 +535,41 @@ public:
     // ...
 };
 ```
+
+To illustrate the power of C++ concepts, here's a code fragment for another type that also satisfies
+`IsRv32iInstructionHandler`, showing implementations for the same member functions.
+
+```cpp
+// An instruction handler for a disassembler for Rv32i instructions.
+struct Rv32iDisassemblingHandler
+{
+    using Item = std::string;
+
+    // ...
+
+    // Immediate shift instructions.
+
+    auto Slli(Reg rd, Reg rs1, u32 shamt) -> Item
+    {
+        return std::format("slli\t{}, {}, {}", Abi(rd), Abi(rs1), shamt);
+    }
+    
+    auto Srli(Reg rd, Reg rs1, u32 shamt) -> Item
+    {
+        return std::format("srli\t{}, {}, {}", Abi(rd), Abi(rs1), shamt);
+    }
+    
+    auto Srai(Reg rd, Reg rs1, u32 shamt) -> Item
+    {
+        return std::format("srai\t{}, {}, {}", Abi(rd), Abi(rs1), shamt);
+    }
+
+    // ...
+};
+```
+
+In this case, the `Item` type is `std::string` rather than `void`. Nonetheless,
+`Rv32iDisassemblingHandler` satisfies the concept `IsRv32iInstructionHandler` and can therefore be
+used with a dispatcher such as `Rv32iDispatcher` shown earlier to implement a disassembler. The
+dispatcher doesn't need to know that it's dealing with a disassembler - it only needs to know that
+it's dealing with a type that satisfies `IsRv32iInstructionHandler`.
