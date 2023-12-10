@@ -487,13 +487,15 @@ It doesn't matter what the instruction handler looks like, or what it does. It j
 the concept `IsRv32iInstructionHandler`.
 
 This is very powerful - it means that the instruction handler could execute instructions, or it
-could just write them to stdout. The dispatcher is effectively an instruction decode for RV32i
-instructions, but it doesn't need to know anything about the implementation of the handler other
-than the fact that the handler satisfies the `IsRv32iInstructionHandler` concept.
+could write them to stdout, or both, or it could do something completely different that hasn't been
+thought of yet. None of that matters to the dispatcher, as it is effectively an instruction decode
+for RV32i instructions that doesn't need to know anything about the implementation of the handler
+other than the fact that the handler satisfies the `IsRv32iInstructionHandler` concept.
 
-Here's `Rv32iIntegerCoreExecutor`, which satisfies `IsRv32iInstructionHandler`, as it implements
-each of the member functions that it requires. The example has been shortened, but three of those
-member functions are shown in the code fragment below.
+Here's a fragment of an instruction handler that satisfies `IsRv32iInstructionHandler`. This
+particular instruction handler operates on any type T that satisfies the `IsIntegerCore` concept.
+The example has been shortened to prevent it from being too verbose, but it clearly shows
+implementations for three of the member functions that satisfy `IsRv32iInstructionHandler`.
  
  ```cpp
 // An Rv32i instruction handler that executes instructions on an integer core. BYO core.
