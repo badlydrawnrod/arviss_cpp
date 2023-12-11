@@ -16,9 +16,9 @@ add_executable(arviss_cpp
     core_concepts.h
     core_mixins.h
     instruction.h
-    rv32i_concepts.h
+    rv32_concepts.h
+    rv32_dispatchers.h
+    rv32_executors.h
     rv32i_cpu.h
     rv32i_disassembler.h
-    rv32_dispatchers.h
-    rv32i_executors.h
     types.h)

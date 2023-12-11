@@ -3,7 +3,7 @@
 #include "core_concepts.h"
 #include "core_mixins.h"
 #include "rv32_dispatchers.h"
-#include "rv32i_executors.h"
+#include "rv32_executors.h"
 
 namespace arviss
 {
