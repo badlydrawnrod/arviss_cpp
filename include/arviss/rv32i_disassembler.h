@@ -1,6 +1,6 @@
 #pragma once
 
-#include "arviss/rv32_dispatchers.h"
+#include "arviss/rv32/dispatchers.h"
 #include "arviss/types.h"
 
 #include <format>

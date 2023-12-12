@@ -2,7 +2,7 @@
 
 #include "arviss/core/concepts.h"
 #include "arviss/instruction.h"
-#include "arviss/rv32_concepts.h"
+#include "arviss/rv32/concepts.h"
 
 namespace arviss
 {

@@ -2,8 +2,8 @@
 
 #include "arviss/core/concepts.h"
 #include "arviss/core/mixins.h"
-#include "arviss/rv32_dispatchers.h"
-#include "arviss/rv32_executors.h"
+#include "arviss/rv32/dispatchers.h"
+#include "arviss/rv32/executors.h"
 
 namespace arviss
 {
