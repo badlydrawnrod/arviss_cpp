@@ -11,8 +11,8 @@ project(
     LANGUAGES CXX)
 
 if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
-    # C++23, no backsliding, no extensions.
-    set(CMAKE_CXX_STANDARD 23)
+    # C++20, no backsliding, no extensions.
+    set(CMAKE_CXX_STANDARD 20)
     set(CMAKE_CXX_STANDARD_REQUIRED True)
     set(CMAKE_CXX_EXTENSIONS OFF)
 endif()
