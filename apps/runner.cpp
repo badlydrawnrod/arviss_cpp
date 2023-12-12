@@ -1,5 +1,6 @@
-#include "arviss/platforms/basic/cpus.h"
-#include "arviss/rv32/disassemblers.h"
+#include "arviss/common/types.h"         // Address
+#include "arviss/platforms/basic/cpus.h" // BasicRv32imfCpu
+#include "arviss/rv32/concepts.h"        // IsRv32imfVm
 
 #include <format>
 #include <fstream>
@@ -15,19 +16,6 @@ auto Run(T& t, size_t count) -> void
     {
         auto ins = t.Fetch(); // Fetch.
         t.Dispatch(ins);      // Execute.
-        --count;
-    }
-}
-
-// How do I say that U's instruction handler can't be a subset of T's instruction handler?
-template<IsRv32imfVm T, IsRv32imfTrace U>
-auto Run(T& t, U& u, size_t count) -> void
-{
-    while (count > 0 && !t.IsTrapped())
-    {
-        auto ins = t.Fetch();                                                    // Fetch.
-        std::cout << std::format("{:04x}\t", t.Pc()) << u.Dispatch(ins) << '\n'; // Trace.
-        t.Dispatch(ins);                                                         // Execute.
         --count;
     }
 }
