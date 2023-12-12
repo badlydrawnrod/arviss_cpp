@@ -3,7 +3,7 @@
 #pragma once
 
 #include "arviss/core/concepts.h"
-#include "arviss/types.h"
+#include "arviss/common/types.h"
 
 #include <array>
 #include <optional>

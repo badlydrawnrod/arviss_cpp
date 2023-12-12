@@ -1,7 +1,7 @@
 #pragma once
 
 #include "arviss/rv32/dispatchers.h"
-#include "arviss/types.h"
+#include "arviss/common/types.h"
 
 #include <format>
 #include <string>
