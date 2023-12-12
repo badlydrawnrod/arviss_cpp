@@ -1,7 +1,7 @@
 #pragma once
 
 #include "core_concepts.h"
-#include "rv32i_concepts.h"
+#include "rv32_concepts.h"
 
 #include <bit>
 #include <cmath>

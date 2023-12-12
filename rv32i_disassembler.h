@@ -1,7 +1,6 @@
 #pragma once
 
-#include "rv32i_dispatcher.h"
-#include "rv32ic_dispatcher.h"
+#include "rv32_dispatchers.h"
 #include "types.h"
 
 #include <format>
