@@ -1,6 +1,6 @@
 #pragma once
 
-#include "arviss/basic_mem.h"
+#include "arviss/platforms/basic/mem.h"
 #include "arviss/rv32/cpus.h"
 
 namespace arviss
