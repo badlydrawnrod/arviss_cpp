@@ -23,7 +23,7 @@ images in `examples/images/`.
 
 Run the examples as follows:
 ```
-$ build/arviss_cpp
+$ build/apps/runner
 Hello, world from C!
 Hello, world from C!
 ...

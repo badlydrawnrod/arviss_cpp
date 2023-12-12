@@ -1,24 +1,27 @@
+# I am not a CMake expert, so cargo-culting from various sources including...
+# - things I've done before
+# - https://gitlab.com/CLIUtils/modern-cmake/-/blob/master/examples/extended-project/CMakeLists.txt
+
 cmake_minimum_required(VERSION 3.22)
 
-project(arviss_cpp
+project(
+    arviss_cpp
     VERSION 0.1
-    DESCRIPTION "Arviss cpp - A RISC-V Instruction Set Simulator"
+    DESCRIPTION "Arviss cpp - A RISC-V Instruction Set Simulator written using C++ concepts"
     LANGUAGES CXX)
 
+if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
+    # C++23, no backsliding, no extensions.
+    set(CMAKE_CXX_STANDARD 23)
+    set(CMAKE_CXX_STANDARD_REQUIRED True)
+    set(CMAKE_CXX_EXTENSIONS OFF)
+endif()
 
-set(CMAKE_CXX_STANDARD 23)
-set(CMAKE_CXX_STANDARD_REQUIRED True)
+# I don't need this yet, but I probably will.
+include(FetchContent)
 
-add_executable(arviss_cpp
-    arviss.cpp
-    basic_mem.h
-    basic_rv32i_cpu.h
-    core_concepts.h
-    core_mixins.h
-    instruction.h
-    rv32_concepts.h
-    rv32_dispatchers.h
-    rv32_executors.h
-    rv32i_cpu.h
-    rv32i_disassembler.h
-    types.h)
+# Here's where to find the app itself.
+add_subdirectory(apps)
+
+# Here's how the app knows what to include.
+target_include_directories(runner PUBLIC include)
