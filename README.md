@@ -505,10 +505,6 @@ implementations for three of the member functions that satisfy `IsRv32iInstructi
 template<IsIntegerCore T>
 class Rv32iIntegerCoreExecutor : public T
 {
-    auto Self() -> T& { return static_cast<T&>(*this); }
-
-    // ...
-
 public:
     using Item = void;
 
@@ -516,21 +512,18 @@ public:
 
     // Immediate shift instructions.
 
-    auto Slli(Reg rd, Reg rs1, u32 shamt) -> Item
+    auto Slli(this T& self, Reg rd, Reg rs1, u32 shamt) -> Item
     {
-        auto& self = Self();
         self.Wx(rd, self.Rx(rs1) << shamt);
     }
 
-    auto Srli(Reg rd, Reg rs1, u32 shamt) -> Item
+    auto Srli(this T& self, Reg rd, Reg rs1, u32 shamt) -> Item
     {
-        auto& self = Self();
         self.Wx(rd, self.Rx(rs1) >> shamt);
     }
 
-    auto Srai(Reg rd, Reg rs1, u32 shamt) -> Item
+    auto Srai(this T& self, Reg rd, Reg rs1, u32 shamt) -> Item
     {
-        auto& self = Self();
         auto xreg_rs = static_cast<i32>(self.Rx(rs1));
         self.Wx(rd, static_cast<u32>(xreg_rs >> static_cast<i32>(shamt)));
     }
