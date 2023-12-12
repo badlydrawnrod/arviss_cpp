@@ -1,7 +1,7 @@
 #pragma once
 
-#include "arviss/core_concepts.h"
-#include "arviss/core_mixins.h"
+#include "arviss/core/concepts.h"
+#include "arviss/core/mixins.h"
 #include "arviss/rv32_dispatchers.h"
 #include "arviss/rv32_executors.h"
 
