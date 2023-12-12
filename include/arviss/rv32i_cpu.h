@@ -1,9 +1,9 @@
 #pragma once
 
-#include "core_concepts.h"
-#include "core_mixins.h"
-#include "rv32_dispatchers.h"
-#include "rv32_executors.h"
+#include "arviss/core_concepts.h"
+#include "arviss/core_mixins.h"
+#include "arviss/rv32_dispatchers.h"
+#include "arviss/rv32_executors.h"
 
 namespace arviss
 {

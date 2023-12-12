@@ -1,5 +1,5 @@
-#include "basic_rv32i_cpu.h"
-#include "rv32i_disassembler.h"
+#include "arviss/basic_rv32i_cpu.h"
+#include "arviss/rv32i_disassembler.h"
 
 #include <format>
 #include <fstream>

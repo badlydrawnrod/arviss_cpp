@@ -1,8 +1,8 @@
 #pragma once
 
-#include "core_concepts.h"
-#include "instruction.h"
-#include "rv32_concepts.h"
+#include "arviss/core_concepts.h"
+#include "arviss/instruction.h"
+#include "arviss/rv32_concepts.h"
 
 namespace arviss
 {
