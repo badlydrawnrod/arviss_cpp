@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include "arviss/types.h"
+#include "arviss/common/types.h"
 
 #include <concepts>
 #include <optional>

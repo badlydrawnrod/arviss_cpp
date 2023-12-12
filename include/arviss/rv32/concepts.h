@@ -1,7 +1,7 @@
 #pragma once
 
-#include "arviss/core_concepts.h"
-#include "arviss/types.h"
+#include "arviss/core/concepts.h"
+#include "arviss/common/types.h"
 
 #include <concepts>
 #include <string>

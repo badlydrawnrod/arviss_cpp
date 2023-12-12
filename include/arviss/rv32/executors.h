@@ -1,7 +1,7 @@
 #pragma once
 
-#include "arviss/core_concepts.h"
-#include "arviss/rv32_concepts.h"
+#include "arviss/core/concepts.h"
+#include "arviss/rv32/concepts.h"
 
 #include <bit>
 #include <cmath>

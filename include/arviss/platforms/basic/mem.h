@@ -1,6 +1,6 @@
 #pragma once
 
-#include "arviss/types.h"
+#include "arviss/common/types.h"
 
 #include <iostream>
 #include <vector>
