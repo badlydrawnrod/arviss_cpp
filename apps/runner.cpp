@@ -19,25 +19,19 @@ auto Run(T& t, size_t count) -> void
     }
 }
 
-// How do I say that U's instruction handler can't be a subset of T's instruction handler?
-template<IsRv32imfVm T, IsRv32imfTrace U>
-auto Run(T& t, U& u, size_t count) -> void
-{
-    while (count > 0 && !t.IsTrapped())
-    {
-        auto ins = t.Fetch();                                                    // Fetch.
-        std::cout << std::format("{:04x}\t", t.Pc()) << u.Dispatch(ins) << '\n'; // Trace.
-        t.Dispatch(ins);                                                         // Execute.
-        --count;
-    }
-}
-
-auto main() -> int
+auto main(int argc, char* argv[]) -> int
 {
     try
     {
+        if (argc < 2)
+        {
+            std::cerr << "Please supply a filename.";
+            return 2;
+        }
+
         // Read the image into a buffer.
-        std::ifstream fileHandle("examples/images/hello.bin", std::ios::in | std::ios::binary | std::ios::ate);
+        const char* filename = argv[1];
+        std::ifstream fileHandle(filename, std::ios::in | std::ios::binary | std::ios::ate);
         const size_t fileSize = fileHandle.tellg();
         fileHandle.seekg(0, std::ios::beg);
         std::vector<u8> buf(fileSize);
@@ -78,5 +72,7 @@ auto main() -> int
     catch (const std::exception& e)
     {
         std::cerr << "VM exited with: " << e.what() << '\n';
+        return 1;
     }
+    return 0;
 }
