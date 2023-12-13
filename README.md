@@ -23,7 +23,7 @@ images in `examples/images/`.
 
 Run the examples as follows:
 ```
-$ build/apps/runner
+$ build/apps/runner examples/images/hello.bin
 Hello, world from C!
 Hello, world from C!
 ...
