@@ -1,5 +1,6 @@
-#include "arviss/platforms/basic/cpus.h"
-#include "arviss/rv32/disassemblers.h"
+#include "arviss/common/types.h"         // Address
+#include "arviss/platforms/basic/cpus.h" // BasicRv32imfCpu
+#include "arviss/rv32/concepts.h"        // IsRv32imfVm
 
 #include <format>
 #include <fstream>
