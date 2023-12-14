@@ -20,8 +20,32 @@ endif()
 # I don't need this yet, but I probably will.
 include(FetchContent)
 
-# Here's where to find the app itself.
-add_subdirectory(apps)
+# # Here's where to find the app itself.
+# add_subdirectory(apps)
 
-# Here's how the app knows what to include.
-target_include_directories(runner PUBLIC include)
+# # Here's how the app knows what to include.
+# target_include_directories(runner PUBLIC include)
+
+add_library(arviss_cpp INTERFACE)
+target_include_directories(
+  arviss_cpp
+  INTERFACE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+            $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
+
+target_compile_features(arviss_cpp INTERFACE cxx_std_20)
+
+install(TARGETS arviss_cpp
+        EXPORT arvissTargets
+        LIBRARY DESTINATION lib
+        ARCHIVE DESTINATION lib
+        RUNTIME DESTINATION bin
+        INCLUDES DESTINATION include
+        )
+
+install(FILES include/arviss/** DESTINATION include/arviss)
+
+install(EXPORT arvissTargets
+        FILE arvissTargets.cmake
+        NAMESPACE arviss_cpp::
+        DESTINATION lib/cmake/arviss_cpp
+        )
