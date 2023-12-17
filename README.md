@@ -17,6 +17,14 @@ $ cmake --build build
 ```
 For more info see the [BUILDING](BUILDING.md) document.
 
+### CMake Init
+
+I am not a CMake expert. I find the whole thing frustrating, not least because CMake has been around
+for so long that there's a lot of conflicting and/or out of date information out there. Fortunately,
+some kind person created [CMake Init](https://github.com/friendlyanon/cmake-init) which collects a
+bunch of CMake wisdom into a script that creates suitable scaffolding to build a CMake project.
+Thank you **friendlyanon**, whoever you are!
+
 # Contributing
 
 See the [CONTRIBUTING](CONTRIBUTING.md) document.
