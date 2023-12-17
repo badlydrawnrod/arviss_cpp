@@ -691,7 +691,7 @@ namespace arviss
                 }
                 else
                 {
-                    // Postive subnormal number.
+                    // Positive subnormal number.
                     result = 1 << 5;
                 }
             }
