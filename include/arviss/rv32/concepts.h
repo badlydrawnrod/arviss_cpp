@@ -106,9 +106,9 @@ namespace arviss
     template<typename T>
     concept IsRv32iDispatcher = IsDispatcher<T> && IsRv32iInstructionHandler<T>;
 
-    // T is a dispatcher VM capable of fetching, dispatching and handling RV32i instructions for an integer core.
+    // T is a dispatcher CPU capable of fetching, dispatching and handling RV32i instructions for an integer core.
     template<typename T>
-    concept IsRv32iVm = IsRv32iDispatcher<T> && IsIntegerCore<T>;
+    concept IsRv32iCpu = IsRv32iDispatcher<T> && IsIntegerCore<T>;
 
     // T is a dispatcher for a tracing handler for Rv32i instructions.
     template<typename T>
@@ -156,9 +156,9 @@ namespace arviss
     template<typename T>
     concept IsRv32imDispatcher = IsDispatcher<T> && IsRv32imInstructionHandler<T>;
 
-    // T is a VM capable of fetching, dispatching and handling RV32im instructions for an integer core.
+    // T is a CPU capable of fetching, dispatching and handling RV32im instructions for an integer core.
     template<typename T>
-    concept IsRv32imVm = IsRv32imDispatcher<T> && IsIntegerCore<T>;
+    concept IsRv32imCpu = IsRv32imDispatcher<T> && IsIntegerCore<T>;
 
     // T is a dispatcher for a tracing handler for Rv32im instructions.
     template<typename T>
@@ -244,9 +244,9 @@ namespace arviss
     template<typename T>
     concept IsRv32icDispatcher = IsDispatcher<T> && IsRv32icInstructionHandler<T>;
 
-    // T is a VM capable of fetching, dispatching and handling RV32ic instructions for an integer core.
+    // T is a CPU capable of fetching, dispatching and handling RV32ic instructions for an integer core.
     template<typename T>
-    concept IsRv32icVm = IsRv32icDispatcher<T> && IsIntegerCore<T>;
+    concept IsRv32icCpu = IsRv32icDispatcher<T> && IsIntegerCore<T>;
 
     // T is a dispatcher for a tracing handler for Rv32ic instructions.
     template<typename T>
@@ -334,9 +334,9 @@ namespace arviss
     template<typename T>
     concept IsRv32imfDispatcher = IsDispatcher<T> && IsRv32imfInstructionHandler<T>;
 
-    // T is a VM capable of fetching, dispatching and handling RV32imf instructions for a floating point core.
+    // T is a CPU capable of fetching, dispatching and handling RV32imf instructions for a floating point core.
     template<typename T>
-    concept IsRv32imfVm = IsRv32imfDispatcher<T> && IsFloatCore<T>;
+    concept IsRv32imfCpu = IsRv32imfDispatcher<T> && IsFloatCore<T>;
 
     // T is a dispatcher for a tracing handler for Rv32imf instructions.
     template<typename T>
