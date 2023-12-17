@@ -34,7 +34,7 @@ C:> cmake --build build
 ## Running
 In both cases (Linux and Windows), building the examples populates the `arviss_cpp/examples/bin` directory
 with two files:
-- `hello` can be loaded by an Arviss VM that has an ELF loader
+- `hello` can be loaded by an Arviss CPU that has an ELF loader
 - `hello.bin` is a raw image extracted from `hello` using `llvm-objcopy`. It can be loaded by an Arviss VM
   that does not know how to read ELF files.
 

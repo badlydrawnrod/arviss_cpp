@@ -60,7 +60,7 @@ Let's walk through an example to see how concepts are used in Arviss.
 Here's the same code again, but this time shown in the context of a function template.
 
 ```cpp
-template<IsRv32iVm Cpu>
+template<IsRv32iCpu Cpu>
 auto Run(Cpu& cpu) -> void
 {
     while (!cpu.IsTrapped())
@@ -71,29 +71,29 @@ auto Run(Cpu& cpu) -> void
 }
 ```
 
-In this example, the template parameter `Cpu` is given as `IsRv32iVm`, which means that the type
-parameter needs to satisfy the `IsRv32iVm` concept.
+In this example, the template parameter `Cpu` is given as `IsRv32iCpu`, which means that the type
+parameter needs to satisfy the `IsRv32iCpu` concept.
 
 Here's some code that calls it. For this code to compile, `BasicRv32iCpu` has to satisfy the
-`IsRv32iVm` concept.
+`IsRv32iCpu` concept.
 
 ```cpp
 BasicRv32iCpu cpu{}; // Create a CPU.
 Run(cpu);            // Run the CPU until it traps.
 ```
 
-Let's approach this from the perspective of concepts. What does `IsRv32iVm` mean?
+Let's approach this from the perspective of concepts. What does `IsRv32iCpu` mean?
 
 Here's the definition.
 
 ```cpp
-// T is a dispatcher VM capable of fetching, dispatching and handling RV32i instructions for an
+// T is a CPU capable of fetching, dispatching and handling RV32i instructions for an
 // integer core.
 template<typename T>
-concept IsRv32iVm = IsRv32iDispatcher<T> && IsIntegerCore<T>;
+concept IsRv32iCpu = IsRv32iDispatcher<T> && IsIntegerCore<T>;
 ```
 
-From this, we can see that for a type T to satisfy the `IsRv32iVm` concept, T must satisfy two more
+From this, we can see that for a type T to satisfy the `IsRv32iCpu` concept, T must satisfy two more
 concepts, namely `IsRv32iDispatcher` and `IsIntegerCore`.
 
 Let's explore `IsIntegerCore` further.
@@ -316,13 +316,13 @@ concept IsIntegerCore = HasTraps<T> // It has traps.
         && HasMemory<T>;            // It has memory.
 ```
 
-Similarly, `IsRv32iVm` must satisfy both `IsRv32iDispatcher` and `IsIntegerCore`.
+Similarly, `IsRv32iCpu` must satisfy both `IsRv32iDispatcher` and `IsIntegerCore`.
 
 ```cpp
-// T is a dispatcher VM capable of fetching, dispatching and handling RV32i instructions for an
+// T is a CPU capable of fetching, dispatching and handling RV32i instructions for an
 // integer core.
 template<typename T>
-concept IsRv32iVm = IsRv32iDispatcher<T> && IsIntegerCore<T>;
+concept IsRv32iCpu = IsRv32iDispatcher<T> && IsIntegerCore<T>;
 ```
 
 We've examined `IsIntegerCore`, but what does `IsRv32iDispatcher` mean?

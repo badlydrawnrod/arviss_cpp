@@ -2,14 +2,28 @@
 
 #pragma once
 
-#include "arviss/core/concepts.h"
 #include "arviss/common/types.h"
+#include "arviss/core/concepts.h"
 
 #include <array>
 #include <optional>
 
 namespace arviss
 {
+    // A do-nothing implementation of memory, for concept checking.
+    struct NullMem
+    {
+        auto Read8(Address) -> u8 { return 0; }
+        auto Read16(Address) -> u16 { return 0; }
+        auto Read32(Address) -> u32 { return 0; }
+
+        auto Write8(Address, u8) -> void {}
+        auto Write16(Address, u16) -> void {}
+        auto Write32(Address, u32) -> void {}
+    };
+
+    static_assert(HasMemory<NullMem>);
+
     // A mixin implementation of RV32i's integer registers.
     // Satisfies: HasXRegisters
     class XRegisters
@@ -26,6 +40,8 @@ namespace arviss
         }
     };
 
+    static_assert(HasXRegisters<XRegisters>);
+
     // A mixin implementation of RV32f's float registers.
     // Satisfies: HasFRegisters
     class FRegisters
@@ -37,6 +53,8 @@ namespace arviss
 
         auto Wf(Reg rd, f32 val) -> void { freg_[rd] = val; }
     };
+
+    static_assert(HasFRegisters<FRegisters>);
 
     // A mixin implementation of the fetch cycle for the given memory implementation. BYO memory.
     // Satisfies: HasFetch, HasMemory
@@ -82,6 +100,8 @@ namespace arviss
         }
     };
 
+    static_assert(HasFetch<Fetcher<NullMem>> && HasMemory<Fetcher<NullMem>>);
+
     // A mixin implementation of a trap handler.
     // Satisfies: HasTraps.
     class TrapHandler
@@ -95,6 +115,8 @@ namespace arviss
         auto ClearTraps() { trap_ = {}; }
     };
 
+    static_assert(HasTraps<TrapHandler>);
+
     // A mixin implementation of an integer core. BYO memory.
     // Satisfies: IsIntegerCore (HasTraps, HasXRegisters, HasFetch, HasMemory)
     template<HasMemory Mem>
@@ -102,11 +124,15 @@ namespace arviss
     {
     };
 
+    static_assert(IsIntegerCore<IntegerCore<NullMem>>);
+
     // A mixin implementation of a floating point core. BYO memory.
     // Satisfies: IsFloatCore (IsIntegerCore + HasFRegisters)
     template<HasMemory Mem>
     struct FloatCore : public TrapHandler, public XRegisters, public FRegisters, public Fetcher<Mem>
     {
     };
+
+    static_assert(IsFloatCore<FloatCore<NullMem>>);
 
 } // namespace arviss

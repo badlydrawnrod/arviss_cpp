@@ -1,6 +1,6 @@
 #include "arviss/common/types.h"         // Address
 #include "arviss/platforms/basic/cpus.h" // BasicRv32imfCpu
-#include "arviss/rv32/concepts.h"        // IsRv32imfVm
+#include "arviss/rv32/concepts.h"        // IsRv32imfCpu
 
 #include <format>
 #include <fstream>
@@ -9,7 +9,7 @@
 
 using namespace arviss;
 
-template<IsRv32imfVm T>
+template<IsRv32imfCpu T>
 auto Run(T& t, size_t count) -> void
 {
     while (count > 0 && !t.IsTrapped())
@@ -72,7 +72,7 @@ auto main(int argc, char* argv[]) -> int
     }
     catch (const std::exception& e)
     {
-        std::cerr << "VM exited with: " << e.what() << '\n';
+        std::cerr << "Exited with: " << e.what() << '\n';
         return 1;
     }
     return 0;
