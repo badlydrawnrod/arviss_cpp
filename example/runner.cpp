@@ -33,9 +33,9 @@ auto main(int argc, char* argv[]) -> int
         // Read the image into a buffer.
         const char* filename = argv[1];
         std::ifstream fileHandle(filename, std::ios::in | std::ios::binary | std::ios::ate);
-        const size_t fileSize = fileHandle.tellg();
+        const std::streampos fileSize = fileHandle.tellg();
         fileHandle.seekg(0, std::ios::beg);
-        std::vector<u8> buf(fileSize);
+        std::vector<u8> buf(static_cast<size_t>(fileSize));
         fileHandle.read(reinterpret_cast<char*>(buf.data()), fileSize);
         fileHandle.close();
 

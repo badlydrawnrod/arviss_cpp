@@ -196,7 +196,7 @@ namespace arviss
             auto& self = Self();
             auto rs1Before = self.Rx(rs1); // Because rd and rs1 might be the same register.
             self.Wx(rd, self.Pc() + 4);    // TODO: wrapping add
-            self.SetNextPc(rs1Before + (iimm) & ~1);
+            self.SetNextPc(rs1Before + (iimm & ~1u));
         }
 
         // S-type instructions.
@@ -422,7 +422,7 @@ namespace arviss
             // Check for signed division overflow.
             if ((static_cast<u32>(dividend) != 0x80000000) || divisor != -1)
             {
-                self.Wx(rd, divisor != 0 ? dividend / divisor : std::numeric_limits<u32>::max());
+                self.Wx(rd, divisor != 0 ? static_cast<u32>(dividend / divisor) : std::numeric_limits<u32>::max());
             }
             else
             {
@@ -661,25 +661,10 @@ namespace arviss
             auto v = self.Rf(rs1);
             auto bits = static_cast<u32>(v);
             u32 result{};
-            if (v == -std::numeric_limits<f32>::infinity())
-            {
-                // Negative infinity.
-                result = 1 << 0;
-            }
-            else if (v == std::numeric_limits<f32>::infinity())
-            {
-                // Positive infinity.
-                result = 1 << 7;
-            }
-            else if (bits == 0x80000000)
+            if (bits == 0x80000000)
             {
                 // Negative zero.
                 result = 1 << 3;
-            }
-            else if (v == 0.0f)
-            {
-                // Zero.
-                result = 1 << 4;
             }
             else if ((bits & 0x7f800000) == 0)
             {
@@ -705,6 +690,24 @@ namespace arviss
                 // Signalling NaN.
                 result = 1 << 8;
             }
+            else if (std::fpclassify(v) == FP_INFINITE)
+            {
+                if (v < 0.0f)
+                {
+                    // Negative infinity.
+                    result = 1 << 0;
+                }
+                else
+                {
+                    // Positive infinity.
+                    result = 1 << 7;
+                }
+            }
+            else if (std::fpclassify(v) == FP_ZERO)
+            {
+                // Zero.
+                result = 1 << 4;
+            }
             else if (v < 0.0f)
             {
                 // Negative.
@@ -729,7 +732,7 @@ namespace arviss
             self.Wf(rd, std::bit_cast<f32>(self.Rx(rs1)));
         }
 
-        auto Fsqrt_s(Reg rd, Reg rs1, u32 imm) -> Item
+        auto Fsqrt_s(Reg rd, Reg rs1, [[maybe_unused]] u32 rm) -> Item
         {
             // rd <- sqrt(rs1)
             auto& self = Self();
@@ -737,7 +740,7 @@ namespace arviss
             self.Wf(rd, std::sqrt(f));
         }
 
-        auto Fcvt_w_s(Reg rd, Reg rs1, u32 imm) -> Item
+        auto Fcvt_w_s(Reg rd, Reg rs1, [[maybe_unused]] u32 rm) -> Item
         {
             // rd <- int32_t(rs1)
             auto& self = Self();
@@ -745,7 +748,7 @@ namespace arviss
             self.Wx(rd, static_cast<u32>(i));
         }
 
-        auto Fcvt_wu_s(Reg rd, Reg rs1, u32 imm) -> Item
+        auto Fcvt_wu_s(Reg rd, Reg rs1, [[maybe_unused]] u32 rm) -> Item
         {
             // rd <- uint32_t(rs1)
             auto& self = Self();
@@ -753,7 +756,7 @@ namespace arviss
             self.Wx(rd, i);
         }
 
-        auto Fcvt_s_w(Reg rd, Reg rs1, u32 imm) -> Item
+        auto Fcvt_s_w(Reg rd, Reg rs1, [[maybe_unused]] u32 rm) -> Item
         {
             // rd <- float(int32_t((rs1))
             auto& self = Self();
@@ -761,7 +764,7 @@ namespace arviss
             self.Wf(rd, static_cast<f32>(i));
         }
 
-        auto Fcvt_s_wu(Reg rd, Reg rs1, u32 imm) -> Item
+        auto Fcvt_s_wu(Reg rd, Reg rs1, [[maybe_unused]] u32 rm) -> Item
         {
             // rd <- float(rs1)
             auto& self = Self();
@@ -889,28 +892,28 @@ namespace arviss
             self.Write32(address, data);
         }
 
-        auto Fmadd_s(Reg rd, Reg rs1, Reg rs2, Reg rs3, u32 imm) -> Item
+        auto Fmadd_s(Reg rd, Reg rs1, Reg rs2, Reg rs3, [[maybe_unused]] u32 rm) -> Item
         {
             // rd <- (rs1 * rs2) + rs3
             auto& self = Self();
             self.Wf(rd, (self.Rf(rs1) * self.Rf(rs2)) + self.Rf(rs3));
         }
 
-        auto Fmsub_s(Reg rd, Reg rs1, Reg rs2, Reg rs3, u32 imm) -> Item
+        auto Fmsub_s(Reg rd, Reg rs1, Reg rs2, Reg rs3, [[maybe_unused]] u32 rm) -> Item
         {
             // rd <- (rs1 * rs2) - rs3
             auto& self = Self();
             self.Wf(rd, (self.Rf(rs1) * self.Rf(rs2)) - self.Rf(rs3));
         }
 
-        auto Fnmsub_s(Reg rd, Reg rs1, Reg rs2, Reg rs3, u32 imm) -> Item
+        auto Fnmsub_s(Reg rd, Reg rs1, Reg rs2, Reg rs3, [[maybe_unused]] u32 rm) -> Item
         {
             // rd <- -(rs1 * rs2) + rs3
             auto& self = Self();
             self.Wf(rd, -(self.Rf(rs1) * self.Rf(rs2)) + self.Rf(rs3));
         }
 
-        auto Fnmadd_s(Reg rd, Reg rs1, Reg rs2, Reg rs3, u32 imm) -> Item
+        auto Fnmadd_s(Reg rd, Reg rs1, Reg rs2, Reg rs3, [[maybe_unused]] u32 rm) -> Item
         {
             // rd <- -(rs1 * rs2) - rs3
             auto& self = Self();
