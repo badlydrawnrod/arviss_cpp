@@ -15,6 +15,11 @@ $ cmake -B build
 $ cmake --build build
 [2/2] Linking CXX executable arviss_cpp
 ```
+For more info see the [BUILDING](BUILDING.md) document.
+
+# Contributing
+
+See the [CONTRIBUTING](CONTRIBUTING.md) document.
 
 ## Running
 
