@@ -376,7 +376,7 @@ namespace arviss
         auto Self() -> T& { return static_cast<T&>(*this); }
 
     public:
-        using Item = Rv32iIntegerCoreExecutor<T>::Item;
+        using Item = typename Rv32iIntegerCoreExecutor<T>::Item;
 
         // TODO: Implement the 'M' extension.
 
@@ -472,7 +472,7 @@ namespace arviss
         auto Self() -> T& { return static_cast<T&>(*this); }
 
     public:
-        using Item = Rv32iIntegerCoreExecutor<T>::Item;
+        using Item = typename Rv32iIntegerCoreExecutor<T>::Item;
 
         auto C_ebreak() -> Item { this->Ebreak(); }
 
@@ -492,7 +492,7 @@ namespace arviss
             self.SetNextPc(rs1Before & ~1);
         }
 
-        auto C_nop(u32 u) -> Item
+        auto C_nop([[maybe_unused]] u32 u) -> Item
         {
             // nop
         }
@@ -646,7 +646,7 @@ namespace arviss
         auto Self() -> T& { return static_cast<T&>(*this); }
 
     public:
-        using Item = Rv32imIntegerCoreExecutor<T>::Item;
+        using Item = typename Rv32imIntegerCoreExecutor<T>::Item;
 
         auto Fmv_x_w(Reg rd, Reg rs1) -> Item
         {

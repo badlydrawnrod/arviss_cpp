@@ -387,7 +387,7 @@ template<typename Handler>
     requires {full_bounds}
 struct Rv32{extensions}Dispatcher : public Handler
 {{
-    using Item = Handler::Item;
+    using Item = typename Handler::Item;
 
     // Decodes the input word to an RV32{extensions.upper()} instruction and dispatches it to a handler.
     // clang-format off
