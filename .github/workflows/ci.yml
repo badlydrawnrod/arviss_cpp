@@ -107,6 +107,10 @@ jobs:
         /usr/bin/clang-tidy clang-tidy
         /usr/bin/clang-tidy-14 140
 
+        sudo update-alternatives --install
+        /usr/bin/c++ c++
+        /usr/bin/g++-13 140
+
     - name: Setup MultiToolTask
       if: matrix.os == 'windows-2022'
       run: |
