@@ -125,9 +125,11 @@ jobs:
         Add-Content "$env:GITHUB_ENV" 'EnforceProcessCountAcrossBuilds=true'
 
     - name: Configure
-      shell: pwsh
-      run: >
-        cmake -DCMAKE_CXX_COMPILER=${{ matrix.cxx_compiler }} "--preset=ci-$("${{ matrix.os }}".split("-")[0])"
+      shell: bash
+      run: |
+        cmake "--preset=ci-$("${{ matrix.os }}".split("-")[0])"
+        -DCMAKE_CXX_COMPILER=${{ matrix.cxx_compiler }}
+        
 
     - name: Build
       run: cmake --build build --config Release -j 2
