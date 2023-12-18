@@ -129,8 +129,7 @@ jobs:
 
     - name: Configure
       run: |
-        cmake --preset=${{ matrix.preset }}
-        -DCMAKE_CXX_COMPILER=${{ matrix.cxx_compiler }}
+        cmake --preset=${{ matrix.preset }} -DCMAKE_CXX_COMPILER=${{ matrix.cxx_compiler }}
 
     - name: Build
       run: cmake --build build --config Release -j 2
