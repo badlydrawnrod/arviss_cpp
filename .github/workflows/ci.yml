@@ -95,10 +95,13 @@ jobs:
         include:
           - os: macos-latest
             cxx_compiler: "$(brew --prefix llvm@15)/bin/clang++"
+            preset: "ci-macos"
           - os: ubuntu-22.04
             cxx_compiler: g++-13
+            preset: "ci-ubuntu"
           - os: windows-2022
             cxx_compiler: cl
+            preset: "ci-windows"
 
     runs-on: ${{ matrix.os }}
 
@@ -125,11 +128,9 @@ jobs:
         Add-Content "$env:GITHUB_ENV" 'EnforceProcessCountAcrossBuilds=true'
 
     - name: Configure
-      shell: bash
       run: |
-        cmake "--preset=ci-$("${{ matrix.os }}".split("-")[0])"
+        cmake --preset=${{ matrix.preset }}
         -DCMAKE_CXX_COMPILER=${{ matrix.cxx_compiler }}
-        
 
     - name: Build
       run: cmake --build build --config Release -j 2
