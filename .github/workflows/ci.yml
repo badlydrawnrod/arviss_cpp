@@ -92,6 +92,9 @@ jobs:
     strategy:
       matrix:
         os: [macos-latest, ubuntu-22.04, windows-2022]
+        include:
+          - os: macos-latest
+            cxx_compiler: "$(brew --prefix llvm@15)/bin/clang++"
 
     runs-on: ${{ matrix.os }}
 
