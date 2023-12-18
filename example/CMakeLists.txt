@@ -21,5 +21,6 @@ function(add_example NAME)
 endfunction()
 
 add_example(empty_example)
+add_example(runner)
 
 add_folders(Example)

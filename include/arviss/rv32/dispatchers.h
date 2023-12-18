@@ -13,7 +13,7 @@ namespace arviss
         requires IsRv32iInstructionHandler<Handler>
     struct Rv32iDispatcher : public Handler
     {
-        using Item = Handler::Item;
+        using Item = typename Handler::Item;
 
         // Decodes the input word to an RV32I instruction and dispatches it to a handler.
         // clang-format off
@@ -84,7 +84,7 @@ namespace arviss
         requires IsRv32iInstructionHandler<Handler> && IsRv32cInstructionHandler<Handler>
     struct Rv32icDispatcher : public Handler
     {
-        using Item = Handler::Item;
+        using Item = typename Handler::Item;
 
         // Decodes the input word to an RV32IC instruction and dispatches it to a handler.
         // clang-format off
@@ -196,7 +196,7 @@ namespace arviss
         requires IsRv32iInstructionHandler<Handler> && IsRv32mInstructionHandler<Handler>
     struct Rv32imDispatcher : public Handler
     {
-        using Item = Handler::Item;
+        using Item = typename Handler::Item;
 
         // Decodes the input word to an RV32IM instruction and dispatches it to a handler.
         // clang-format off
@@ -275,7 +275,7 @@ namespace arviss
         requires IsRv32iInstructionHandler<Handler> && IsRv32mInstructionHandler<Handler> && IsRv32fInstructionHandler<Handler>
     struct Rv32imfDispatcher : public Handler
     {
-        using Item = Handler::Item;
+        using Item = typename Handler::Item;
 
         // Decodes the input word to an RV32IMF instruction and dispatches it to a handler.
         // clang-format off

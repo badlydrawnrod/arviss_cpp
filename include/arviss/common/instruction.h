@@ -20,19 +20,19 @@ namespace arviss
         static auto CReg(u32 r) -> u32 { return 8 + r; }
 
     public:
-        Instruction(u32 ins) : ins_{ins} {};
+        Instruction(u32 ins) : ins_{ins} {}
 
-        auto Opcode() -> u32 const { return ins_ & 0x7f; }
+        auto Opcode() const -> u32 { return ins_ & 0x7f; }
 
-        auto Rd() -> u32 const { return (ins_ >> 7) & 0x1f; }
-        auto Rs1() -> u32 const { return (ins_ >> 15) & 0x1f; }
-        auto Rs2() -> u32 const { return (ins_ >> 20) & 0x1f; }
+        auto Rd() const -> u32 { return (ins_ >> 7) & 0x1f; }
+        auto Rs1() const -> u32 { return (ins_ >> 15) & 0x1f; }
+        auto Rs2() const -> u32 { return (ins_ >> 20) & 0x1f; }
 
-        auto Shamtw() -> u32 const { return (ins_ >> 20) & 0x1f; }
+        auto Shamtw() const -> u32 { return (ins_ >> 20) & 0x1f; }
 
-        auto Fm() -> u32 const { return (ins_ >> 20) & 0xf; }
+        auto Fm() const -> u32 { return (ins_ >> 20) & 0xf; }
 
-        auto Bimmediate() -> u32 const
+        auto Bimmediate() const -> u32
         {
             auto imm12 = static_cast<i32>(ins_ & 0x80000000) >> 19;     // ins[31] -> sext(imm[12])
             auto imm11 = static_cast<i32>((ins_ & 0x00000080) << 4);    // ins[7] -> imm[11]
@@ -41,19 +41,19 @@ namespace arviss
             return static_cast<u32>(imm12 | imm11 | imm10_5 | imm4_1);
         }
 
-        auto Iimmediate() -> u32 const
+        auto Iimmediate() const -> u32
         {
             return static_cast<u32>((static_cast<i32>(ins_) >> 20)); // ins[31:20] -> sext(imm[11:0])
         }
 
-        auto Simmediate() -> u32 const
+        auto Simmediate() const -> u32
         {
             auto imm11_5 = (static_cast<i32>(ins_ & 0xfe000000)) >> 20; // ins[31:25] -> sext(imm[11:5])
             auto imm4_0 = static_cast<i32>((ins_ & 0x00000f80) >> 7);   // ins[11:7]  -> imm[4:0]
             return static_cast<u32>(imm11_5 | imm4_0);
         }
 
-        auto Jimmediate() -> u32 const
+        auto Jimmediate() const -> u32
         {
             auto imm20 = static_cast<i32>(ins_ & 0x80000000) >> 11;     // ins[31] -> sext(imm[20])
             auto imm19_12 = static_cast<i32>(ins_ & 0x000ff000);        // ins[19:12] -> imm[19:12]
@@ -62,36 +62,36 @@ namespace arviss
             return static_cast<u32>(imm20 | imm19_12 | imm11 | imm10_1);
         }
 
-        auto Uimmediate() -> u32 const
+        auto Uimmediate() const -> u32
         {
             return ins_ & 0xfffff000; // ins[31:12] -> imm[31:12]
         }
 
         // RV32C
 
-        auto Rdp() -> u32 const { return CReg((ins_ >> 2) & 7); }
+        auto Rdp() const -> u32 { return CReg((ins_ >> 2) & 7); }
 
-        auto Rdn0() -> u32 const { return Rd(); }
+        auto Rdn0() const -> u32 { return Rd(); }
 
-        auto Rdn2() -> u32 const { return Rd(); }
+        auto Rdn2() const -> u32 { return Rd(); }
 
-        auto Rdrs1() -> u32 const { return Rd(); }
+        auto Rdrs1() const -> u32 { return Rd(); }
 
-        auto Rs1p() -> u32 const { return CReg((ins_ >> 7) & 7); }
+        auto Rs1p() const -> u32 { return CReg((ins_ >> 7) & 7); }
 
-        auto Rs2p() -> u32 const { return CReg((ins_ >> 2) & 7); }
+        auto Rs2p() const -> u32 { return CReg((ins_ >> 2) & 7); }
 
-        auto Rdrs1p() -> u32 const { return CReg((ins_ >> 7) & 7); }
+        auto Rdrs1p() const -> u32 { return CReg((ins_ >> 7) & 7); }
 
-        auto Rs1n0() -> u32 const { return (ins_ >> 7) & 0x1f; }
+        auto Rs1n0() const -> u32 { return (ins_ >> 7) & 0x1f; }
 
-        auto Rs2n0() -> u32 const { return (ins_ >> 2) & 0x1f; }
+        auto Rs2n0() const -> u32 { return (ins_ >> 2) & 0x1f; }
 
-        auto Rdrs1n0() -> u32 const { return Rd(); }
+        auto Rdrs1n0() const -> u32 { return Rd(); }
 
-        auto C_rs2() -> u32 const { return (ins_ >> 2) & 0x1f; }
+        auto C_rs2() const -> u32 { return (ins_ >> 2) & 0x1f; }
 
-        auto C_nzuimm10() -> u32 const
+        auto C_nzuimm10() const -> u32
         {
             // Zero extended.
             auto imm = (ins_ >> 5) & 0xff;
@@ -102,7 +102,7 @@ namespace arviss
             return a | b | c | d;
         }
 
-        auto C_uimm7() -> u32 const
+        auto C_uimm7() const -> u32
         {
             // Zero extended.
             auto a = ((ins_ >> 12) & 1) << 5;      // offset[5]
@@ -111,7 +111,7 @@ namespace arviss
             return a | b | c;
         }
 
-        auto C_nzimm6() -> u32 const
+        auto C_nzimm6() const -> u32
         {
             // Sign extended.
             auto a = ((ins_ >> 12) & 1) << 5; // imm[5]
@@ -119,7 +119,7 @@ namespace arviss
             return Sext(a | b, 5);
         }
 
-        auto C_nzimm10() -> u32 const
+        auto C_nzimm10() const -> u32
         {
             // Sign extended.
             auto a = ((ins_ >> 12) & 1) << 9; // nzimm[9]
@@ -131,7 +131,7 @@ namespace arviss
             return Sext(a | b | c | d | e, 9);
         }
 
-        auto C_nzimm18() -> u32 const
+        auto C_nzimm18() const -> u32
         {
             // Sign extended.
             auto a = ((ins_ >> 12) & 1) << 17;   // nzimm[17]
@@ -139,7 +139,7 @@ namespace arviss
             return Sext(a | b, 17);
         }
 
-        auto C_imm6() -> u32 const
+        auto C_imm6() const -> u32
         {
             // Sign extended.
             auto a = ((ins_ >> 12) & 1) << 5; // imm[5]
@@ -147,7 +147,7 @@ namespace arviss
             return Sext(a | b, 5);
         }
 
-        auto C_imm12() -> u32 const
+        auto C_imm12() const -> u32
         {
             // Sign extended.
             auto imm = (ins_ >> 2) & 0x7ff;
@@ -162,7 +162,7 @@ namespace arviss
             return Sext(a | b | c | d | e | f | g | h, 11);
         }
 
-        auto C_bimm9() -> u32 const
+        auto C_bimm9() const -> u32
         {
             // Sign extended.
             auto imm1 = (ins_ >> 10) & 7;
@@ -175,7 +175,7 @@ namespace arviss
             return Sext(a | b | c | d | e, 8);
         }
 
-        auto C_uimm8sp() -> u32 const
+        auto C_uimm8sp() const -> u32
         {
             // Zero extended.
             auto a = ((ins_ >> 12) & 1) << 5; // offset[5]
@@ -185,7 +185,7 @@ namespace arviss
             return a | b | c;
         }
 
-        auto C_uimm8sp_s() -> u32 const
+        auto C_uimm8sp_s() const -> u32
         {
             // Zero extended.
             auto imm = (ins_ >> 7) & 0x3f;
@@ -194,7 +194,7 @@ namespace arviss
             return a | b;
         }
 
-        auto C_nzuimm6() -> u32 const
+        auto C_nzuimm6() const -> u32
         {
             // Zero extended.
             auto a = ((ins_ >> 12) & 1) << 5; // shamt[5]
@@ -204,7 +204,7 @@ namespace arviss
 
         // RV32F
 
-        auto Rs3() -> u32 const { return (ins_ >> 27) & 0x1f; }
-        auto Rm() -> u32 const { return (ins_ >> 12) & 7; }
+        auto Rs3() const -> u32 { return (ins_ >> 27) & 0x1f; }
+        auto Rm() const -> u32 { return (ins_ >> 12) & 7; }
     };
 } // namespace arviss

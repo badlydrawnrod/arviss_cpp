@@ -65,7 +65,7 @@ namespace arviss
         Address nextPc_{};
 
     public:
-        auto Pc() -> Address const { return pc_; }
+        auto Pc() const -> Address { return pc_; }
 
         auto Transfer() -> Address
         {
@@ -95,8 +95,8 @@ namespace arviss
 
         auto Fetch32(Address address) -> u32
         {
-            auto& mem_ = static_cast<Mem&>(*this);
-            return mem_.Read32(address);
+            auto& mem = static_cast<Mem&>(*this);
+            return mem.Read32(address);
         }
     };
 

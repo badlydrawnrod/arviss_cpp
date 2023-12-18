@@ -91,7 +91,17 @@ jobs:
 
     strategy:
       matrix:
-        os: [macos-12, ubuntu-22.04, windows-2022]
+        os: [macos-latest, ubuntu-22.04, windows-2022]
+        include:
+          - os: macos-latest
+            cxx_compiler: "$(brew --prefix llvm@15)/bin/clang++"
+            preset: "ci-macos"
+          - os: ubuntu-22.04
+            cxx_compiler: g++-13
+            preset: "ci-ubuntu"
+          - os: windows-2022
+            cxx_compiler: cl
+            preset: "ci-windows"
 
     runs-on: ${{ matrix.os }}
 
@@ -107,6 +117,10 @@ jobs:
         /usr/bin/clang-tidy clang-tidy
         /usr/bin/clang-tidy-14 140
 
+        sudo update-alternatives --install
+        /usr/bin/c++ c++
+        /usr/bin/g++-13 140
+
     - name: Setup MultiToolTask
       if: matrix.os == 'windows-2022'
       run: |
@@ -114,8 +128,8 @@ jobs:
         Add-Content "$env:GITHUB_ENV" 'EnforceProcessCountAcrossBuilds=true'
 
     - name: Configure
-      shell: pwsh
-      run: cmake "--preset=ci-$("${{ matrix.os }}".split("-")[0])"
+      run: |
+        cmake --preset=${{ matrix.preset }} -DCMAKE_CXX_COMPILER=${{ matrix.cxx_compiler }}
 
     - name: Build
       run: cmake --build build --config Release -j 2
