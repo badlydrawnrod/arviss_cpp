@@ -155,18 +155,18 @@ namespace arviss
         auto Slti(Reg rd, Reg rs1, u32 iimm) -> Item
         {
             // Signed.
-            // rd <- (rs1 < imm_i) ? 1 : 0, pc += 4
+            // rd <- (rs1 < imm_i) ? 1u : 0u, pc += 4
             auto& self = Self();
             auto xreg_rs1 = static_cast<i32>(self.Rx(rs1));
-            self.Wx(rd, xreg_rs1 < static_cast<i32>(iimm) ? 1 : 0);
+            self.Wx(rd, xreg_rs1 < static_cast<i32>(iimm) ? 1u : 0u);
         }
 
         auto Sltiu(Reg rd, Reg rs1, u32 iimm) -> Item
         {
             // Unsigned.
-            // rd <- (rs1 < imm_i) ? 1 : 0, pc += 4
+            // rd <- (rs1 < imm_i) ? 1u : 0u, pc += 4
             auto& self = Self();
-            self.Wx(rd, self.Rx(rs1) < iimm ? 1 : 0);
+            self.Wx(rd, self.Rx(rs1) < iimm ? 1u : 0u);
         }
 
         auto Xori(Reg rd, Reg rs1, u32 iimm) -> Item
@@ -277,20 +277,20 @@ namespace arviss
         auto Slt(Reg rd, Reg rs1, Reg rs2) -> Item
         {
             // Signed.
-            // rd <- (rs1 < rs2) ? 1 : 0, pc += 4
+            // rd <- (rs1 < rs2) ? 1u : 0u, pc += 4
             auto& self = Self();
             auto xreg_rs1 = static_cast<i32>(self.Rx(rs1));
             auto xreg_rs2 = static_cast<i32>(self.Rx(rs2));
-            self.Wx(rd, xreg_rs1 < xreg_rs2 ? 1 : 0);
+            self.Wx(rd, xreg_rs1 < xreg_rs2 ? 1u : 0u);
         }
 
         auto Sltu(Reg rd, Reg rs1, Reg rs2) -> Item
         {
-            // rd <- (rs1 < rs2) ? 1 : 0, pc += 4
+            // rd <- (rs1 < rs2) ? 1u : 0u, pc += 4
             auto& self = Self();
             auto xreg_rs1 = self.Rx(rs1);
             auto xreg_rs2 = self.Rx(rs2);
-            self.Wx(rd, xreg_rs1 < xreg_rs2 ? 1 : 0);
+            self.Wx(rd, xreg_rs1 < xreg_rs2 ? 1u : 0u);
         }
 
         auto Xor(Reg rd, Reg rs1, Reg rs2) -> Item
@@ -821,29 +821,29 @@ namespace arviss
 
         auto Fle_s(Reg rd, Reg rs1, Reg rs2) -> Item
         {
-            // rd <- (rs1 <= rs2) ? 1 : 0;
+            // rd <- (rs1 <= rs2) ? 1u : 0u;
             auto& self = Self();
             auto freg_rs1 = self.Rf(rs1);
             auto freg_rs2 = self.Rf(rs2);
-            self.Wx(rd, (freg_rs1 <= freg_rs2) ? 1 : 0);
+            self.Wx(rd, (freg_rs1 <= freg_rs2) ? 1u : 0u);
         }
 
         auto Flt_s(Reg rd, Reg rs1, Reg rs2) -> Item
         {
-            // rd <- (rs1 < rs2) ? 1 : 0;
+            // rd <- (rs1 < rs2) ? 1u : 0u;
             auto& self = Self();
             auto freg_rs1 = self.Rf(rs1);
             auto freg_rs2 = self.Rf(rs2);
-            self.Wx(rd, (freg_rs1 < freg_rs2) ? 1 : 0);
+            self.Wx(rd, (freg_rs1 < freg_rs2) ? 1u : 0u);
         }
 
         auto Feq_s(Reg rd, Reg rs1, Reg rs2) -> Item
         {
-            // rd <- (rs1 == rs2) ? 1 : 0;
+            // rd <- (rs1 == rs2) ? 1u : 0u;
             auto& self = Self();
             auto freg_rs1 = self.Rf(rs1);
             auto freg_rs2 = self.Rf(rs2);
-            self.Wx(rd, (freg_rs1 == freg_rs2) ? 1 : 0);
+            self.Wx(rd, (freg_rs1 == freg_rs2) ? 1u : 0u);
         }
 
         auto Fadd_s(Reg rd, Reg rs1, Reg rs2, u32 /*rm*/) -> Item
