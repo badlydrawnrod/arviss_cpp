@@ -40,9 +40,9 @@ endif()
 # ---- Examples ----
 
 if(PROJECT_IS_TOP_LEVEL)
-  option(BUILD_EXAMPLES "Build examples tree." "${arviss_cpp_DEVELOPER_MODE}")
-  if(BUILD_EXAMPLES)
-    add_subdirectory(example)
+  option(BUILD_APPS "Build example apps tree." "${arviss_cpp_DEVELOPER_MODE}")
+  if(BUILD_APPS)
+    add_subdirectory(apps)
   endif()
 endif()
 

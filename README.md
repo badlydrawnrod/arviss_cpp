@@ -31,12 +31,12 @@ See the [CONTRIBUTING](CONTRIBUTING.md) document.
 
 ## Running
 
-Build the examples as described in [examples/README.md](examples/README.md). This will create some example
-images in `examples/images/`.
+Build the examples as described in [riscv-examples/README.md](riscv-examples/README.md). This will create some example
+images in `riscv-examples/images/`.
 
 Run the examples as follows:
 ```
-$ build/apps/runner examples/images/hello.bin
+$ build/apps/runner riscv-examples/images/hello.bin
 Hello, world from C!
 Hello, world from C!
 ...
