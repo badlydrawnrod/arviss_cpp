@@ -15,7 +15,7 @@ $ cmake -B build
 $ cmake --build build
 [2/2] Linking CXX executable arviss_cpp
 ```
-For more info see the [BUILDING](BUILDING.md) document.
+For more info see the [BUILDING](BUILDING.md) and [HACKING](HACKING.md) documents.
 
 ### CMake Init
 
@@ -25,7 +25,7 @@ some kind person created [CMake Init](https://github.com/friendlyanon/cmake-init
 bunch of CMake wisdom into a script that creates suitable scaffolding to build a CMake project.
 Thank you **friendlyanon**, whoever you are!
 
-# Contributing
+## Contributing
 
 See the [CONTRIBUTING](CONTRIBUTING.md) document.
 
@@ -35,8 +35,9 @@ Build the examples as described in [riscv-examples/README.md](riscv-examples/REA
 images in `riscv-examples/images/`.
 
 Run the examples as follows:
-```
-$ build/apps/runner riscv-examples/images/hello.bin
+
+```sh
+$ build/dev/apps/runner riscv-examples/images/hello.bin
 Hello, world from C!
 Hello, world from C!
 ...
