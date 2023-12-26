@@ -20,7 +20,7 @@ function(add_app NAME)
   add_dependencies(run-apps "run_${NAME}")
 endfunction()
 
-add_app(empty)
+add_app(bencher)
 add_app(runner)
 
 add_folders(Apps)
