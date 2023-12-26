@@ -378,8 +378,6 @@ namespace arviss
     public:
         using Item = typename Rv32iIntegerCoreExecutor<T>::Item;
 
-        // TODO: Implement the 'M' extension.
-
         auto Mul(Reg rd, Reg rs1, Reg rs2) -> Item
         {
             // rd <- rs1 * rs2, pc += 4
