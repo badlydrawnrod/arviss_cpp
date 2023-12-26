@@ -65,6 +65,7 @@ namespace arviss
         Ebreak,
 
         // --- RV32m
+
         Mul,
         Mulh,
         Mulhsu,
@@ -72,7 +73,36 @@ namespace arviss
         Div,
         Divu,
         Rem,
-        Remu
+        Remu,
+
+        // --- Rv32f
+
+        Fmv_x_w,
+        Fclass_s,
+        Fmv_w_x,
+        Fsqrt_s,
+        Fcvt_w_s,
+        Fcvt_wu_s,
+        Fcvt_s_w,
+        Fcvt_s_wu,
+        Fsgnj_s,
+        Fsgnjn_s,
+        Fsgnjx_s,
+        Fmin_s,
+        Fmax_s,
+        Fle_s,
+        Flt_s,
+        Feq_s,
+        Fadd_s,
+        Fsub_s,
+        Fmul_s,
+        Fdiv_s,
+        Flw,
+        Fsw,
+        Fmadd_s,
+        Fmsub_s,
+        Fnmsub_s,
+        Fnmadd_s,
     };
 
     // Illegal instruction.
@@ -143,6 +173,57 @@ namespace arviss
         Reg rs1;
     };
 
+    struct FloatRdRs1
+    {
+        Reg rd;
+        Reg rs1;
+    };
+
+    struct FloatRdRs1Rm
+    {
+        Reg rd;
+        Reg rs1;
+        u32 rm;
+    };
+
+    struct FloatRdRs1Rs2
+    {
+        Reg rd;
+        Reg rs1;
+        Reg rs2;
+    };
+
+    struct FloatRdRs1Rs2Rm
+    {
+        Reg rd;
+        Reg rs1;
+        Reg rs2;
+        u32 rm;
+    };
+
+    struct FloatRdRs1Rs2Rs3Rm
+    {
+        Reg rd;
+        Reg rs1;
+        Reg rs2;
+        Reg rs3;
+        u32 rm;
+    };
+
+    struct FloatRdRs1Imm
+    {
+        Reg rd;
+        Reg rs1;
+        u32 imm;
+    };
+
+    struct FloatRs1Rs2Imm
+    {
+        Reg rs1;
+        Reg rs2;
+        u32 imm;
+    };
+
     struct Encoding
     {
         Opcode opcode;
@@ -157,6 +238,13 @@ namespace arviss
             ArithType arithType;
             ImmShiftType immShiftType;
             FenceType fenceType;
+            FloatRdRs1 floatRdRs1;
+            FloatRdRs1Rm floatRdRs1Rm;
+            FloatRdRs1Rs2 floatRdRs1Rs2;
+            FloatRdRs1Rs2Rm floatRdRs1Rs2Rm;
+            FloatRdRs1Rs2Rs3Rm floatRdRs1Rs2Rs3Rm;
+            FloatRdRs1Imm floatRdRs1Imm;
+            FloatRs1Rs2Imm floatRs1Rs2Imm;
         };
     };
 
@@ -245,5 +333,75 @@ namespace arviss
     };
 
     static_assert(IsRv32imInstructionHandler<Rv32imArvissEncoder>);
+
+    // TODO: consider compact instructions, i.e., RV32c.
+
+    class Rv32imfArvissEncoder : public Rv32imArvissEncoder
+    {
+    public:
+        using Item = Rv32imArvissEncoder::Item;
+
+        auto Fmv_x_w(Reg rd, Reg rs1) -> Item { return {.opcode = Opcode::Fmv_x_w, .floatRdRs1{.rd = rd, .rs1 = rs1}}; }
+        auto Fclass_s(Reg rd, Reg rs1) -> Item { return {.opcode = Opcode::Fclass_s, .floatRdRs1{.rd = rd, .rs1 = rs1}}; }
+        auto Fmv_w_x(Reg rd, Reg rs1) -> Item { return {.opcode = Opcode::Fmv_w_x, .floatRdRs1{.rd = rd, .rs1 = rs1}}; }
+        auto Fsqrt_s(Reg rd, Reg rs1, u32 rm) -> Item { return {.opcode = Opcode::Fsqrt_s, .floatRdRs1Rm{.rd = rd, .rs1 = rs1, .rm = rm}}; }
+        auto Fcvt_w_s(Reg rd, Reg rs1, u32 rm) -> Item { return {.opcode = Opcode::Fcvt_w_s, .floatRdRs1Rm{.rd = rd, .rs1 = rs1, .rm = rm}}; }
+        auto Fcvt_wu_s(Reg rd, Reg rs1, u32 rm) -> Item { return {.opcode = Opcode::Fcvt_wu_s, .floatRdRs1Rm{.rd = rd, .rs1 = rs1, .rm = rm}}; }
+        auto Fcvt_s_w(Reg rd, Reg rs1, u32 rm) -> Item { return {.opcode = Opcode::Fcvt_s_w, .floatRdRs1Rm{.rd = rd, .rs1 = rs1, .rm = rm}}; }
+        auto Fcvt_s_wu(Reg rd, Reg rs1, u32 rm) -> Item { return {.opcode = Opcode::Fcvt_s_wu, .floatRdRs1Rm{.rd = rd, .rs1 = rs1, .rm = rm}}; }
+        auto Fsgnj_s(Reg rd, Reg rs1, Reg rs2) -> Item { return {.opcode = Opcode::Fsgnj_s, .floatRdRs1Rs2{.rd = rd, .rs1 = rs1, .rs2 = rs2}}; }
+        auto Fsgnjn_s(Reg rd, Reg rs1, Reg rs2) -> Item { return {.opcode = Opcode::Fsgnjn_s, .floatRdRs1Rs2{.rd = rd, .rs1 = rs1, .rs2 = rs2}}; }
+        auto Fsgnjx_s(Reg rd, Reg rs1, Reg rs2) -> Item { return {.opcode = Opcode::Fsgnjx_s, .floatRdRs1Rs2{.rd = rd, .rs1 = rs1, .rs2 = rs2}}; }
+        auto Fmin_s(Reg rd, Reg rs1, Reg rs2) -> Item { return {.opcode = Opcode::Fmin_s, .floatRdRs1Rs2{.rd = rd, .rs1 = rs1, .rs2 = rs2}}; }
+        auto Fmax_s(Reg rd, Reg rs1, Reg rs2) -> Item { return {.opcode = Opcode::Fmax_s, .floatRdRs1Rs2{.rd = rd, .rs1 = rs1, .rs2 = rs2}}; }
+        auto Fle_s(Reg rd, Reg rs1, Reg rs2) -> Item { return {.opcode = Opcode::Fle_s, .floatRdRs1Rs2{.rd = rd, .rs1 = rs1, .rs2 = rs2}}; }
+        auto Flt_s(Reg rd, Reg rs1, Reg rs2) -> Item { return {.opcode = Opcode::Flt_s, .floatRdRs1Rs2{.rd = rd, .rs1 = rs1, .rs2 = rs2}}; }
+        auto Feq_s(Reg rd, Reg rs1, Reg rs2) -> Item { return {.opcode = Opcode::Feq_s, .floatRdRs1Rs2{.rd = rd, .rs1 = rs1, .rs2 = rs2}}; }
+
+        auto Fadd_s(Reg rd, Reg rs1, Reg rs2, u32 rm) -> Item
+        {
+            return {.opcode = Opcode::Fadd_s, .floatRdRs1Rs2Rm{.rd = rd, .rs1 = rs1, .rs2 = rs2, .rm = rm}};
+        }
+
+        auto Fsub_s(Reg rd, Reg rs1, Reg rs2, u32 rm) -> Item
+        {
+            return {.opcode = Opcode::Fsub_s, .floatRdRs1Rs2Rm{.rd = rd, .rs1 = rs1, .rs2 = rs2, .rm = rm}};
+        }
+
+        auto Fmul_s(Reg rd, Reg rs1, Reg rs2, u32 rm) -> Item
+        {
+            return {.opcode = Opcode::Fmul_s, .floatRdRs1Rs2Rm{.rd = rd, .rs1 = rs1, .rs2 = rs2, .rm = rm}};
+        }
+
+        auto Fdiv_s(Reg rd, Reg rs1, Reg rs2, u32 rm) -> Item
+        {
+            return {.opcode = Opcode::Fdiv_s, .floatRdRs1Rs2Rm{.rd = rd, .rs1 = rs1, .rs2 = rs2, .rm = rm}};
+        }
+
+        auto Flw(Reg rd, Reg rs1, u32 imm) -> Item { return {.opcode = Opcode::Flw, .floatRdRs1Imm{.rd = rd, .rs1 = rs1, .imm = imm}}; }
+        auto Fsw(Reg rs1, Reg rs2, u32 imm) -> Item { return {.opcode = Opcode::Fsw, .floatRs1Rs2Imm{.rs1 = rs1, .rs2 = rs2, .imm = imm}}; }
+
+        auto Fmadd_s(Reg rd, Reg rs1, Reg rs2, Reg rs3, u32 rm) -> Item
+        {
+            return {.opcode = Opcode::Fmadd_s, .floatRdRs1Rs2Rs3Rm{.rd = rd, .rs1 = rs1, .rs2 = rs2, .rs3 = rs3, .rm = rm}};
+        }
+
+        auto Fmsub_s(Reg rd, Reg rs1, Reg rs2, Reg rs3, u32 rm) -> Item
+        {
+            return {.opcode = Opcode::Fmsub_s, .floatRdRs1Rs2Rs3Rm{.rd = rd, .rs1 = rs1, .rs2 = rs2, .rs3 = rs3, .rm = rm}};
+        }
+
+        auto Fnmsub_s(Reg rd, Reg rs1, Reg rs2, Reg rs3, u32 rm) -> Item
+        {
+            return {.opcode = Opcode::Fnmsub_s, .floatRdRs1Rs2Rs3Rm{.rd = rd, .rs1 = rs1, .rs2 = rs2, .rs3 = rs3, .rm = rm}};
+        }
+
+        auto Fnmadd_s(Reg rd, Reg rs1, Reg rs2, Reg rs3, u32 rm) -> Item
+        {
+            return {.opcode = Opcode::Fnmadd_s, .floatRdRs1Rs2Rs3Rm{.rd = rd, .rs1 = rs1, .rs2 = rs2, .rs3 = rs3, .rm = rm}};
+        }
+    };
+
+    static_assert(IsRv32imfInstructionHandler<Rv32imfArvissEncoder>);
 
 } // namespace arviss
