@@ -1,7 +1,8 @@
-#include "arviss/common/types.h"         // Address
-#include "arviss/platforms/basic/cpus.h" // BasicRv32imfCpu
-#include "arviss/rv32/arviss_encoder.h"  // Rv32iArvissEncoder
-#include "arviss/rv32/concepts.h"        // IsRv32imfCpu
+#include "arviss/common/types.h"          // Address
+#include "arviss/platforms/basic/cpus.h"  // BasicRv32imfCpu
+#include "arviss/rv32/arviss_encoder.h"   // Rv32iArvissEncoder
+#include "arviss/rv32/arviss_executors.h" // Arviss32iDispatcher
+#include "arviss/rv32/concepts.h"         // IsRv32imfCpu
 
 #include <format>
 #include <fstream>
@@ -10,13 +11,15 @@
 
 using namespace arviss;
 
-template<IsRv32imfCpu T>
+template<IsRv32iCpu T>
 auto Run(T& t, size_t count) -> void
 {
+    auto encoder = Rv32iDispatcher<Rv32iArvissEncoder>{};
     while (count > 0 && !t.IsTrapped())
     {
-        auto ins = t.Fetch(); // Fetch.
-        t.Dispatch(ins);      // Execute.
+        auto ins = t.Fetch();                       // Fetch.
+        auto arvissEncoded = encoder.Dispatch(ins); // Convert it into Arviss encoding.
+        t.DispatchEncoded(arvissEncoded);           // Dispatch it as an Arviss encoded instruction.
         --count;
     }
 }
@@ -44,10 +47,14 @@ auto main(int argc, char* argv[]) -> int
         Rv32iArvissEncoder encoder{};
 
         // Create a CPU.
-        using Cpu = Rv32imfCpuFloatCore<NoIoMem>;
-        static_assert(IsRv32imfCpu<Cpu>);
+        // using Cpu = Rv32iCpuIntegerCore<NoIoMem>;
+        using Cpu = Rv32iCpuIntegerCore<BasicMem>;
+        static_assert(IsRv32iCpu<Cpu>);
 
-        Cpu cpu{};
+        using ArvissEncodedCpu = Arviss32iDispatcher<Cpu>;
+        static_assert(IsRv32iCpu<ArvissEncodedCpu>);
+
+        ArvissEncodedCpu cpu{};
 
         // Populate its memory with the contents of the image.
         Address addr = 0;
