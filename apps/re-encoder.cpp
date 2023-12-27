@@ -16,7 +16,6 @@ using Cache = std::vector<Encoding>;
 template<IsRv32iCpu T>
 auto Run(T& t, size_t count) -> void
 {
-    auto encoder = Rv32iDispatcher<Rv32iArvissEncoder>{};
     while (count > 0 && !t.IsTrapped())
     {
         t.QuickDispatch();
