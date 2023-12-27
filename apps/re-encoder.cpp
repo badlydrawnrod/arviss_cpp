@@ -14,21 +14,12 @@ using namespace arviss;
 using Cache = std::vector<Encoding>;
 
 template<IsRv32iCpu T>
-auto Run(T& t, size_t count, Cache& cache) -> void
+auto Run(T& t, size_t count) -> void
 {
     auto encoder = Rv32iDispatcher<Rv32iArvissEncoder>{};
     while (count > 0 && !t.IsTrapped())
     {
-        auto pc = t.Transfer();                  // Update pc from nextPc.
-        auto arvissEncoded = cache[pc / 4];      // Look for the instruction in the cache.
-        if (arvissEncoded.opcode == Opcode::Fdx) // Decode it if we don't know about it.
-        {
-            auto ins = t.Fetch32(pc);              // Fetch the RISC-V encoded instruction from memory.
-            arvissEncoded = encoder.Dispatch(ins); // Convert it into Arviss encoding.
-            cache[pc / 4] = arvissEncoded;         // Place it in the cache.
-        }
-        t.SetNextPc(pc + 4);              // Go to the next instruction.
-        t.DispatchEncoded(arvissEncoded); // Dispatch it as an Arviss encoded instruction.
+        t.QuickDispatch();
         --count;
     }
 }
@@ -73,14 +64,12 @@ auto main(int argc, char* argv[]) -> int
             ++addr;
         }
 
-        Cache cache(8192);
-
         // Execute some instructions.
         for (int i = 0; i < 100000; i++)
         {
             cpu.ClearTraps();
             cpu.SetNextPc(0);
-            Run(cpu, 1000000, cache);
+            Run(cpu, 1000000);
 
             if (cpu.IsTrapped())
             {

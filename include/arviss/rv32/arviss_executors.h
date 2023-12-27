@@ -7,13 +7,28 @@
 
 namespace arviss
 {
-    template<IsRv32iInstructionHandler T>
+    using Cache = std::vector<Encoding>;
+
+    template<IsRv32iCpu T>
     class Arviss32iDispatcher : public T
     {
+        Cache cache_ = Cache{8192}; // TODO: magic number - 32KiB can hold 8192 instructions.
+        Rv32iDispatcher<Rv32iArvissEncoder> encoder_{};
+        Address pc_{};
+
         auto Self() -> T& { return static_cast<T&>(*this); }
 
     public:
         using Item = typename T::Item;
+
+        auto QuickDispatch() -> Item
+        {
+            auto& self = Self();
+            pc_ = self.Transfer();                 // Update pc from nextPc.
+            auto arvissEncoded = cache_[pc_ / 4];  // Look for the instruction in the cache. It'll be an Fdx if not present.
+            self.SetNextPc(pc_ + 4);               // Go to the next instruction.
+            return DispatchEncoded(arvissEncoded); // Dispatch the Arviss-encoded instruction.
+        }
 
         auto DispatchEncoded(const Encoding& e) -> Item
         {
@@ -22,9 +37,14 @@ namespace arviss
             switch (e.opcode)
             {
             // Arviss.
-            case Opcode::Fdx:
-                // TODO: implement Fdx.
-                break;
+            case Opcode::Fdx: {
+                auto ins = self.Fetch32(pc_);                // Fetch the RISC-V encoded instruction from memory.
+                auto arvissEncoded = encoder_.Dispatch(ins); // Encode it for Arviss.
+                cache_[pc_ / 4] = arvissEncoded;             // Cache it.
+
+                // Doesn't recurse, because we'll get an illegal instruction for anything that the encode doesn't know about.
+                return DispatchEncoded(arvissEncoded);
+            }
 
             // --- RV32i
 
@@ -127,10 +147,11 @@ namespace arviss
                 return self.Ecall();
             case Opcode::Ebreak:
                 return self.Ebreak();
-            }
 
             // Default to an illegal instruction.
-            return self.Illegal(e.illegal.ins);
+            default:
+                return self.Illegal(e.illegal.ins);
+            }
         }
     };
 } // namespace arviss
