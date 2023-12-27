@@ -16,6 +16,7 @@ namespace arviss
 
         // Illegal instruction.
         Illegal,
+
         // B-type instructions.
         Beq,
         Bne,
@@ -23,6 +24,7 @@ namespace arviss
         Bge,
         Bltu,
         Bgeu,
+
         // I-type instructions.
         Lb,
         Lh,
@@ -36,15 +38,19 @@ namespace arviss
         Ori,
         Andi,
         Jalr,
+
         // S-type instructions.
         Sb,
         Sh,
         Sw,
+
         // U-type instructions.
         Auipc,
         Lui,
+
         // J-type instructions.
         Jal,
+
         // Arithmetic instructions.
         Add,
         Sub,
@@ -56,10 +62,13 @@ namespace arviss
         Sra,
         Or,
         And,
+
         // Immediate shift instructions.
         Slli,
         Srli,
         Srai,
+
+        // System instructions.
         Fence,
         Ecall,
         Ebreak,
