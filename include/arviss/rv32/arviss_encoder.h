@@ -5,12 +5,12 @@
 
 namespace arviss
 {
-    // Arviss-encode opcodes.
+    // Arviss-encoded opcodes.
 
     enum class Opcode
     {
         // Arviss.
-        Fdx,
+        Fdx, // (F)etch the RISC-V encoded instruction, (D)ecode it to Arviss encoding, and e(X)ecute it.
 
         // --- RV32i
 
@@ -148,7 +148,7 @@ namespace arviss
     struct UType
     {
         Reg rd;
-        Reg uimm;
+        u32 uimm;
     };
 
     // J-type instruction.
