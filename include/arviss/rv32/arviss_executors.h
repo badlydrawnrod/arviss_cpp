@@ -148,6 +148,48 @@ namespace arviss
             case Opcode::Ebreak:
                 return self.Ebreak();
 
+            // --- RV32m
+            case Opcode::Mul:
+                if constexpr (IsRv32imCpu<T>)
+                {
+                    return self.Mul(e.arithType.rd, e.arithType.rs1, e.arithType.rs2);
+                }
+            case Opcode::Mulh:
+                if constexpr (IsRv32imCpu<T>)
+                {
+                    return self.Mulh(e.arithType.rd, e.arithType.rs1, e.arithType.rs2);
+                }
+            case Opcode::Mulhsu:
+                if constexpr (IsRv32imCpu<T>)
+                {
+                    return self.Mulhsu(e.arithType.rd, e.arithType.rs1, e.arithType.rs2);
+                }
+            case Opcode::Mulhu:
+                if constexpr (IsRv32imCpu<T>)
+                {
+                    return self.Mulhu(e.arithType.rd, e.arithType.rs1, e.arithType.rs2);
+                }
+            case Opcode::Div:
+                if constexpr (IsRv32imCpu<T>)
+                {
+                    return self.Div(e.arithType.rd, e.arithType.rs1, e.arithType.rs2);
+                }
+            case Opcode::Divu:
+                if constexpr (IsRv32imCpu<T>)
+                {
+                    return self.Divu(e.arithType.rd, e.arithType.rs1, e.arithType.rs2);
+                }
+            case Opcode::Rem:
+                if constexpr (IsRv32imCpu<T>)
+                {
+                    return self.Rem(e.arithType.rd, e.arithType.rs1, e.arithType.rs2);
+                }
+            case Opcode::Remu:
+                if constexpr (IsRv32imCpu<T>)
+                {
+                    return self.Remu(e.arithType.rd, e.arithType.rs1, e.arithType.rs2);
+                }
+
             // Default to an illegal instruction.
             default:
                 return self.Illegal(e.illegal.ins);
