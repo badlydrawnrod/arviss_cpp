@@ -36,18 +36,17 @@ namespace arviss
 
             switch (e.opcode)
             {
-            // Arviss.
+            // --- Arviss.
             case Opcode::Fdx: {
                 auto ins = self.Fetch32(pc_);                // Fetch the RISC-V encoded instruction from memory.
                 auto arvissEncoded = encoder_.Dispatch(ins); // Encode it for Arviss.
                 cache_[pc_ / 4] = arvissEncoded;             // Cache it.
 
-                // Doesn't recurse, because we'll get an illegal instruction for anything that the encode doesn't know about.
+                // Doesn't recurse, because we'll get an illegal instruction for anything that the encoder didn't know about.
                 return DispatchEncoded(arvissEncoded);
             }
 
-            // --- RV32i
-
+            // --- RV32i.
             // Illegal instruction.
             case Opcode::Illegal:
                 return self.Illegal(e.illegal.ins);
@@ -148,7 +147,8 @@ namespace arviss
             case Opcode::Ebreak:
                 return self.Ebreak();
 
-            // --- RV32m
+            // --- RV32m.
+            // Integer multiply and divide instructions.
             case Opcode::Mul:
                 if constexpr (IsRv32imCpu<T>)
                 {
@@ -188,6 +188,143 @@ namespace arviss
                 if constexpr (IsRv32imCpu<T>)
                 {
                     return self.Remu(e.arithType.rd, e.arithType.rs1, e.arithType.rs2);
+                }
+
+            // --- RV32f.
+            // Floating point instructions.
+            case Opcode::Fmv_x_w:
+                if constexpr (IsRv32imfCpu<T>)
+                {
+                    return self.Fmv_x_w(e.floatRdRs1.rd, e.floatRdRs1.rs1);
+                }
+            case Opcode::Fclass_s:
+                if constexpr (IsRv32imfCpu<T>)
+                {
+                    return self.Fclass_s(e.floatRdRs1.rd, e.floatRdRs1.rs1);
+                }
+            case Opcode::Fmv_w_x:
+                if constexpr (IsRv32imfCpu<T>)
+                {
+                    return self.Fmv_w_x(e.floatRdRs1.rd, e.floatRdRs1.rs1);
+                }
+            case Opcode::Fsqrt_s:
+                if constexpr (IsRv32imfCpu<T>)
+                {
+                    return self.Fsqrt_s(e.floatRdRs1Rm.rd, e.floatRdRs1Rm.rs1, e.floatRdRs1Rm.rm);
+                }
+            case Opcode::Fcvt_w_s:
+                if constexpr (IsRv32imfCpu<T>)
+                {
+                    return self.Fcvt_w_s(e.floatRdRs1Rm.rd, e.floatRdRs1Rm.rs1, e.floatRdRs1Rm.rm);
+                }
+            case Opcode::Fcvt_wu_s:
+                if constexpr (IsRv32imfCpu<T>)
+                {
+                    return self.Fcvt_wu_s(e.floatRdRs1Rm.rd, e.floatRdRs1Rm.rs1, e.floatRdRs1Rm.rm);
+                }
+            case Opcode::Fcvt_s_w:
+                if constexpr (IsRv32imfCpu<T>)
+                {
+                    return self.Fcvt_s_w(e.floatRdRs1Rm.rd, e.floatRdRs1Rm.rs1, e.floatRdRs1Rm.rm);
+                }
+            case Opcode::Fcvt_s_wu:
+                if constexpr (IsRv32imfCpu<T>)
+                {
+                    return self.Fcvt_s_wu(e.floatRdRs1Rm.rd, e.floatRdRs1Rm.rs1, e.floatRdRs1Rm.rm);
+                }
+            case Opcode::Fsgnj_s:
+                if constexpr (IsRv32imfCpu<T>)
+                {
+                    return self.Fsgnj_s(e.floatRdRs1Rs2.rd, e.floatRdRs1Rs2.rs1, e.floatRdRs1Rs2.rs2);
+                }
+            case Opcode::Fsgnjn_s:
+                if constexpr (IsRv32imfCpu<T>)
+                {
+                    return self.Fsgnjn_s(e.floatRdRs1Rs2.rd, e.floatRdRs1Rs2.rs1, e.floatRdRs1Rs2.rs2);
+                }
+            case Opcode::Fsgnjx_s:
+                if constexpr (IsRv32imfCpu<T>)
+                {
+                    return self.Fsgnjx_s(e.floatRdRs1Rs2.rd, e.floatRdRs1Rs2.rs1, e.floatRdRs1Rs2.rs2);
+                }
+            case Opcode::Fmin_s:
+                if constexpr (IsRv32imfCpu<T>)
+                {
+                    return self.Fmin_s(e.floatRdRs1Rs2.rd, e.floatRdRs1Rs2.rs1, e.floatRdRs1Rs2.rs2);
+                }
+            case Opcode::Fmax_s:
+                if constexpr (IsRv32imfCpu<T>)
+                {
+                    return self.Fmax_s(e.floatRdRs1Rs2.rd, e.floatRdRs1Rs2.rs1, e.floatRdRs1Rs2.rs2);
+                }
+            case Opcode::Fle_s:
+                if constexpr (IsRv32imfCpu<T>)
+                {
+                    return self.Fle_s(e.floatRdRs1Rs2.rd, e.floatRdRs1Rs2.rs1, e.floatRdRs1Rs2.rs2);
+                }
+            case Opcode::Flt_s:
+                if constexpr (IsRv32imfCpu<T>)
+                {
+                    return self.Flt_s(e.floatRdRs1Rs2.rd, e.floatRdRs1Rs2.rs1, e.floatRdRs1Rs2.rs2);
+                }
+            case Opcode::Feq_s:
+                if constexpr (IsRv32imfCpu<T>)
+                {
+                    return self.Feq_s(e.floatRdRs1Rs2.rd, e.floatRdRs1Rs2.rs1, e.floatRdRs1Rs2.rs2);
+                }
+            case Opcode::Fadd_s:
+                if constexpr (IsRv32imfCpu<T>)
+                {
+                    return self.Fadd_s(e.floatRdRs1Rs2Rm.rd, e.floatRdRs1Rs2Rm.rs1, e.floatRdRs1Rs2Rm.rs2, e.floatRdRs1Rs2Rm.rm);
+                }
+            case Opcode::Fsub_s:
+                if constexpr (IsRv32imfCpu<T>)
+                {
+                    return self.Fsub_s(e.floatRdRs1Rs2Rm.rd, e.floatRdRs1Rs2Rm.rs1, e.floatRdRs1Rs2Rm.rs2, e.floatRdRs1Rs2Rm.rm);
+                }
+            case Opcode::Fmul_s:
+                if constexpr (IsRv32imfCpu<T>)
+                {
+                    return self.Fmul_s(e.floatRdRs1Rs2Rm.rd, e.floatRdRs1Rs2Rm.rs1, e.floatRdRs1Rs2Rm.rs2, e.floatRdRs1Rs2Rm.rm);
+                }
+            case Opcode::Fdiv_s:
+                if constexpr (IsRv32imfCpu<T>)
+                {
+                    return self.Fdiv_s(e.floatRdRs1Rs2Rm.rd, e.floatRdRs1Rs2Rm.rs1, e.floatRdRs1Rs2Rm.rs2, e.floatRdRs1Rs2Rm.rm);
+                }
+            case Opcode::Flw:
+                if constexpr (IsRv32imfCpu<T>)
+                {
+                    return self.Flw(e.floatRdRs1Imm.rd, e.floatRdRs1Imm.rs1, e.floatRdRs1Imm.imm);
+                }
+            case Opcode::Fsw:
+                if constexpr (IsRv32imfCpu<T>)
+                {
+                    return self.Fsw(e.floatRs1Rs2Imm.rs1, e.floatRs1Rs2Imm.rs2, e.floatRs1Rs2Imm.imm);
+                }
+            case Opcode::Fmadd_s:
+                if constexpr (IsRv32imfCpu<T>)
+                {
+                    return self.Fmadd_s(e.floatRdRs1Rs2Rs3Rm.rd, e.floatRdRs1Rs2Rs3Rm.rs1, e.floatRdRs1Rs2Rs3Rm.rs2, e.floatRdRs1Rs2Rs3Rm.rs3,
+                                        e.floatRdRs1Rs2Rs3Rm.rm);
+                }
+            case Opcode::Fmsub_s:
+                if constexpr (IsRv32imfCpu<T>)
+                {
+                    return self.Fmsub_s(e.floatRdRs1Rs2Rs3Rm.rd, e.floatRdRs1Rs2Rs3Rm.rs1, e.floatRdRs1Rs2Rs3Rm.rs2, e.floatRdRs1Rs2Rs3Rm.rs3,
+                                        e.floatRdRs1Rs2Rs3Rm.rm);
+                }
+            case Opcode::Fnmsub_s:
+                if constexpr (IsRv32imfCpu<T>)
+                {
+                    return self.Fnmsub_s(e.floatRdRs1Rs2Rs3Rm.rd, e.floatRdRs1Rs2Rs3Rm.rs1, e.floatRdRs1Rs2Rs3Rm.rs2, e.floatRdRs1Rs2Rs3Rm.rs3,
+                                         e.floatRdRs1Rs2Rs3Rm.rm);
+                }
+            case Opcode::Fnmadd_s:
+                if constexpr (IsRv32imfCpu<T>)
+                {
+                    return self.Fnmadd_s(e.floatRdRs1Rs2Rs3Rm.rd, e.floatRdRs1Rs2Rs3Rm.rs1, e.floatRdRs1Rs2Rs3Rm.rs2, e.floatRdRs1Rs2Rs3Rm.rs3,
+                                         e.floatRdRs1Rs2Rs3Rm.rm);
                 }
 
             // Default to an illegal instruction.

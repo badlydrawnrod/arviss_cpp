@@ -46,7 +46,7 @@ auto main(int argc, char* argv[]) -> int
         Rv32iArvissEncoder encoder{};
 
         // Create a CPU.
-        using Cpu = Rv32imCpuIntegerCore<NoIoMem>;
+        using Cpu = Rv32imfCpuFloatCore<NoIoMem>;
         // using Cpu = Rv32iCpuIntegerCore<BasicMem>;
         static_assert(IsRv32iCpu<Cpu>);
 
