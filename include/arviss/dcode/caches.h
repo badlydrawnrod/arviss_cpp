@@ -17,7 +17,8 @@ namespace arviss
         SimpleCache() = default;
         SimpleCache(size_t size) : cache_(size) {}
 
-        DCode Get(Address addr) { return cache_[addr]; }
+        // DCode Get(Address addr) { return cache_[addr]; }
+        const DCode& Get(Address addr) const { return cache_[addr]; }
         void Put(Address addr, DCode e) { cache_[addr] = e; }
     };
 

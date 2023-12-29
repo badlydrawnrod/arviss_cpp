@@ -1,17 +1,17 @@
 #pragma once
 
 #include "arviss/core/concepts.h"
-#include "arviss/dcode/encoder.h"
 #include "arviss/dcode/caches.h"
 #include "arviss/dcode/concepts.h"
+#include "arviss/dcode/encoder.h"
 #include "arviss/rv32/concepts.h"
 #include "arviss/rv32/dispatchers.h"
 #include "arviss/rv32/executors.h"
 
 namespace arviss
 {
-    template<IsRv32iCpu T, IsCache CacheT>
-    class Arviss32iDispatcher : public T
+    template<IsRv32iCpu T, IsCache CacheT> // TODO: Why does this need the Dispatcher part?
+    class DCodeDispatcher : public T
     {
         CacheT cache_;
         Rv32iDispatcher<Rv32iToDCodeConverter> encoder_{}; // TODO: Shouldn't this be as wide as it can be rather than being restricted to RV32i?
@@ -22,17 +22,17 @@ namespace arviss
     public:
         using Item = typename T::Item;
 
-        Arviss32iDispatcher() : Arviss32iDispatcher(CacheT()) {}
+        DCodeDispatcher() : DCodeDispatcher(CacheT()) {}
 
-        Arviss32iDispatcher(CacheT&& cache) : cache_{std::move(cache)} {}
+        DCodeDispatcher(CacheT&& cache) : cache_{std::move(cache)} {}
 
         auto QuickDispatch() -> Item
         {
             auto& self = Self();
-            pc_ = self.Transfer();                          // Update pc from nextPc.
-            const auto arvissEncoded = cache_.Get(pc_ / 4); // Look for the instruction in the cache. It'll be an Fdx if not present.
-            self.SetNextPc(pc_ + 4);                        // Go to the next instruction.
-            return DispatchEncoded(arvissEncoded);          // Dispatch the DCode-encoded instruction.
+            pc_ = self.Transfer();                           // Update pc from nextPc.
+            const auto& arvissEncoded = cache_.Get(pc_ / 4); // Look for the instruction in the cache. It'll be an Fdx if not present.
+            self.SetNextPc(pc_ + 4);                         // Go to the next instruction.
+            return DispatchEncoded(arvissEncoded);           // Dispatch the DCode-encoded instruction.
         }
 
         auto DispatchEncoded(const DCode& e) -> Item
