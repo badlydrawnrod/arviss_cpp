@@ -1,7 +1,7 @@
 #pragma once
 
 #include "arviss/core/concepts.h"
-#include "arviss/dcode/arviss_encoder.h"
+#include "arviss/dcode/encoder.h"
 #include "arviss/dcode/caches.h"
 #include "arviss/dcode/concepts.h"
 #include "arviss/rv32/concepts.h"
@@ -14,7 +14,7 @@ namespace arviss
     class Arviss32iDispatcher : public T
     {
         CacheT cache_;
-        Rv32iDispatcher<Rv32iArvissEncoder> encoder_{};
+        Rv32iDispatcher<Rv32iToDCodeConverter> encoder_{}; // TODO: Shouldn't this be as wide as it can be rather than being restricted to RV32i?
         Address pc_{};
 
         auto Self() -> T& { return static_cast<T&>(*this); }
@@ -32,10 +32,10 @@ namespace arviss
             pc_ = self.Transfer();                          // Update pc from nextPc.
             const auto arvissEncoded = cache_.Get(pc_ / 4); // Look for the instruction in the cache. It'll be an Fdx if not present.
             self.SetNextPc(pc_ + 4);                        // Go to the next instruction.
-            return DispatchEncoded(arvissEncoded);          // Dispatch the Arviss-encoded instruction.
+            return DispatchEncoded(arvissEncoded);          // Dispatch the DCode-encoded instruction.
         }
 
-        auto DispatchEncoded(const Encoding& e) -> Item
+        auto DispatchEncoded(const DCode& e) -> Item
         {
             auto& self = Self();
 
@@ -44,7 +44,7 @@ namespace arviss
             // --- Arviss.
             case Opcode::Fdx: {
                 auto ins = self.Fetch32(pc_);                // Fetch the RISC-V encoded instruction from memory.
-                auto arvissEncoded = encoder_.Dispatch(ins); // Encode it for Arviss.
+                auto arvissEncoded = encoder_.Dispatch(ins); // Encode it as DCode.
                 cache_.Put(pc_ / 4, arvissEncoded);          // Cache it.
 
                 // Doesn't recurse, because we'll get an illegal instruction for anything that the encoder didn't know about.

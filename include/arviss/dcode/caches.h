@@ -1,7 +1,7 @@
 #pragma once
 
 #include "arviss/common/types.h"
-#include "arviss/dcode/arviss_encoder.h"
+#include "arviss/dcode/encoder.h"
 
 #include <vector>
 
@@ -11,14 +11,14 @@ namespace arviss
     {
         static const size_t defaultCacheSize = 8192;
 
-        std::vector<Encoding> cache_ = std::vector<Encoding>(defaultCacheSize);
+        std::vector<DCode> cache_ = std::vector<DCode>(defaultCacheSize);
 
     public:
         SimpleCache() = default;
         SimpleCache(size_t size) : cache_(size) {}
 
-        Encoding Get(Address addr) { return cache_[addr]; }
-        void Put(Address addr, Encoding e) { cache_[addr] = e; }
+        DCode Get(Address addr) { return cache_[addr]; }
+        void Put(Address addr, DCode e) { cache_[addr] = e; }
     };
 
 } // namespace arviss
