@@ -10,7 +10,7 @@
 
 namespace arviss
 {
-    template<IsRv32iCpu T, IsCache CacheT>
+    template<IsRv32iCpu T, IsCache CacheT> // TODO: Why does this need the Dispatcher part?
     class DCodeDispatcher : public T
     {
         CacheT cache_;
