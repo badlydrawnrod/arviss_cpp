@@ -1,19 +1,20 @@
 #pragma once
 
 #include "arviss/core/concepts.h"
-#include "arviss/rv32/arviss_encoder.h" // Opcode.
+#include "arviss/dcode/encoder.h"
+#include "arviss/dcode/caches.h"
+#include "arviss/dcode/concepts.h"
 #include "arviss/rv32/concepts.h"
+#include "arviss/rv32/dispatchers.h"
 #include "arviss/rv32/executors.h"
 
 namespace arviss
 {
-    using Cache = std::vector<Encoding>;
-
-    template<IsRv32iCpu T>
+    template<IsRv32iCpu T, IsCache CacheT>
     class Arviss32iDispatcher : public T
     {
-        Cache cache_ = Cache{8192}; // TODO: magic number - 32KiB can hold 8192 instructions.
-        Rv32iDispatcher<Rv32iArvissEncoder> encoder_{};
+        CacheT cache_;
+        Rv32iDispatcher<Rv32iToDCodeConverter> encoder_{}; // TODO: Shouldn't this be as wide as it can be rather than being restricted to RV32i?
         Address pc_{};
 
         auto Self() -> T& { return static_cast<T&>(*this); }
@@ -21,16 +22,20 @@ namespace arviss
     public:
         using Item = typename T::Item;
 
+        Arviss32iDispatcher() : Arviss32iDispatcher(CacheT()) {}
+
+        Arviss32iDispatcher(CacheT&& cache) : cache_{std::move(cache)} {}
+
         auto QuickDispatch() -> Item
         {
             auto& self = Self();
-            pc_ = self.Transfer();                 // Update pc from nextPc.
-            auto arvissEncoded = cache_[pc_ / 4];  // Look for the instruction in the cache. It'll be an Fdx if not present.
-            self.SetNextPc(pc_ + 4);               // Go to the next instruction.
-            return DispatchEncoded(arvissEncoded); // Dispatch the Arviss-encoded instruction.
+            pc_ = self.Transfer();                          // Update pc from nextPc.
+            const auto arvissEncoded = cache_.Get(pc_ / 4); // Look for the instruction in the cache. It'll be an Fdx if not present.
+            self.SetNextPc(pc_ + 4);                        // Go to the next instruction.
+            return DispatchEncoded(arvissEncoded);          // Dispatch the DCode-encoded instruction.
         }
 
-        auto DispatchEncoded(const Encoding& e) -> Item
+        auto DispatchEncoded(const DCode& e) -> Item
         {
             auto& self = Self();
 
@@ -39,8 +44,8 @@ namespace arviss
             // --- Arviss.
             case Opcode::Fdx: {
                 auto ins = self.Fetch32(pc_);                // Fetch the RISC-V encoded instruction from memory.
-                auto arvissEncoded = encoder_.Dispatch(ins); // Encode it for Arviss.
-                cache_[pc_ / 4] = arvissEncoded;             // Cache it.
+                auto arvissEncoded = encoder_.Dispatch(ins); // Encode it as DCode.
+                cache_.Put(pc_ / 4, arvissEncoded);          // Cache it.
 
                 // Doesn't recurse, because we'll get an illegal instruction for anything that the encoder didn't know about.
                 return DispatchEncoded(arvissEncoded);

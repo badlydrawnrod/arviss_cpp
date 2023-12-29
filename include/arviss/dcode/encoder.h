@@ -5,7 +5,7 @@
 
 namespace arviss
 {
-    // Arviss-encoded opcodes.
+    // DCode-encoded opcodes.
 
     enum class Opcode
     {
@@ -233,7 +233,8 @@ namespace arviss
         u32 imm;
     };
 
-    struct Encoding
+    // A deconstructed instruction - aka "DCode".
+    struct DCode
     {
         Opcode opcode;
         union
@@ -258,10 +259,10 @@ namespace arviss
     };
 
     // An Rv32i instruction handler that re-encodes instructions for Arviss.
-    class Rv32iArvissEncoder
+    class Rv32iToDCodeConverter
     {
     public:
-        using Item = Encoding;
+        using Item = DCode;
 
         // Illegal instruction.
         auto Illegal(u32 ins) -> Item { return {.opcode = Opcode::Illegal, .illegal = {.ins = ins}}; }
@@ -323,13 +324,13 @@ namespace arviss
         auto Ebreak() -> Item { return {.opcode = Opcode::Ebreak}; }
     };
 
-    static_assert(IsRv32iInstructionHandler<Rv32iArvissEncoder>);
+    static_assert(IsRv32iInstructionHandler<Rv32iToDCodeConverter>);
 
     // An Rv32im instruction handler that re-encodes instructions for Arviss.
-    class Rv32imArvissEncoder : public Rv32iArvissEncoder
+    class Rv32imToDCodeConverter : public Rv32iToDCodeConverter
     {
     public:
-        using Item = Rv32iArvissEncoder::Item;
+        using Item = Rv32iToDCodeConverter::Item;
 
         auto Mul(Reg rd, Reg rs1, Reg rs2) -> Item { return {.opcode = Opcode::Mul, .arithType = {.rd = rd, .rs1 = rs1, .rs2 = rs2}}; }
         auto Mulh(Reg rd, Reg rs1, Reg rs2) -> Item { return {.opcode = Opcode::Mulh, .arithType = {.rd = rd, .rs1 = rs1, .rs2 = rs2}}; }
@@ -341,14 +342,14 @@ namespace arviss
         auto Remu(Reg rd, Reg rs1, Reg rs2) -> Item { return {.opcode = Opcode::Remu, .arithType = {.rd = rd, .rs1 = rs1, .rs2 = rs2}}; }
     };
 
-    static_assert(IsRv32imInstructionHandler<Rv32imArvissEncoder>);
+    static_assert(IsRv32imInstructionHandler<Rv32imToDCodeConverter>);
 
     // TODO: consider compact instructions, i.e., RV32c.
 
-    class Rv32imfArvissEncoder : public Rv32imArvissEncoder
+    class Rv32imfToDCodeConverter : public Rv32imToDCodeConverter
     {
     public:
-        using Item = Rv32imArvissEncoder::Item;
+        using Item = Rv32imToDCodeConverter::Item;
 
         auto Fmv_x_w(Reg rd, Reg rs1) -> Item { return {.opcode = Opcode::Fmv_x_w, .floatRdRs1{.rd = rd, .rs1 = rs1}}; }
         auto Fclass_s(Reg rd, Reg rs1) -> Item { return {.opcode = Opcode::Fclass_s, .floatRdRs1{.rd = rd, .rs1 = rs1}}; }
@@ -411,6 +412,6 @@ namespace arviss
         }
     };
 
-    static_assert(IsRv32imfInstructionHandler<Rv32imfArvissEncoder>);
+    static_assert(IsRv32imfInstructionHandler<Rv32imfToDCodeConverter>);
 
 } // namespace arviss

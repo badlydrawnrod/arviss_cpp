@@ -1,8 +1,8 @@
-#include "arviss/common/types.h"          // Address
-#include "arviss/platforms/basic/cpus.h"  // BasicRv32imfCpu
-#include "arviss/rv32/arviss_encoder.h"   // Rv32iArvissEncoder
-#include "arviss/rv32/arviss_executors.h" // Arviss32iDispatcher
-#include "arviss/rv32/concepts.h"         // IsRv32imfCpu
+#include "arviss/common/types.h"
+#include "arviss/dcode/encoder.h"
+#include "arviss/dcode/executors.h"
+#include "arviss/platforms/basic/cpus.h"
+#include "arviss/rv32/concepts.h"
 
 #include <format>
 #include <fstream>
@@ -11,7 +11,7 @@
 
 using namespace arviss;
 
-using Cache = std::vector<Encoding>;
+using Cache = std::vector<DCode>;
 
 template<IsRv32iCpu T>
 auto Run(T& t, size_t count) -> void
@@ -42,18 +42,15 @@ auto main(int argc, char* argv[]) -> int
         fileHandle.read(reinterpret_cast<char*>(buf.data()), fileSize);
         fileHandle.close();
 
-        // Create an encoder.
-        Rv32iArvissEncoder encoder{};
-
         // Create a CPU.
         using Cpu = Rv32imfCpuFloatCore<NoIoMem>;
         // using Cpu = Rv32iCpuIntegerCore<BasicMem>;
         static_assert(IsRv32iCpu<Cpu>);
 
-        using ArvissEncodedCpu = Arviss32iDispatcher<Cpu>;
+        using ArvissEncodedCpu = Arviss32iDispatcher<Cpu, SimpleCache>;
         static_assert(IsRv32iCpu<ArvissEncodedCpu>);
 
-        ArvissEncodedCpu cpu{};
+        ArvissEncodedCpu cpu{SimpleCache()};
 
         // Populate its memory with the contents of the image.
         Address addr = 0;
