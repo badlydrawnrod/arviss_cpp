@@ -2,34 +2,14 @@
 
 #include "arviss/core/concepts.h"
 #include "arviss/dcode/arviss_encoder.h"
+#include "arviss/dcode/caches.h"
+#include "arviss/dcode/concepts.h"
 #include "arviss/rv32/concepts.h"
 #include "arviss/rv32/dispatchers.h"
 #include "arviss/rv32/executors.h"
 
-#include <vector>
-
 namespace arviss
 {
-    template<typename T>
-    concept IsCache = requires(T t, Encoding e) {
-        e = t.Get(Address{}); // Read from the cache at a given address.
-        t.Put(Address{}, e);  // Write to the cache at a given address.
-    };
-
-    class SimpleCache
-    {
-        static const size_t defaultCacheSize = 8192;
-
-        std::vector<Encoding> cache_ = std::vector<Encoding>(defaultCacheSize);
-
-    public:
-        SimpleCache() = default;
-        SimpleCache(size_t size) : cache_(size) {}
-
-        Encoding Get(Address addr) { return cache_[addr]; }
-        void Put(Address addr, Encoding e) { cache_[addr] = e; }
-    };
-
     template<IsRv32iCpu T, IsCache CacheT>
     class Arviss32iDispatcher : public T
     {
