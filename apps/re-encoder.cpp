@@ -50,10 +50,10 @@ auto main(int argc, char* argv[]) -> int
         // using Cpu = Rv32iCpuIntegerCore<BasicMem>;
         static_assert(IsRv32iCpu<Cpu>);
 
-        using ArvissEncodedCpu = Arviss32iDispatcher<Cpu>;
+        using ArvissEncodedCpu = Arviss32iDispatcher<Cpu, SimpleCache>;
         static_assert(IsRv32iCpu<ArvissEncodedCpu>);
 
-        ArvissEncodedCpu cpu{};
+        ArvissEncodedCpu cpu{SimpleCache()};
 
         // Populate its memory with the contents of the image.
         Address addr = 0;
