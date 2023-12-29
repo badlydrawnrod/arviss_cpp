@@ -1,9 +1,12 @@
 #pragma once
 
 #include "arviss/core/concepts.h"
-#include "arviss/rv32/arviss_encoder.h"
+#include "arviss/dcode/arviss_encoder.h"
 #include "arviss/rv32/concepts.h"
+#include "arviss/rv32/dispatchers.h"
 #include "arviss/rv32/executors.h"
+
+#include <vector>
 
 namespace arviss
 {

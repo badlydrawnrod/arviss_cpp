@@ -1,8 +1,8 @@
-#include "arviss/common/types.h"          // Address
-#include "arviss/platforms/basic/cpus.h"  // BasicRv32imfCpu
-#include "arviss/rv32/arviss_encoder.h"   // Rv32iArvissEncoder
-#include "arviss/rv32/arviss_executors.h" // Arviss32iDispatcher
-#include "arviss/rv32/concepts.h"         // IsRv32imfCpu
+#include "arviss/common/types.h"           // Address
+#include "arviss/dcode/arviss_encoder.h"   // Rv32iArvissEncoder
+#include "arviss/dcode/arviss_executors.h" // Arviss32iDispatcher
+#include "arviss/platforms/basic/cpus.h"   // BasicRv32imfCpu
+#include "arviss/rv32/concepts.h"          // IsRv32imfCpu
 
 #include <format>
 #include <fstream>
