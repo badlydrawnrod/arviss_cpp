@@ -13,16 +13,16 @@ namespace arviss
     namespace
     {
         template<typename T>
-            requires IsRv32iInstructionHandler<T> // T is a handler for Rv32i.
-                && !IsRv32mInstructionHandler<T>  // T is NOT a handler for Rv32m.
-                && !IsRv32fInstructionHandler<T>  // T is NOT a handler for Rv32f.
-                   auto EncoderFor()->Rv32iDispatcher<Rv32iToDCodeConverter>;
+            requires IsRv32iInstructionHandler<T>  // T is a handler for Rv32i.
+                && (!IsRv32mInstructionHandler<T>) // T is NOT a handler for Rv32m.
+                && (!IsRv32fInstructionHandler<T>) // T is NOT a handler for Rv32f.
+        auto EncoderFor() -> Rv32iDispatcher<Rv32iToDCodeConverter>;
 
         template<typename T>
-            requires IsRv32iInstructionHandler<T> // T is a handler for Rv32i.
-                && IsRv32mInstructionHandler<T>   // T is a handler for Rv32m.
-                && !IsRv32fInstructionHandler<T>  // T is NOT a handler for Rv32f.
-                   auto EncoderFor()->Rv32imDispatcher<Rv32imToDCodeConverter>;
+            requires IsRv32iInstructionHandler<T>  // T is a handler for Rv32i.
+                && IsRv32mInstructionHandler<T>    // T is a handler for Rv32m.
+                && (!IsRv32fInstructionHandler<T>) // T is NOT a handler for Rv32f.
+        auto EncoderFor() -> Rv32imDispatcher<Rv32imToDCodeConverter>;
 
         template<typename T>
             requires IsRv32iInstructionHandler<T> // T is a handler for Rv32i.
