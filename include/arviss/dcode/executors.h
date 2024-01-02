@@ -10,20 +10,39 @@
 
 namespace arviss
 {
-    // For a DCodeDispatcher to work, T must satisfy the following requirements, encoded in IsDCodeDispatchable.
-    // - IsRv32iInstructionHandler<T> so that it can call Add(), Beq(), etc.
-    // - HasFetch<T> so that it can call Transfer() and SetNextPc()
-    //
-    // Further requirements for RV32 extensions are guarded by `if constexpr` on instruction handlers for the relevant
-    // concept.
-    template<typename T>
-    concept IsDCodeDispatchable = IsRv32iInstructionHandler<T> && HasFetch<T>;
+    namespace
+    {
+        template<typename T>
+            requires IsRv32iInstructionHandler<T> // T is a handler for Rv32i.
+                && !IsRv32mInstructionHandler<T>  // T is NOT a handler for Rv32m.
+                && !IsRv32fInstructionHandler<T>  // T is NOT a handler for Rv32f.
+                   auto EncoderFor()->Rv32iDispatcher<Rv32iToDCodeConverter>;
 
-    template<IsDCodeDispatchable T, IsCache CacheT> // TODO: Why does this need the Dispatcher part?
+        template<typename T>
+            requires IsRv32iInstructionHandler<T> // T is a handler for Rv32i.
+                && IsRv32mInstructionHandler<T>   // T is a handler for Rv32m.
+                && !IsRv32fInstructionHandler<T>  // T is NOT a handler for Rv32f.
+                   auto EncoderFor()->Rv32imDispatcher<Rv32imToDCodeConverter>;
+
+        template<typename T>
+            requires IsRv32iInstructionHandler<T> // T is a handler for Rv32i.
+                && IsRv32mInstructionHandler<T>   // T is a handler for Rv32i.
+                && IsRv32fInstructionHandler<T>   // T is a handler for Rv32f.
+        auto EncoderFor() -> Rv32imfDispatcher<Rv32imfToDCodeConverter>;
+
+    } // namespace
+
+    template<IsDCodeDispatchable T, IsCache CacheT>
     class DCodeDispatcher : public T
     {
         CacheT cache_;
-        Rv32iDispatcher<Rv32iToDCodeConverter> encoder_{}; // TODO: This should reflect what T can do, rather than being restricted to RV32i.
+
+        // We want a different encoder dependending on the capabilities of the instruction handler, because otherwise
+        // the dispatcher has to do work unnecessarily.
+        using EncoderType = decltype(EncoderFor<T>());
+
+        EncoderType encoder_{};
+
         Address pc_{};
 
         auto Self() -> T& { return static_cast<T&>(*this); }
