@@ -344,8 +344,6 @@ namespace arviss
 
     static_assert(IsRv32imInstructionHandler<Rv32imToDCodeConverter>);
 
-    // TODO: consider compact instructions, i.e., RV32c.
-
     class Rv32imfToDCodeConverter : public Rv32imToDCodeConverter
     {
     public:
