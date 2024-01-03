@@ -21,9 +21,6 @@ namespace arviss
     public:
         auto Read8(Address address) -> u8
         {
-            // TODO: Given that this is *checked* memory, then we could use mem_.at(address) and re-throw std::out_of_range as a TrappedException.
-            // And, yes, this is true, but the underlying code looks no better - in fact, slightly worse because it throws one exception only to
-            // call another.
             if (address < mem_.size())
             {
                 return mem_[address];

@@ -11,8 +11,6 @@
 
 using namespace arviss;
 
-using Cache = std::vector<DCode>;
-
 template<IsRv32iCpu T>
 auto Run(T& t, size_t count) -> void
 {

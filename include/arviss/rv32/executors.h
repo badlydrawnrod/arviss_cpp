@@ -40,7 +40,7 @@ namespace arviss
             auto& self = Self();
             if (self.Rx(rs1) == self.Rx(rs2))
             {
-                self.SetNextPc(self.Pc() + bimm); // TODO: wrapping add
+                self.SetNextPc(self.Pc() + bimm);
             }
         }
 
@@ -50,7 +50,7 @@ namespace arviss
             auto& self = Self();
             if (self.Rx(rs1) != self.Rx(rs2))
             {
-                self.SetNextPc(self.Pc() + bimm); // TODO: wrapping add
+                self.SetNextPc(self.Pc() + bimm);
             }
         }
 
@@ -61,7 +61,7 @@ namespace arviss
             auto& self = Self();
             if (static_cast<i32>(self.Rx(rs1)) < static_cast<i32>(self.Rx(rs2)))
             {
-                self.SetNextPc(self.Pc() + bimm); // TODO: wrapping add
+                self.SetNextPc(self.Pc() + bimm);
             }
         }
 
@@ -72,7 +72,7 @@ namespace arviss
             auto& self = Self();
             if (static_cast<i32>(self.Rx(rs1)) >= static_cast<i32>(self.Rx(rs2)))
             {
-                self.SetNextPc(self.Pc() + bimm); // TODO: wrapping add
+                self.SetNextPc(self.Pc() + bimm);
             }
         }
 
@@ -83,7 +83,7 @@ namespace arviss
             auto& self = Self();
             if (self.Rx(rs1) < self.Rx(rs2))
             {
-                self.SetNextPc(self.Pc() + bimm); // TODO: wrapping add
+                self.SetNextPc(self.Pc() + bimm);
             }
         }
 
@@ -94,7 +94,7 @@ namespace arviss
             auto& self = Self();
             if (self.Rx(rs1) >= self.Rx(rs2))
             {
-                self.SetNextPc(self.Pc() + bimm); // TODO: wrapping add
+                self.SetNextPc(self.Pc() + bimm);
             }
         }
 
@@ -195,7 +195,7 @@ namespace arviss
             // rd <- pc + 4, pc <- (rs1 + imm_i) & ~1
             auto& self = Self();
             auto rs1Before = self.Rx(rs1); // Because rd and rs1 might be the same register.
-            self.Wx(rd, self.Pc() + 4);    // TODO: wrapping add
+            self.Wx(rd, self.Pc() + 4);
             self.SetNextPc(rs1Before + (iimm & ~1u));
         }
 
@@ -231,7 +231,7 @@ namespace arviss
         {
             // rd <- pc + imm_u, pc += 4
             auto& self = Self();
-            self.Wx(rd, self.Pc() + uimm); // TODO: wrapping add
+            self.Wx(rd, self.Pc() + uimm);
         }
 
         auto Lui(Reg rd, u32 uimm) -> Item
@@ -247,8 +247,8 @@ namespace arviss
         {
             // rd <- pc + 4, pc <- pc + imm_j
             auto& self = Self();
-            self.Wx(rd, self.Pc() + 4);       // TODO: wrapping add
-            self.SetNextPc(self.Pc() + jimm); // TODO: wrapping add
+            self.Wx(rd, self.Pc() + 4);
+            self.SetNextPc(self.Pc() + jimm);
         }
 
         // Arithmetic instructions.
@@ -486,7 +486,7 @@ namespace arviss
             // jalr x1, 0(rs1)
             auto& self = Self();
             auto rs1Before = self.Rx(rs1n0);      // Because rs1 might be RA.
-            self.Wx(RegNames::RA, self.Pc() + 2); // TODO: wrapping add.
+            self.Wx(RegNames::RA, self.Pc() + 2);
             self.SetNextPc(rs1Before & ~1);
         }
 
@@ -626,8 +626,8 @@ namespace arviss
         {
             // jal x1, offset[11:1]
             auto& self = Self();
-            self.Wx(RegNames::RA, self.Pc() + 2); // TODO: wrapping add
-            self.SetNextPc(self.Pc() + imm);      // TODO: wrapping add
+            self.Wx(RegNames::RA, self.Pc() + 2);
+            self.SetNextPc(self.Pc() + imm);
         }
 
         auto C_slli(Reg rdrs1n0, u32 imm) -> Item
