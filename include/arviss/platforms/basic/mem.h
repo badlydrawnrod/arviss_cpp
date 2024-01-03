@@ -2,11 +2,15 @@
 
 #include "arviss/common/types.h"
 
+#include <bit>
 #include <iostream>
 #include <vector>
 
 namespace arviss
 {
+    // If you're not an a little-endian platform or a big-endian platform then all bets are off.
+    static_assert(std::endian::native == std::endian::little || std::endian::native == std::endian::big);
+
     // A mixin implementation of a simple, checked address space that can signal bad access. It also has some simple
     // memory-mapped I/O in the form of a TTY.
     class BasicMem
@@ -36,9 +40,15 @@ namespace arviss
         {
             if (address < mem_.size() - 1)
             {
-                // TODO: What if we're on a big-endian machine, or one that complains about alignment?
-                auto* p = reinterpret_cast<u16*>(&mem_[address]);
-                return *p;
+                if constexpr (std::endian::native == std::endian::little)
+                {
+                    auto* p = reinterpret_cast<u16*>(&mem_[address]);
+                    return *p;
+                }
+                else if constexpr (std::endian::native == std::endian::big)
+                {
+                    return (mem_[address] << 8) | mem_[address + 1];
+                }
             }
             throw TrappedException(TrapType::LoadAccessFault);
         }
@@ -47,9 +57,15 @@ namespace arviss
         {
             if (address < mem_.size() - 3)
             {
-                // TODO: What if we're on a big-endian machine, or one that complains about alignment?
-                auto* p = reinterpret_cast<u32*>(&mem_[address]);
-                return *p;
+                if constexpr (std::endian::native == std::endian::little)
+                {
+                    auto* p = reinterpret_cast<u32*>(&mem_[address]);
+                    return *p;
+                }
+                else if constexpr (std::endian::native == std::endian::big)
+                {
+                    return (mem_[address] << 24) | (mem_[address + 1] << 16) | (mem_[address + 2] << 8) | mem_[address + 3];
+                }
             }
             throw TrappedException(TrapType::LoadAccessFault);
         }
@@ -74,9 +90,16 @@ namespace arviss
         {
             if (address < mem_.size() - 1)
             {
-                // TODO: What if we're on a big-endian machine, or one that complains about alignment?
-                auto* p = reinterpret_cast<u16*>(&mem_[address]);
-                *p = halfWord;
+                if constexpr (std::endian::native == std::endian::little)
+                {
+                    auto* p = reinterpret_cast<u16*>(&mem_[address]);
+                    *p = halfWord;
+                }
+                else if constexpr (std::endian::native == std::endian::big)
+                {
+                    mem_[address] = (halfWord >> 8) & 0xff;
+                    mem_[address + 1] = halfWord & 0xff;
+                }
             }
             else
             {
@@ -88,9 +111,18 @@ namespace arviss
         {
             if (address < mem_.size() - 3)
             {
-                // TODO: What if we're on a big-endian machine, or one that complains about alignment?
-                auto* p = reinterpret_cast<u32*>(&mem_[address]);
-                *p = word;
+                if constexpr (std::endian::native == std::endian::little)
+                {
+                    auto* p = reinterpret_cast<u32*>(&mem_[address]);
+                    *p = word;
+                }
+                else if constexpr (std::endian::native == std::endian::big)
+                {
+                    mem_[address] = (word >> 24) & 0xff;
+                    mem_[address + 1] = (word >> 16) & 0xff;
+                    mem_[address + 2] = (word >> 8) & 0xff;
+                    mem_[address + 3] = word & 0xff;
+                }
             }
             else
             {
@@ -113,9 +145,6 @@ namespace arviss
     public:
         auto Read8(Address address) -> u8
         {
-            // TODO: Given that this is *checked* memory, then we could use mem_.at(address) and re-throw std::out_of_range as a TrappedException.
-            // And, yes, this is true, but the underlying code looks no better - in fact, slightly worse because it throws one exception only to
-            // call another.
             if (address < mem_.size())
             {
                 return mem_[address];
@@ -131,9 +160,15 @@ namespace arviss
         {
             if (address < mem_.size() - 1)
             {
-                // TODO: What if we're on a big-endian machine, or one that complains about alignment?
-                auto* p = reinterpret_cast<u16*>(&mem_[address]);
-                return *p;
+                if constexpr (std::endian::native == std::endian::little)
+                {
+                    auto* p = reinterpret_cast<u16*>(&mem_[address]);
+                    return *p;
+                }
+                else if constexpr (std::endian::native == std::endian::big)
+                {
+                    return (mem_[address] << 8) | mem_[address + 1];
+                }
             }
             throw TrappedException(TrapType::LoadAccessFault);
         }
@@ -142,9 +177,15 @@ namespace arviss
         {
             if (address < mem_.size() - 3)
             {
-                // TODO: What if we're on a big-endian machine, or one that complains about alignment?
-                auto* p = reinterpret_cast<u32*>(&mem_[address]);
-                return *p;
+                if constexpr (std::endian::native == std::endian::little)
+                {
+                    auto* p = reinterpret_cast<u32*>(&mem_[address]);
+                    return *p;
+                }
+                else if constexpr (std::endian::native == std::endian::big)
+                {
+                    return (mem_[address] << 24) | (mem_[address + 1] << 16) | (mem_[address + 2] << 8) | mem_[address + 3];
+                }
             }
             throw TrappedException(TrapType::LoadAccessFault);
         }
@@ -169,9 +210,16 @@ namespace arviss
         {
             if (address < mem_.size() - 1)
             {
-                // TODO: What if we're on a big-endian machine, or one that complains about alignment?
-                auto* p = reinterpret_cast<u16*>(&mem_[address]);
-                *p = halfWord;
+                if constexpr (std::endian::native == std::endian::little)
+                {
+                    auto* p = reinterpret_cast<u16*>(&mem_[address]);
+                    *p = halfWord;
+                }
+                else if constexpr (std::endian::native == std::endian::big)
+                {
+                    mem_[address] = (halfWord >> 8) & 0xff;
+                    mem_[address + 1] = halfWord & 0xff;
+                }
             }
             else
             {
@@ -183,9 +231,18 @@ namespace arviss
         {
             if (address < mem_.size() - 3)
             {
-                // TODO: What if we're on a big-endian machine, or one that complains about alignment?
-                auto* p = reinterpret_cast<u32*>(&mem_[address]);
-                *p = word;
+                if constexpr (std::endian::native == std::endian::little)
+                {
+                    auto* p = reinterpret_cast<u32*>(&mem_[address]);
+                    *p = word;
+                }
+                else if constexpr (std::endian::native == std::endian::big)
+                {
+                    mem_[address] = (word >> 24) & 0xff;
+                    mem_[address + 1] = (word >> 16) & 0xff;
+                    mem_[address + 2] = (word >> 8) & 0xff;
+                    mem_[address + 3] = word & 0xff;
+                }
             }
             else
             {
