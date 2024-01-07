@@ -26,3 +26,20 @@ add_app(runner)
 add_app(windows_memory)
 
 add_folders(Apps)
+
+if(NOT DEFINED ASMJIT_STATIC)
+  set(ASMJIT_STATIC TRUE)
+endif()
+
+include(FetchContent)
+
+FetchContent_Declare(
+  asmjit
+  GIT_REPOSITORY https://github.com/asmjit/asmjit
+  GIT_TAG        master
+)
+
+FetchContent_MakeAvailable(asmjit)
+
+add_app(use_asmjit)
+target_link_libraries(use_asmjit PRIVATE AsmJit::AsmJit)
