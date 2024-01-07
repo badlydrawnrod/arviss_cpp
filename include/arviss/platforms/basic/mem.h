@@ -97,8 +97,8 @@ namespace arviss
                 }
                 else if constexpr (std::endian::native == std::endian::big)
                 {
-                    mem_[address] = (halfWord >> 8) & 0xff;
-                    mem_[address + 1] = halfWord & 0xff;
+                    mem_[address] = (halfWord >> 8) & 0xffu;
+                    mem_[address + 1] = halfWord & 0xffu;
                 }
             }
             else
@@ -118,10 +118,10 @@ namespace arviss
                 }
                 else if constexpr (std::endian::native == std::endian::big)
                 {
-                    mem_[address] = (word >> 24) & 0xff;
-                    mem_[address + 1] = (word >> 16) & 0xff;
-                    mem_[address + 2] = (word >> 8) & 0xff;
-                    mem_[address + 3] = word & 0xff;
+                    mem_[address] = (word >> 24) & 0xffu;
+                    mem_[address + 1] = (word >> 16) & 0xffu;
+                    mem_[address + 2] = (word >> 8) & 0xffu;
+                    mem_[address + 3] = word & 0xffu;
                 }
             }
             else
@@ -217,8 +217,8 @@ namespace arviss
                 }
                 else if constexpr (std::endian::native == std::endian::big)
                 {
-                    mem_[address] = (halfWord >> 8) & 0xff;
-                    mem_[address + 1] = halfWord & 0xff;
+                    mem_[address] = (halfWord >> 8) & 0xffu;
+                    mem_[address + 1] = halfWord & 0xffu;
                 }
             }
             else
@@ -238,10 +238,10 @@ namespace arviss
                 }
                 else if constexpr (std::endian::native == std::endian::big)
                 {
-                    mem_[address] = (word >> 24) & 0xff;
-                    mem_[address + 1] = (word >> 16) & 0xff;
-                    mem_[address + 2] = (word >> 8) & 0xff;
-                    mem_[address + 3] = word & 0xff;
+                    mem_[address] = (word >> 24) & 0xffu;
+                    mem_[address + 1] = (word >> 16) & 0xffu;
+                    mem_[address + 2] = (word >> 8) & 0xffu;
+                    mem_[address + 3] = word & 0xffu;
                 }
             }
             else
