@@ -1,4 +1,5 @@
 #include <asmjit/asmjit.h>
+#include <asmjit/core.h>
 #include <iostream>
 
 // Approach 3
@@ -12,11 +13,14 @@ auto main() -> int
     // Runtime designed for JIT - it holds relocated functions and controls their lifetime.
     asmjit::JitRuntime rt;
 
+    asmjit::FileLogger logger(stdout);
+
     // Holds code and relocation information during code generation.
     asmjit::CodeHolder code;
 
     // Initialize the code holder so that it can be used.
     code.init(rt.environment(), rt.cpuFeatures());
+    code.setLogger(&logger);
 
     // Create an assembler that can emit code to the code holder. The assembler's constructor calls `code.attach(&a)`
     // implicitly.
