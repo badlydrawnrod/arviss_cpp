@@ -43,3 +43,6 @@ FetchContent_MakeAvailable(asmjit)
 
 add_app(use_asmjit)
 target_link_libraries(use_asmjit PRIVATE AsmJit::AsmJit)
+
+add_app(asmjit_experiments)
+target_link_libraries(asmjit_experiments PRIVATE AsmJit::AsmJit)
