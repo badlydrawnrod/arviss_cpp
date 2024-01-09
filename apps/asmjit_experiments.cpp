@@ -1,33 +1,38 @@
 #include <asmjit/asmjit.h>
 #include <asmjit/core.h>
+#include <cstddef>
 #include <iostream>
 
 // Enough of a CPU for experimental purposes.
 struct Cpu
 {
-    uint32_t xreg[32];
+    uint32_t xreg[32]; // Integer registers.
 };
 
 // How we invoke a function that works on the CPU.
 using CpuFunc = void (*)(Cpu*);
 
-using Reg = int32_t;
+using Reg = uint32_t;
 
 // Let's assume WIN32, x64 for now. Calling convention is that the first argument is in rcx.
-const asmjit::x86::Gp arg0 = asmjit::x86::rcx; // First argument.
+constexpr asmjit::x86::Gp ARG0 = asmjit::x86::rcx; // First argument.
+
+inline auto xreg_ofs(Reg r) -> asmjit::x86::Mem
+{
+    // What's the address of the given xregister relative to ARG0.
+    return asmjit::x86::ptr(ARG0, static_cast<int32_t>(offsetof(Cpu, xreg[r])));
+}
 
 // Add two registers and store the result in a third.
-void EmitAdd(asmjit::x86::Assembler& a, Reg rd, Reg rs1, Reg rs2)
+auto EmitAdd(asmjit::x86::Assembler& a, Reg rd, Reg rs1, Reg rs2) -> void
 {
     using namespace asmjit;
 
-    // TODO: calculate offsets properly rather than making assumptions. Here I'm assuming that the x registers start at
-    //       the beginning of the structure and they're 4 bytes each.
-    x86::Mem addrRs1 = x86::ptr(arg0, rs1 * 4);
-    x86::Mem addrRs2 = x86::ptr(arg0, rs2 * 4);
-    x86::Mem addrRd = x86::ptr(arg0, rd * 4);
+    const x86::Mem addrRs1 = xreg_ofs(rs1);
+    const x86::Mem addrRs2 = xreg_ofs(rs2);
+    const x86::Mem addrRd = xreg_ofs(rd);
 
-    // Only emit code if we're not writing to rd, as that's always zero.
+    // Only emit code if we're not writing to x0, as that's always zero.
     if (rd != 0)
     {
         a.mov(x86::eax, addrRs1);
@@ -37,14 +42,12 @@ void EmitAdd(asmjit::x86::Assembler& a, Reg rd, Reg rs1, Reg rs2)
 }
 
 // Add a register and an immediate value and store the result in a destination register.
-void EmitAddi(asmjit::x86::Assembler& a, Reg rd, Reg rs1, int32_t imm)
+auto EmitAddi(asmjit::x86::Assembler& a, Reg rd, Reg rs1, int32_t imm) -> void
 {
     using namespace asmjit;
 
-    // TODO: calculate offsets properly rather than making assumptions. Here I'm assuming that the x registers start at
-    //       the beginning of the structure and they're 4 bytes each.
-    x86::Mem addrRs1 = x86::ptr(arg0, rs1 * 4);
-    x86::Mem addrRd = x86::ptr(arg0, rd * 4);
+    const x86::Mem addrRs1 = xreg_ofs(rs1);
+    const x86::Mem addrRd = xreg_ofs(rd);
 
     // Only emit code if we're not writing to rd, as that's always zero.
     if (rd != 0)
