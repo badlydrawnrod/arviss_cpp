@@ -46,85 +46,119 @@ inline auto NextPcOfs() -> asmjit::x86::Mem
     return asmjit::x86::ptr(ARG0, static_cast<int32_t>(offsetof(Cpu, nextPc)));
 }
 
-// Add two registers and store the result in a third.
-auto EmitAdd(asmjit::x86::Assembler& a, Reg rd, Reg rs1, Reg rs2) -> void
+class DemoJit
 {
-    using namespace asmjit;
+    asmjit::x86::Assembler& a_;
 
-    const x86::Mem addrRs1 = XregOfs(rs1);
-    const x86::Mem addrRs2 = XregOfs(rs2);
-    const x86::Mem addrRd = XregOfs(rd);
+    // A map from VM addresses to their code offsets in the generated function.
+    std::unordered_map<uint32_t, uint64_t> offsetMap{};
 
-    // Only emit code if we're not writing to x0, as that's always zero.
-    if (rd != 0)
+    uint32_t pc_{};
+
+public:
+    DemoJit(asmjit::x86::Assembler& a) : a_{a} {}
+
+    // Create a mapping between the current pc and an offset. Bump pc and return its old value which is effectively
+    // the VM address of this instruction.
+    auto AddOffset() -> uint32_t
     {
-        a.mov(x86::eax, addrRs1);
-        a.add(x86::eax, addrRs2);
-        a.mov(addrRd, x86::eax);
-    }
-}
+        auto oldPc = pc_;
+        offsetMap[oldPc] = a_.offset();
+        pc_ += 4;
+        return oldPc;
+    };
 
-// Add a register and an immediate value and store the result in a destination register.
-auto EmitAddi(asmjit::x86::Assembler& a, Reg rd, Reg rs1, int32_t imm) -> void
-{
-    using namespace asmjit;
+    auto Resolve(uint32_t vmAddr) -> uint64_t { return offsetMap.at(vmAddr); }
 
-    const x86::Mem addrRs1 = XregOfs(rs1);
-    const x86::Mem addrRd = XregOfs(rd);
-
-    // Only emit code if we're not writing to rd, as that's always zero.
-    if (rd != 0)
+    // Add two registers and store the result in a third.
+    auto EmitAdd(Reg rd, Reg rs1, Reg rs2) -> uint32_t
     {
-        // Add if rs1 is not x0, otherwise just move.
-        if (rs1 != 0)
+        using namespace asmjit;
+
+        auto pc = AddOffset();
+
+        const x86::Mem addrRs1 = XregOfs(rs1);
+        const x86::Mem addrRs2 = XregOfs(rs2);
+        const x86::Mem addrRd = XregOfs(rd);
+
+        // Only emit code if we're not writing to x0, as that's always zero.
+        if (rd != 0)
         {
-            a.mov(x86::eax, addrRs1);
-            a.add(x86::eax, imm);
+            a_.mov(x86::eax, addrRs1);
+            a_.add(x86::eax, addrRs2);
+            a_.mov(addrRd, x86::eax);
         }
-        else
-        {
-            a.mov(x86::eax, imm);
-        }
-        a.mov(addrRd, x86::eax);
+
+        return pc;
     }
-}
 
-// Compare two registers and branch if they aren't equal.
+    // Add a register and an immediate value and store the result in a destination register.
+    auto EmitAddi(Reg rd, Reg rs1, int32_t imm) -> uint32_t
+    {
+        using namespace asmjit;
 
-auto EmitBne(asmjit::x86::Assembler& a, uint32_t pc, Reg rs1, Reg rs2, int32_t imm) -> void
-{
-    using namespace asmjit;
+        auto pc = AddOffset();
 
-    const x86::Mem addrRs1 = XregOfs(rs1);
-    const x86::Mem addrRs2 = XregOfs(rs2);
-    Label branchNotTaken = a.newLabel();
+        const x86::Mem addrRs1 = XregOfs(rs1);
+        const x86::Mem addrRd = XregOfs(rd);
 
-    // TODO: what if it's the same register?
-    a.mov(x86::eax, addrRs1); // TODO: what if this was x0 ?
-    a.cmp(x86::eax, addrRs2); // TODO: what if this was x0 ?
-    a.je(branchNotTaken);     // Ironically.
+        // Only emit code if we're not writing to rd, as that's always zero.
+        if (rd != 0)
+        {
+            // Add if rs1 is not x0, otherwise just move.
+            if (rs1 != 0)
+            {
+                a_.mov(x86::eax, addrRs1);
+                a_.add(x86::eax, imm);
+            }
+            else
+            {
+                a_.mov(x86::eax, imm);
+            }
+            a_.mov(addrRd, x86::eax);
+        }
 
-    // We took the branch. next_pc <- pc + imm
-    a.mov(x86::eax, pc);
-    a.add(x86::eax, imm);
-    a.mov(NextPcOfs(), x86::eax);
-    a.ret(); // Return to the execution environment.
+        return pc;
+    }
 
-    // We didn't take the branch. next_pc <- pc + 4
-    a.bind(branchNotTaken);
-    a.mov(x86::eax, pc);
-    a.add(x86::eax, 4);
-    a.mov(NextPcOfs(), x86::eax);
-    a.ret(); // Return to the execution environment.
-}
+    // Compare two registers and branch if they aren't equal.
+
+    auto EmitBne(Reg rs1, Reg rs2, int32_t imm) -> uint32_t
+    {
+        using namespace asmjit;
+
+        auto pc = AddOffset();
+
+        const x86::Mem addrRs1 = XregOfs(rs1);
+        const x86::Mem addrRs2 = XregOfs(rs2);
+        Label branchNotTaken = a_.newLabel();
+
+        // TODO: what if it's the same register?
+        a_.mov(x86::eax, addrRs1); // TODO: what if this was x0 ?
+        a_.cmp(x86::eax, addrRs2); // TODO: what if this was x0 ?
+        a_.je(branchNotTaken);     // Ironically.
+
+        // We took the branch. next_pc <- pc + imm
+        a_.mov(x86::eax, pc);
+        a_.add(x86::eax, imm);
+        a_.mov(NextPcOfs(), x86::eax);
+        a_.ret(); // Return to the execution environment.
+
+        // We didn't take the branch. next_pc <- pc + 4
+        a_.bind(branchNotTaken);
+        a_.mov(x86::eax, pc);
+        a_.add(x86::eax, 4);
+        a_.mov(NextPcOfs(), x86::eax);
+        a_.ret(); // Return to the execution environment.
+
+        return pc;
+    }
+};
 
 auto main() -> int
 {
     try
     {
-        // A map from VM addresses to their code offsets in the generated function.
-        std::unordered_map<uint32_t, uint64_t> offsetMap{};
-
         // Runtime designed for JIT - it holds relocated functions and controls their lifetime.
         asmjit::JitRuntime rt;
 
@@ -141,17 +175,7 @@ auto main() -> int
         // implicitly.
         asmjit::x86::Assembler a(&code);
 
-        uint32_t pc{};
-
-        // Create a mapping between the current pc and an offset. Bump pc and return its old value which is effectively
-        // the VM address of this instruction.
-        auto AddOffset = [&offsetMap, &a, &pc]() {
-            auto oldPc = pc;
-            offsetMap[oldPc] = a.offset();
-            pc += 4;
-            return oldPc;
-        };
-
+        auto jit = DemoJit(a);
         // Use the assembler to emit some code to the code holder's .text section.
         asmjit::Label startLabel = a.newLabel();
         a.bind(startLabel);
@@ -159,30 +183,23 @@ auto main() -> int
 
         // We have to emit labels for every instruction that we encode, because we don't know if we're going to jump to
         // them.
-        AddOffset();
-        EmitAdd(a, 1, 2, 3); // add x1, x2, x3
-        AddOffset();
-        EmitAdd(a, 0, 1, 1); // add x0, x1, x1
-        AddOffset();
-        EmitAdd(a, 2, 2, 2); // add x2, x2, x2
-        AddOffset();
-        EmitAddi(a, 3, 0, 100); // addi x3, x0, 100
-        AddOffset();
+        jit.EmitAdd(1, 2, 3);    // add x1, x2, x3
+        jit.EmitAdd(0, 1, 1);    // add x0, x1, x1
+        jit.EmitAdd(2, 2, 2);    // add x2, x2, x2
+        jit.EmitAddi(3, 0, 100); // addi x3, x0, 100
+        jit.AddOffset();
         a.ret();
 
         // Emit a loop that counts down from 10 to 0.
         asmjit::Label loopFuncEntryLabel = a.newLabel();
         a.bind(loopFuncEntryLabel);
-        AddOffset();
-        EmitAddi(a, 1, 0, 10); // add x1, x0, 10
+        jit.EmitAddi(1, 0, 10); // add x1, x0, 10
 
-        AddOffset();
-        EmitAddi(a, 1, 1, -1); // add x1, x1, -1
-        auto oldPc = AddOffset();
-        EmitBne(a, oldPc, 1, 0, -4); // bne x1, x0, -4
+        jit.EmitAddi(1, 1, -1); // add x1, x1, -1
+        jit.EmitBne(1, 0, -4);  // bne x1, x0, -4
 
         // This is only here so we have somewhere to go to when we're not looping.
-        auto endPc = AddOffset();
+        auto endPc = jit.AddOffset();
 
         // The assembler is no longer needed from here, so detach it from the code holder.
         code.detach(&a);
@@ -222,7 +239,7 @@ auto main() -> int
         while (am.nextPc != endPc)
         {
             // Resolve the address of the next piece of compiled code.
-            auto nextPcOffset = offsetMap.at(am.nextPc);
+            auto nextPcOffset = jit.Resolve(am.nextPc);
             auto loopAddr = reinterpret_cast<uint8_t*>(&(*simpleFunc)) + nextPcOffset;
             loopFunc = reinterpret_cast<CpuFunc>(loopAddr);
 
