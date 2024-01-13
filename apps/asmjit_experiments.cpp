@@ -25,8 +25,6 @@ using CpuFunc = void (*)(Cpu*);
 
 using Reg = uint32_t;
 
-using PcToLabel = std::unordered_map<uint32_t, asmjit::Label>;
-
 // Let's assume WIN32, x64 for now. Calling convention is that the first argument is in rcx.
 constexpr asmjit::x86::Gp ARG0 = asmjit::x86::rcx; // First argument.
 
@@ -124,7 +122,8 @@ auto main() -> int
 {
     try
     {
-        PcToLabel labelMap{};
+        // A map from VM addresses to their code offsets in the generated function.
+        std::unordered_map<uint32_t, uint64_t> offsetMap{};
 
         // Runtime designed for JIT - it holds relocated functions and controls their lifetime.
         asmjit::JitRuntime rt;
@@ -144,13 +143,11 @@ auto main() -> int
 
         uint32_t pc{};
 
-        // Create a mapping between the current pc and a bound label. Bump pc and return its old value, effectively the
-        // address of this instruction.
-        auto PcLabel = [&labelMap, &a, &pc]() {
-            auto label = a.newLabel();
-            a.bind(label);
-            labelMap[pc] = label;
+        // Create a mapping between the current pc and an offset. Bump pc and return its old value which is effectively
+        // the VM address of this instruction.
+        auto AddOffset = [&offsetMap, &a, &pc]() {
             auto oldPc = pc;
+            offsetMap[oldPc] = a.offset();
             pc += 4;
             return oldPc;
         };
@@ -162,30 +159,30 @@ auto main() -> int
 
         // We have to emit labels for every instruction that we encode, because we don't know if we're going to jump to
         // them.
-        PcLabel();
+        AddOffset();
         EmitAdd(a, 1, 2, 3); // add x1, x2, x3
-        PcLabel();
+        AddOffset();
         EmitAdd(a, 0, 1, 1); // add x0, x1, x1
-        PcLabel();
+        AddOffset();
         EmitAdd(a, 2, 2, 2); // add x2, x2, x2
-        PcLabel();
+        AddOffset();
         EmitAddi(a, 3, 0, 100); // addi x3, x0, 100
-        PcLabel();
+        AddOffset();
         a.ret();
 
         // Emit a loop that counts down from 10 to 0.
         asmjit::Label loopFuncEntryLabel = a.newLabel();
         a.bind(loopFuncEntryLabel);
-        PcLabel();
+        AddOffset();
         EmitAddi(a, 1, 0, 10); // add x1, x0, 10
 
-        PcLabel();
+        AddOffset();
         EmitAddi(a, 1, 1, -1); // add x1, x1, -1
-        auto oldPc = PcLabel();
+        auto oldPc = AddOffset();
         EmitBne(a, oldPc, 1, 0, -4); // bne x1, x0, -4
 
         // This is only here so we have somewhere to go to when we're not looping.
-        auto endPc = PcLabel();
+        auto endPc = AddOffset();
 
         // The assembler is no longer needed from here, so detach it from the code holder.
         code.detach(&a);
@@ -201,13 +198,6 @@ auto main() -> int
 
         auto loopFuncEntryAddr = reinterpret_cast<uint8_t*>(&(*simpleFunc)) + code.labelOffset(loopFuncEntryLabel);
         auto loopFunc = reinterpret_cast<CpuFunc>(loopFuncEntryAddr);
-
-        // Create a mapping from VM PC to offset.
-        std::unordered_map<uint32_t, uint64_t> offsetMap{};
-        for (const auto& [vmAddr, label] : labelMap)
-        {
-            offsetMap[vmAddr] = code.labelOffset(label);
-        }
 
         // The code holder is no longer needed and can be safely destroyed. The runtime holds the relocated function and
         // controls its lifetime. The function will be freed with the runtime.
