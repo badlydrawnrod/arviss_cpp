@@ -48,27 +48,64 @@ inline auto NextPcOfs() -> asmjit::x86::Mem
 
 class DemoJit
 {
-    asmjit::x86::Assembler& a_;
+    // Runtime designed for JIT - it holds relocated functions and controls their lifetime.
+    asmjit::JitRuntime runtime_;
+
+    asmjit::FileLogger logger_ = asmjit::FileLogger(stdout);
+
+    // Holds code and relocation information during code generation.
+    asmjit::CodeHolder code_;
+
+    // An assembler that can emit code to the code holder.
+    asmjit::x86::Assembler a_;
 
     // A map from VM addresses to their code offsets in the generated function.
-    std::unordered_map<uint32_t, uint64_t> offsetMap{};
+    std::unordered_map<uint32_t, uint64_t> offsetMap_{};
 
     uint32_t pc_{};
 
 public:
-    DemoJit(asmjit::x86::Assembler& a) : a_{a} {}
+    DemoJit()
+    {
+        // Initialize the code holder so that it can be used.
+        code_.init(runtime_.environment(), runtime_.cpuFeatures());
+        code_.setLogger(&logger_);
+        code_.attach(&a_);
+    }
 
     // Create a mapping between the current pc and an offset. Bump pc and return its old value which is effectively
     // the VM address of this instruction.
     auto AddOffset() -> uint32_t
     {
         auto oldPc = pc_;
-        offsetMap[oldPc] = a_.offset();
+        offsetMap_[oldPc] = a_.offset();
         pc_ += 4;
         return oldPc;
     };
 
-    auto Resolve(uint32_t vmAddr) -> uint64_t { return offsetMap.at(vmAddr); }
+    auto Resolve(uint32_t vmAddr) -> uint64_t { return offsetMap_.at(vmAddr); }
+
+    auto Compile() -> CpuFunc
+    {
+        // The assembler is no longer needed from here, so detach it from the code holder.
+        code_.detach(&a_);
+
+        // Add the generated code to the JitRuntime via JitRuntime::add(). This function copies the code from the code
+        // holder into executable memory and relocates it.
+        CpuFunc simpleFunc;
+        if (asmjit::Error err = runtime_.add(&simpleFunc, &code_))
+        {
+            std::cerr << "AsmJit failed: " << asmjit::DebugUtils::errorAsString(err) << '\n';
+            // TODO: error handling.
+        }
+
+        // The code holder is no longer needed and can be safely destroyed. The runtime holds the relocated function and
+        // controls its lifetime. The function will be freed with the runtime.
+        code_.reset();
+
+        // Usual caveats about lifetimes.
+        return simpleFunc;
+    }
 
     auto EmitEndFunc() -> uint32_t
     {
@@ -174,24 +211,8 @@ auto main() -> int
 {
     try
     {
-        // Runtime designed for JIT - it holds relocated functions and controls their lifetime.
-        asmjit::JitRuntime rt;
-
-        asmjit::FileLogger logger(stdout);
-
-        // Holds code and relocation information during code generation.
-        asmjit::CodeHolder code;
-
-        // Initialize the code holder so that it can be used.
-        code.init(rt.environment(), rt.cpuFeatures());
-        code.setLogger(&logger);
-
-        // Create an assembler that can emit code to the code holder. The assembler's constructor calls `code.attach(&a)`
-        // implicitly.
-        asmjit::x86::Assembler a(&code);
-
         // Create a JIT wrapper for the assembler.
-        auto jit = DemoJit(a);
+        auto jit = DemoJit();
 
         // Emit a straightforward function that adds a few things then returns.
         jit.EmitAdd(1, 2, 3);    // add x1, x2, x3
@@ -208,21 +229,7 @@ auto main() -> int
         // This is only here so we have somewhere to go to when we're not looping.
         auto endPc = jit.EmitEndFunc();
 
-        // The assembler is no longer needed from here, so detach it from the code holder.
-        code.detach(&a);
-
-        // Add the generated code to the JitRuntime via JitRuntime::add(). This function copies the code from the code
-        // holder into executable memory and relocates it.
-        CpuFunc simpleFunc;
-        if (asmjit::Error err = rt.add(&simpleFunc, &code))
-        {
-            std::cerr << "AsmJit failed: " << asmjit::DebugUtils::errorAsString(err) << '\n';
-            return 1;
-        }
-
-        // The code holder is no longer needed and can be safely destroyed. The runtime holds the relocated function and
-        // controls its lifetime. The function will be freed with the runtime.
-        code.reset();
+        CpuFunc simpleFunc = jit.Compile();
 
         // Call the first piece of code.
         Cpu cpu{};
@@ -251,10 +258,6 @@ auto main() -> int
         }
         std::cout << "xreg[1] is: " << cpu.xreg[1] << '\n';
         std::cout << "next_pc after loop completion is: " << cpu.nextPc << '\n';
-
-        // All classes use RAII, all resources will be released before `main()` returns. The generated function can be,
-        // however, be released explicitly if you intend to re-use the runtime.
-        rt.release(simpleFunc);
 
         return 0;
     }
