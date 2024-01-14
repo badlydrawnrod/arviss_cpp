@@ -60,7 +60,10 @@ class DemoJit
     asmjit::x86::Assembler a_;
 
     // A map from VM addresses to their code offsets in the generated function.
-    std::unordered_map<uint32_t, uint64_t> offsetMap_{};
+    std::unordered_map<uint32_t, CpuFunc> offsetMap_{};
+
+    using OffsetPair = std::pair<uint32_t, uint64_t>;
+    std::vector<OffsetPair> unfixedupOffsets_{};
 
     uint32_t pc_{};
 
@@ -73,38 +76,50 @@ public:
         code_.attach(&a_);
     }
 
-    // Create a mapping between the current pc and an offset. Bump pc and return its old value which is effectively
-    // the VM address of this instruction.
+    // Add an offset whose address we need to fix up later.
     auto AddOffset() -> uint32_t
     {
+        unfixedupOffsets_.push_back(std::make_pair(pc_, a_.offset()));
         auto oldPc = pc_;
-        offsetMap_[oldPc] = a_.offset();
         pc_ += 4;
         return oldPc;
     };
 
-    auto Resolve(uint32_t vmAddr) -> uint64_t { return offsetMap_.at(vmAddr); }
+    auto Resolve(uint32_t vmAddr) -> CpuFunc { return offsetMap_.at(vmAddr); }
 
     auto Compile() -> CpuFunc
     {
         // The assembler is no longer needed from here, so detach it from the code holder.
         code_.detach(&a_);
 
-        // Add the generated code to the JitRuntime via JitRuntime::add(). This function copies the code from the code
-        // holder into executable memory and relocates it.
-        CpuFunc simpleFunc;
-        if (asmjit::Error err = runtime_.add(&simpleFunc, &code_))
+        // Copy and relocate the generated code from the code holder to the JitRuntime.
+        CpuFunc generatedFunc;
+        if (asmjit::Error err = runtime_.add(&generatedFunc, &code_))
         {
             std::cerr << "AsmJit failed: " << asmjit::DebugUtils::errorAsString(err) << '\n';
             // TODO: error handling.
         }
 
-        // The code holder is no longer needed and can be safely destroyed. The runtime holds the relocated function and
-        // controls its lifetime. The function will be freed with the runtime.
+        // Fix up those offsets so that we have a direct mapping from VM addresses to native addresses.
+        const auto baseAddress = code_.baseAddress();
+        std::cout << std::format("Base address: 0x{:08x}\n", baseAddress);
+        for (auto [vmAddr, offset] : unfixedupOffsets_)
+        {
+            auto addr = baseAddress + offset;
+            std::cout << std::format("vm address 0x{:04x} is native address 0x{:08x}\n", vmAddr, addr);
+            void* p = reinterpret_cast<void*>(addr);
+            offsetMap_[vmAddr] = asmjit::ptr_as_func<CpuFunc>(p);
+        }
+
+        // Reset so that we're ready for the next round of compilation.
+        unfixedupOffsets_.clear();
         code_.reset();
+        code_.init(runtime_.environment(), runtime_.cpuFeatures());
+        code_.setLogger(&logger_);
+        code_.attach(&a_);
 
         // Usual caveats about lifetimes.
-        return simpleFunc;
+        return generatedFunc;
     }
 
     auto EmitEndFunc() -> uint32_t
@@ -175,8 +190,8 @@ public:
 
         auto pc = AddOffset();
 
-        const x86::Mem addrRs1 = XregOfs(rs1);
-        const x86::Mem addrRs2 = XregOfs(rs2);
+        const auto addrRs1 = XregOfs(rs1);
+        const auto addrRs2 = XregOfs(rs2);
         Label branchNotTaken = a_.newLabel();
 
         // TODO: what if it's the same register?
@@ -200,12 +215,6 @@ public:
         return pc;
     }
 };
-
-CpuFunc FuncFromOfs(CpuFunc base, uint64_t ofs)
-{
-    const auto addr = reinterpret_cast<uint8_t*>(base) + ofs;
-    return reinterpret_cast<CpuFunc>(addr);
-}
 
 auto main() -> int
 {
@@ -245,13 +254,41 @@ auto main() -> int
 
         // Now to live dangerously. Call the second piece of code, and use the value of next_pc to figure out where to
         // go next.
-        auto callFunc = FuncFromOfs(simpleFunc, jit.Resolve(loopEntryOfs));
+        auto callFunc = jit.Resolve(loopEntryOfs);
         callFunc(&cpu);
         std::cout << "xreg[1] is: " << cpu.xreg[1] << '\n';
         while (cpu.nextPc != endPc)
         {
             // Resolve the address of the next piece of compiled code.
-            callFunc = FuncFromOfs(simpleFunc, jit.Resolve(cpu.nextPc));
+            callFunc = jit.Resolve(cpu.nextPc);
+
+            // Call the next piece of compiled code.
+            callFunc(&cpu);
+        }
+        std::cout << "xreg[1] is: " << cpu.xreg[1] << '\n';
+        std::cout << "next_pc after loop completion is: " << cpu.nextPc << '\n';
+
+        // Emit a little more code.
+        jit.EmitAddi(1, 0, 0x3c00); // add x1, x0, 3c00h (15360 - a number burned into my brain).
+        jit.EmitEndFunc();
+
+        auto loopEntryOfs2 = jit.EmitAddi(1, 0, 10); // add x1, x0, 10
+        jit.EmitAddi(1, 1, -1);                      // add x1, x1, -1
+        jit.EmitBne(1, 0, -4);                       // bne x1, x0, -4
+        auto endPc2 = jit.EmitEndFunc();
+
+        // Ok, what happens now?
+        CpuFunc func3 = jit.Compile();
+        func3(&cpu);
+        std::cout << "xreg[1] is: " << cpu.xreg[1] << '\n'; // 15360 (0x3c00)
+
+        callFunc = jit.Resolve(loopEntryOfs2);
+        callFunc(&cpu);
+        std::cout << "xreg[1] is: " << cpu.xreg[1] << '\n';
+        while (cpu.nextPc != endPc2)
+        {
+            // Resolve the address of the next piece of compiled code.
+            callFunc = jit.Resolve(cpu.nextPc);
 
             // Call the next piece of compiled code.
             callFunc(&cpu);
