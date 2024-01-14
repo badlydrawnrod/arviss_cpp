@@ -70,6 +70,15 @@ public:
 
     auto Resolve(uint32_t vmAddr) -> uint64_t { return offsetMap.at(vmAddr); }
 
+    auto EmitEndFunc() -> uint32_t
+    {
+        auto pc = AddOffset();
+
+        a_.ret();
+
+        return pc;
+    }
+
     // Add two registers and store the result in a third.
     auto EmitAdd(Reg rd, Reg rs1, Reg rs2) -> uint32_t
     {
@@ -155,6 +164,12 @@ public:
     }
 };
 
+CpuFunc FuncFromOfs(CpuFunc base, uint64_t ofs)
+{
+    const auto addr = reinterpret_cast<uint8_t*>(base) + ofs;
+    return reinterpret_cast<CpuFunc>(addr);
+}
+
 auto main() -> int
 {
     try
@@ -175,31 +190,23 @@ auto main() -> int
         // implicitly.
         asmjit::x86::Assembler a(&code);
 
+        // Create a JIT wrapper for the assembler.
         auto jit = DemoJit(a);
-        // Use the assembler to emit some code to the code holder's .text section.
-        asmjit::Label startLabel = a.newLabel();
-        a.bind(startLabel);
-        std::cout << std::format("startLabel is at: 0x{:08x}\n", code.labelOffset(startLabel));
 
-        // We have to emit labels for every instruction that we encode, because we don't know if we're going to jump to
-        // them.
+        // Emit a straightforward function that adds a few things then returns.
         jit.EmitAdd(1, 2, 3);    // add x1, x2, x3
         jit.EmitAdd(0, 1, 1);    // add x0, x1, x1
         jit.EmitAdd(2, 2, 2);    // add x2, x2, x2
         jit.EmitAddi(3, 0, 100); // addi x3, x0, 100
-        jit.AddOffset();
-        a.ret();
+        jit.EmitEndFunc();
 
         // Emit a loop that counts down from 10 to 0.
-        asmjit::Label loopFuncEntryLabel = a.newLabel();
-        a.bind(loopFuncEntryLabel);
-        jit.EmitAddi(1, 0, 10); // add x1, x0, 10
-
-        jit.EmitAddi(1, 1, -1); // add x1, x1, -1
-        jit.EmitBne(1, 0, -4);  // bne x1, x0, -4
+        auto loopEntryOfs = jit.EmitAddi(1, 0, 10); // add x1, x0, 10
+        jit.EmitAddi(1, 1, -1);                     // add x1, x1, -1
+        jit.EmitBne(1, 0, -4);                      // bne x1, x0, -4
 
         // This is only here so we have somewhere to go to when we're not looping.
-        auto endPc = jit.AddOffset();
+        auto endPc = jit.EmitEndFunc();
 
         // The assembler is no longer needed from here, so detach it from the code holder.
         code.detach(&a);
@@ -213,41 +220,37 @@ auto main() -> int
             return 1;
         }
 
-        auto loopFuncEntryAddr = reinterpret_cast<uint8_t*>(&(*simpleFunc)) + code.labelOffset(loopFuncEntryLabel);
-        auto loopFunc = reinterpret_cast<CpuFunc>(loopFuncEntryAddr);
-
         // The code holder is no longer needed and can be safely destroyed. The runtime holds the relocated function and
         // controls its lifetime. The function will be freed with the runtime.
         code.reset();
 
         // Call the first piece of code.
-        Cpu am{};
-        am.xreg[1] = 1234;
-        am.xreg[2] = 20;
-        am.xreg[3] = 22;
-        std::cout << "xreg[1] before calling compiled code is: " << am.xreg[1] << '\n';
-        std::cout << "xreg[2] before calling compiled code is: " << am.xreg[2] << '\n';
-        simpleFunc(&am);
-        std::cout << "xreg[1] after calling compiled code is: " << am.xreg[1] << '\n'; // 42   (from add x1, x2, x3)
-        std::cout << "xreg[2] after calling compiled code is: " << am.xreg[2] << '\n'; // 40   (from add x2, x2, x2)
-        std::cout << "xreg[3] after calling compiled code is: " << am.xreg[3] << '\n'; // 100  (from addi, x3, x0, 100)
+        Cpu cpu{};
+        cpu.xreg[1] = 1234;
+        cpu.xreg[2] = 20;
+        cpu.xreg[3] = 22;
+        std::cout << "xreg[1] before calling compiled code is: " << cpu.xreg[1] << '\n';
+        std::cout << "xreg[2] before calling compiled code is: " << cpu.xreg[2] << '\n';
+        simpleFunc(&cpu);
+        std::cout << "xreg[1] after calling compiled code is: " << cpu.xreg[1] << '\n'; // 42   (from add x1, x2, x3)
+        std::cout << "xreg[2] after calling compiled code is: " << cpu.xreg[2] << '\n'; // 40   (from add x2, x2, x2)
+        std::cout << "xreg[3] after calling compiled code is: " << cpu.xreg[3] << '\n'; // 100  (from addi, x3, x0, 100)
 
         // Now to live dangerously. Call the second piece of code, and use the value of next_pc to figure out where to
         // go next.
-        loopFunc(&am);
-        std::cout << "xreg[1] is: " << am.xreg[1] << '\n';
-        while (am.nextPc != endPc)
+        auto callFunc = FuncFromOfs(simpleFunc, jit.Resolve(loopEntryOfs));
+        callFunc(&cpu);
+        std::cout << "xreg[1] is: " << cpu.xreg[1] << '\n';
+        while (cpu.nextPc != endPc)
         {
             // Resolve the address of the next piece of compiled code.
-            auto nextPcOffset = jit.Resolve(am.nextPc);
-            auto loopAddr = reinterpret_cast<uint8_t*>(&(*simpleFunc)) + nextPcOffset;
-            loopFunc = reinterpret_cast<CpuFunc>(loopAddr);
+            callFunc = FuncFromOfs(simpleFunc, jit.Resolve(cpu.nextPc));
 
             // Call the next piece of compiled code.
-            loopFunc(&am);
+            callFunc(&cpu);
         }
-        std::cout << "xreg[1] is: " << am.xreg[1] << '\n';
-        std::cout << "next_pc after loop completion is: " << am.nextPc << '\n';
+        std::cout << "xreg[1] is: " << cpu.xreg[1] << '\n';
+        std::cout << "next_pc after loop completion is: " << cpu.nextPc << '\n';
 
         // All classes use RAII, all resources will be released before `main()` returns. The generated function can be,
         // however, be released explicitly if you intend to re-use the runtime.
