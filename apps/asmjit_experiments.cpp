@@ -11,19 +11,73 @@
 //
 // add  - rd <- rs1 + rs2
 // addi - rd <- rs1 + imm32
-// bne  - pc <- pc + imm32 if rs1 != rs2 else pc + 4
+// bne  - pc <- pc + imm32 if rs1 != rs2 else pc + 1
+// beq  - pc <- pc + imm32 if rs1 == rs2 else pc + 1
 
 struct Cpu
 {
     uint32_t pc;       // The address of the current instruction.
     uint32_t nextPc;   // The address of the next instruction.
     uint32_t xreg[32]; // Integer registers.
+    bool isTrapped;    // Is the CPU trapped.
 };
+
+using Reg = uint32_t;
+
+namespace vm
+{
+    enum Opcode
+    {
+        HALT,
+        ADD,
+        ADDI,
+        BNE,
+        BEQ,
+    };
+
+    struct Empty
+    {
+    };
+
+    struct Reg3
+    {
+        Reg r1;
+        Reg r2;
+        Reg r3;
+    };
+
+    struct Reg2Imm
+    {
+        Reg r1;
+        Reg r2;
+        int32_t imm;
+    };
+
+    struct Instruction
+    {
+        Opcode op;
+        union
+        {
+            struct Empty empty;
+            struct Reg3 reg3;
+            struct Reg2Imm reg2imm;
+        };
+    };
+
+    struct Machine
+    {
+        std::vector<Instruction> code_{};
+
+        auto Halt() -> void { code_.emplace_back(Instruction{.op = HALT, .empty = {}}); }
+        auto Add(Reg rd, Reg rs1, Reg rs2) -> void { code_.emplace_back(Instruction{.op = ADD, .reg3 = {.r1 = rd, .r2 = rs1, .r3 = rs2}}); }
+        auto Addi(Reg rd, Reg rs1, int32_t imm) -> void { code_.emplace_back(Instruction{.op = ADDI, .reg2imm = {.r1 = rd, .r2 = rs1, .imm = imm}}); }
+        auto Bne(Reg rs1, Reg rs2, int32_t imm) -> void { code_.emplace_back(Instruction{.op = BNE, .reg2imm{.r1 = rs1, .r2 = rs2, .imm = imm}}); }
+        auto Beq(Reg rs1, Reg rs2, int32_t imm) -> void { code_.emplace_back(Instruction{.op = BEQ, .reg2imm{.r1 = rs1, .r2 = rs2, .imm = imm}}); }
+    };
+} // namespace vm
 
 // How we invoke a function that works on the CPU.
 using CpuFunc = void (*)(Cpu*);
-
-using Reg = uint32_t;
 
 // Let's assume WIN32, x64 for now. Calling convention is that the first argument is in rcx.
 constexpr asmjit::x86::Gp ARG0 = asmjit::x86::rcx; // First argument.
@@ -44,6 +98,12 @@ inline auto NextPcOfs() -> asmjit::x86::Mem
 {
     // What's the address of nextPc relative to ARG0.
     return asmjit::x86::ptr(ARG0, static_cast<int32_t>(offsetof(Cpu, nextPc)));
+}
+
+inline auto IsTrappedOfs() -> asmjit::x86::Mem
+{
+    // What's the address of isTrapped relative to ARG0.
+    return asmjit::x86::ptr(ARG0, static_cast<int32_t>(offsetof(Cpu, isTrapped)));
 }
 
 class DemoJit
@@ -78,17 +138,19 @@ public:
         code_.attach(&a_);
     }
 
+    auto SetPc(uint32_t pc) -> void { pc_ = pc; }
+
     // Adds an offset whose address we need to fix up later.
     auto AddOffset() -> uint32_t
     {
         pendingOffsets_.emplace_back(OffsetPair(pc_, a_.offset()));
         const auto oldPc = pc_;
-        pc_ += 4;
+        pc_ += 1;
         return oldPc;
     };
 
     // Resolves a VM address into a native address.
-    auto Resolve(uint32_t vmAddr) -> CpuFunc { return offsetMap_.at(vmAddr); }
+    auto Resolve(uint32_t vmAddr) -> CpuFunc { return offsetMap_[vmAddr]; }
 
     auto Compile() -> CpuFunc
     {
@@ -105,7 +167,7 @@ public:
 
         // Fix up those offsets so that we have a direct mapping from VM addresses to native addresses.
         const auto baseAddress = code_.baseAddress();
-        std::cout << std::format("Base address: 0x{:08x}\n", baseAddress);
+        std::cout << std::format("Base address of compiled code: 0x{:08x}\n", baseAddress);
         for (auto [vmAddr, offset] : pendingOffsets_)
         {
             const std::uintptr_t addr = baseAddress + offset;
@@ -130,6 +192,18 @@ public:
     {
         const auto pc = AddOffset();
         a_.ret();
+        return pc;
+    }
+
+    auto EmitTrap() -> uint32_t
+    {
+        const auto pc = AddOffset();
+
+        const auto addr = IsTrappedOfs();
+        a_.mov(asmjit::x86::eax, 1);
+        a_.mov(addr, asmjit::x86::eax);
+        a_.ret();
+
         return pc;
     }
 
@@ -197,9 +271,36 @@ public:
         a_.mov(NextPcOfs(), asmjit::x86::eax);
         a_.ret(); // Return to the execution environment.
 
-        // We didn't take the branch. nextPc <- pc + 4
+        // We didn't take the branch. nextPc <- pc + 1
         a_.bind(branchNotTaken);
-        a_.mov(asmjit::x86::eax, pc + 4);
+        a_.mov(asmjit::x86::eax, pc + 1);
+        a_.mov(NextPcOfs(), asmjit::x86::eax);
+        a_.ret(); // Return to the execution environment.
+
+        return pc;
+    }
+
+    // Compares two registers and branches if they are equal.
+    auto EmitBeq(Reg rs1, Reg rs2, int32_t imm) -> uint32_t
+    {
+        const auto pc = AddOffset();
+        const auto addrRs1 = XregOfs(rs1);
+        const auto addrRs2 = XregOfs(rs2);
+        const asmjit::Label branchNotTaken = a_.newLabel();
+
+        // TODO: what if it's the same register?
+        a_.mov(asmjit::x86::eax, addrRs1); // TODO: what if this was x0 ?
+        a_.cmp(asmjit::x86::eax, addrRs2); // TODO: what if this was x0 ?
+        a_.jne(branchNotTaken);            // Ironically.
+
+        // We took the branch. nextPc <- pc + imm
+        a_.mov(asmjit::x86::eax, pc + imm);
+        a_.mov(NextPcOfs(), asmjit::x86::eax);
+        a_.ret(); // Return to the execution environment.
+
+        // We didn't take the branch. nextPc <- pc + 1
+        a_.bind(branchNotTaken);
+        a_.mov(asmjit::x86::eax, pc + 1);
         a_.mov(NextPcOfs(), asmjit::x86::eax);
         a_.ret(); // Return to the execution environment.
 
@@ -207,88 +308,104 @@ public:
     }
 };
 
+auto JitBlock(DemoJit& jit, vm::Machine& machine, uint32_t pc) -> CpuFunc
+{
+    std::cout << std::format("Compiling from 0x{:04x}\n", pc);
+    jit.SetPc(pc);
+    bool isEndOfBasicBlock = false;
+    for (size_t index = pc; !isEndOfBasicBlock && index < machine.code_.size(); index++)
+    {
+        auto ins = machine.code_[index];
+        switch (ins.op)
+        {
+        case vm::HALT:
+            jit.EmitTrap();
+            isEndOfBasicBlock = true;
+            break;
+        case vm::ADD:
+            jit.EmitAdd(ins.reg3.r1, ins.reg3.r2, ins.reg3.r3);
+            break;
+        case vm::ADDI:
+            jit.EmitAddi(ins.reg2imm.r1, ins.reg2imm.r2, ins.reg2imm.imm);
+            break;
+        case vm::BNE:
+            jit.EmitBne(ins.reg2imm.r1, ins.reg2imm.r2, ins.reg2imm.imm);
+            isEndOfBasicBlock = true;
+            break;
+        case vm::BEQ:
+            jit.EmitBeq(ins.reg2imm.r1, ins.reg2imm.r2, ins.reg2imm.imm);
+            isEndOfBasicBlock = true;
+            break;
+        }
+    }
+    return isEndOfBasicBlock ? jit.Compile() : nullptr;
+}
+
 auto main() -> int
 {
     try
     {
+        // Create a VM and load it up with some instructions. This is what we'll be jitting *from*. The instructions
+        // are simple and would have little to no decoding overhead if we actually decoded them.
+        vm::Machine vm;
+
+        // Basic block. Add a few things together and fall through.
+        vm.Add(1, 2, 3); // 0
+        vm.Add(0, 1, 1); // 1
+        vm.Add(2, 2, 2); // 2
+        vm.Beq(0, 0, 1); // 3
+
+        // Basic block. A loop that counts down from 10 to 0.
+        vm.Addi(1, 0, 10); // 4
+        vm.Addi(1, 1, -1); // 5
+        vm.Bne(1, 0, -1);  // 6
+
+        // Basic block. Set up a few registers.
+        vm.Addi(1, 0, 15360); // 7
+        vm.Addi(2, 0, 15361); // 8
+        vm.Addi(3, 0, 1023);  // 9
+        vm.Beq(0, 0, 1);      // 10
+
+        // Basic block. A loop that counts down from 10 to 0.
+        vm.Addi(1, 0, 10); // 11
+        vm.Addi(1, 1, -1); // 12
+        vm.Bne(1, 0, -1);  // 13
+
+        // Basic block. Halt. Do not catch fire.
+        vm.Halt(); // 14
+
         // Create a JIT.
         auto jit = DemoJit();
 
-        // Emit a straightforward function that adds a few things then returns.
-        jit.EmitAdd(1, 2, 3);    // add x1, x2, x3
-        jit.EmitAdd(0, 1, 1);    // add x0, x1, x1
-        jit.EmitAdd(2, 2, 2);    // add x2, x2, x2
-        jit.EmitAddi(3, 0, 100); // addi x3, x0, 100
-        jit.EmitEndFunc();
-
-        // Emit a loop that counts down from 10 to 0.
-        auto loopEntryOfs = jit.EmitAddi(1, 0, 10); // add x1, x0, 10
-        jit.EmitAddi(1, 1, -1);                     // add x1, x1, -1
-        jit.EmitBne(1, 0, -4);                      // bne x1, x0, -4
-        const auto endPc = jit.EmitEndFunc();
-
-        CpuFunc simpleFunc = jit.Compile();
-
-        // Call the first piece of code.
+        // Create a CPU.
         Cpu cpu{};
-        cpu.xreg[1] = 1234;
-        cpu.xreg[2] = 20;
-        cpu.xreg[3] = 22;
-        std::cout << "xreg[1] before calling compiled code is: " << cpu.xreg[1] << '\n';
-        std::cout << "xreg[2] before calling compiled code is: " << cpu.xreg[2] << '\n';
-        simpleFunc(&cpu);
-        std::cout << "xreg[1] after calling compiled code is: " << cpu.xreg[1] << '\n'; // 42   (from add x1, x2, x3)
-        std::cout << "xreg[2] after calling compiled code is: " << cpu.xreg[2] << '\n'; // 40   (from add x2, x2, x2)
-        std::cout << "xreg[3] after calling compiled code is: " << cpu.xreg[3] << '\n'; // 100  (from addi, x3, x0, 100)
 
-        // Now to live dangerously. Call the second piece of code, and use the value of nextPc to figure out where to
-        // go next.
-        auto callFunc = jit.Resolve(loopEntryOfs);
-        callFunc(&cpu);
-        std::cout << "xreg[1] is: " << cpu.xreg[1] << '\n';
-        while (cpu.nextPc != endPc)
+        // JIT the VM's code, one basic block at a time, and run it.
+        // TODO: this is very, very hacky. Fix.
+        uint32_t pc = 0;
+        CpuFunc func = nullptr;
+        while (!cpu.isTrapped)
         {
-            // Resolve the address of the next piece of compiled code.
-            callFunc = jit.Resolve(cpu.nextPc);
+            // If we don't have a function to call then attempt to JIT from the current VM PC.
+            if (func == nullptr)
+            {
+                func = JitBlock(jit, vm, pc);
 
-            // Call the next piece of compiled code.
-            callFunc(&cpu);
+                // If we couldn't JIT it then something went wrong and we're done.
+                if (func == nullptr)
+                {
+                    break;
+                }
+            }
+
+            // Call the native code.
+            func(&cpu);
+            std::cout << "x1 = " << cpu.xreg[1] << '\n';
+
+            // Get the VM address of the next instruction and see if the JIT knows about it.
+            pc = cpu.nextPc;
+            func = jit.Resolve(pc);
         }
-        std::cout << "xreg[1] is: " << cpu.xreg[1] << '\n';
-        std::cout << "nextPc after loop completion is: " << cpu.nextPc << '\n';
-
-        // Emit a little more code.
-        jit.EmitAddi(1, 0, 0x3c00); // add x1, x0, 3c00h (15360 - a number burned into my brain).
-        jit.EmitAddi(2, 0, 0x3c01); // add x2, x0, 3c01h
-        jit.EmitAddi(3, 0, 0x3ff);  // add x3, x0, 3ffh
-        jit.EmitEndFunc();
-
-        auto loopEntryOfs2 = jit.EmitAddi(1, 0, 10); // add x1, x0, 10
-        jit.EmitAddi(1, 1, -1);                      // add x1, x1, -1
-        jit.EmitBne(1, 0, -4);                       // bne x1, x0, -4
-        const auto endPc2 = jit.EmitEndFunc();
-
-        // Compile the newly emitted code and call it.
-        CpuFunc func3 = jit.Compile();
-        func3(&cpu);
-        std::cout << "xreg[1] is: " << cpu.xreg[1] << '\n'; // 15360 (0x3c00)
-        std::cout << "xreg[2] is: " << cpu.xreg[2] << '\n'; // 15361 (0x3c01)
-        std::cout << "xreg[3] is: " << cpu.xreg[3] << '\n'; //  1023 (0x03ff)
-
-        // Call the other loop.
-        callFunc = jit.Resolve(loopEntryOfs2);
-        callFunc(&cpu);
-        std::cout << "xreg[1] is: " << cpu.xreg[1] << '\n';
-        while (cpu.nextPc != endPc2)
-        {
-            // Resolve the address of the next piece of compiled code.
-            callFunc = jit.Resolve(cpu.nextPc);
-
-            // Call the next piece of compiled code.
-            callFunc(&cpu);
-        }
-        std::cout << "xreg[1] is: " << cpu.xreg[1] << '\n';
-        std::cout << "nextPc after second loop completion is: " << cpu.nextPc << '\n';
 
         return 0;
     }
