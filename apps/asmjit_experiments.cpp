@@ -193,15 +193,13 @@ public:
         a_.je(branchNotTaken);             // Ironically.
 
         // We took the branch. nextPc <- pc + imm
-        a_.mov(asmjit::x86::eax, pc);
-        a_.add(asmjit::x86::eax, imm);
+        a_.mov(asmjit::x86::eax, pc + imm);
         a_.mov(NextPcOfs(), asmjit::x86::eax);
         a_.ret(); // Return to the execution environment.
 
         // We didn't take the branch. nextPc <- pc + 4
         a_.bind(branchNotTaken);
-        a_.mov(asmjit::x86::eax, pc);
-        a_.add(asmjit::x86::eax, 4);
+        a_.mov(asmjit::x86::eax, pc + 4);
         a_.mov(NextPcOfs(), asmjit::x86::eax);
         a_.ret(); // Return to the execution environment.
 
