@@ -313,9 +313,10 @@ auto JitBlock(DemoJit& jit, vm::Machine& machine, uint32_t pc) -> CpuFunc
     std::cout << std::format("Compiling from 0x{:04x}\n", pc);
     jit.SetPc(pc);
     bool isEndOfBasicBlock = false;
-    for (size_t index = pc; !isEndOfBasicBlock && index < machine.code_.size(); index++)
+    const auto& code = machine.code_;
+    for (auto it = code.cbegin() + pc; it != code.cend() && !isEndOfBasicBlock; ++it)
     {
-        const auto& ins = machine.code_[index];
+        const auto& ins = *it;
         switch (ins.op)
         {
         case vm::HALT:
@@ -338,17 +339,18 @@ auto JitBlock(DemoJit& jit, vm::Machine& machine, uint32_t pc) -> CpuFunc
             break;
         }
     }
+
     return isEndOfBasicBlock ? jit.Compile() : nullptr;
 }
 
 auto Resolve(DemoJit& jit, vm::Machine& machine, uint32_t pc) -> CpuFunc
 {
     CpuFunc func = jit.Resolve(pc);
-    if (func == nullptr)
+    if (func)
     {
-        func = JitBlock(jit, machine, pc);
+        return func;
     }
-    return func;
+    return JitBlock(jit, machine, pc);
 }
 
 auto main() -> int
