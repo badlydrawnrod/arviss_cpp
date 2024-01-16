@@ -64,9 +64,14 @@ namespace vm
         };
     };
 
-    struct Machine
+    using Code = std::vector<Instruction>;
+
+    class Assembler
     {
-        std::vector<Instruction> code_{};
+        Code& code_;
+
+    public:
+        Assembler(Code& code) : code_{code} {}
 
         auto Halt() -> void { code_.emplace_back(Instruction{.op = HALT, .empty = {}}); }
         auto Add(Reg rd, Reg rs1, Reg rs2) -> void { code_.emplace_back(Instruction{.op = ADD, .reg3 = {.r1 = rd, .r2 = rs1, .r3 = rs2}}); }
@@ -308,12 +313,11 @@ public:
     }
 };
 
-auto JitBlock(DemoJit& jit, vm::Machine& machine, uint32_t pc) -> CpuFunc
+auto JitBlock(DemoJit& jit, const vm::Code& code, uint32_t pc) -> CpuFunc
 {
     std::cout << std::format("Compiling from 0x{:04x}\n", pc);
     jit.SetPc(pc);
     bool isEndOfBasicBlock = false;
-    const auto& code = machine.code_;
     for (auto it = code.cbegin() + pc; it != code.cend() && !isEndOfBasicBlock; ++it)
     {
         const auto& ins = *it;
@@ -343,14 +347,14 @@ auto JitBlock(DemoJit& jit, vm::Machine& machine, uint32_t pc) -> CpuFunc
     return isEndOfBasicBlock ? jit.Compile() : nullptr;
 }
 
-auto Resolve(DemoJit& jit, vm::Machine& machine, uint32_t pc) -> CpuFunc
+auto Resolve(DemoJit& jit, const vm::Code& code, uint32_t pc) -> CpuFunc
 {
     CpuFunc func = jit.Resolve(pc);
     if (func)
     {
         return func;
     }
-    return JitBlock(jit, machine, pc);
+    return JitBlock(jit, code, pc);
 }
 
 auto main() -> int
@@ -359,32 +363,33 @@ auto main() -> int
     {
         // Create a VM and load it up with some instructions. This is what we'll be jitting *from*. The instructions
         // are simple and would have little to no decoding overhead if we actually decoded them.
-        vm::Machine vm;
+        vm::Code code;
+        vm::Assembler a(code);
 
         // Basic block. Add a few things together and fall through.
-        vm.Add(1, 2, 3); // 0
-        vm.Add(0, 1, 1); // 1
-        vm.Add(2, 2, 2); // 2
-        vm.Beq(0, 0, 1); // 3
+        a.Add(1, 2, 3); // 0
+        a.Add(0, 1, 1); // 1
+        a.Add(2, 2, 2); // 2
+        a.Beq(0, 0, 1); // 3
 
         // Basic block. A loop that counts down from 10 to 0.
-        vm.Addi(1, 0, 10); // 4
-        vm.Addi(1, 1, -1); // 5
-        vm.Bne(1, 0, -1);  // 6
+        a.Addi(1, 0, 10); // 4
+        a.Addi(1, 1, -1); // 5
+        a.Bne(1, 0, -1);  // 6
 
         // Basic block. Set up a few registers.
-        vm.Addi(1, 0, 15360); // 7
-        vm.Addi(2, 0, 15361); // 8
-        vm.Addi(3, 0, 1023);  // 9
-        vm.Beq(0, 0, 1);      // 10
+        a.Addi(1, 0, 15360); // 7
+        a.Addi(2, 0, 15361); // 8
+        a.Addi(3, 0, 1023);  // 9
+        a.Beq(0, 0, 1);      // 10
 
         // Basic block. A loop that counts down from 10 to 0.
-        vm.Addi(1, 0, 10); // 11
-        vm.Addi(1, 1, -1); // 12
-        vm.Bne(1, 0, -1);  // 13
+        a.Addi(1, 0, 10); // 11
+        a.Addi(1, 1, -1); // 12
+        a.Bne(1, 0, -1);  // 13
 
         // Basic block. Halt. Do not catch fire.
-        vm.Halt(); // 14
+        a.Halt(); // 14
 
         // Create a JIT.
         auto jit = DemoJit();
@@ -394,7 +399,7 @@ auto main() -> int
 
         // JIT the VM's code, one basic block at a time, and run it.
         uint32_t pc = 0;
-        for (CpuFunc func = Resolve(jit, vm, pc); func != nullptr && !cpu.isTrapped; func = Resolve(jit, vm, pc))
+        for (CpuFunc func = Resolve(jit, code, pc); func != nullptr && !cpu.isTrapped; func = Resolve(jit, code, pc))
         {
             // Call the native code.
             func(&cpu);
