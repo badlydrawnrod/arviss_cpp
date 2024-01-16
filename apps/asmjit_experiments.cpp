@@ -311,58 +311,82 @@ public:
 
         return pc;
     }
+
+    auto JitBlock(const vm::Code& code, uint32_t pc) -> CpuFunc
+    {
+        std::cout << std::format("Compiling from 0x{:04x}\n", pc);
+        SetPc(pc);
+        bool isEndOfBasicBlock = false;
+        for (auto it = code.cbegin() + pc; it != code.cend() && !isEndOfBasicBlock; ++it)
+        {
+            const auto& ins = *it;
+            switch (ins.op)
+            {
+            case vm::HALT:
+                EmitTrap();
+                isEndOfBasicBlock = true;
+                break;
+            case vm::ADD:
+                EmitAdd(ins.reg3.r1, ins.reg3.r2, ins.reg3.r3);
+                break;
+            case vm::ADDI:
+                EmitAddi(ins.reg2imm.r1, ins.reg2imm.r2, ins.reg2imm.imm);
+                break;
+            case vm::BNE:
+                EmitBne(ins.reg2imm.r1, ins.reg2imm.r2, ins.reg2imm.imm);
+                isEndOfBasicBlock = true;
+                break;
+            case vm::BEQ:
+                EmitBeq(ins.reg2imm.r1, ins.reg2imm.r2, ins.reg2imm.imm);
+                isEndOfBasicBlock = true;
+                break;
+            }
+        }
+
+        return isEndOfBasicBlock ? Compile() : nullptr;
+    }
 };
 
-auto JitBlock(DemoJit& jit, const vm::Code& code, uint32_t pc) -> CpuFunc
+class System
 {
-    std::cout << std::format("Compiling from 0x{:04x}\n", pc);
-    jit.SetPc(pc);
-    bool isEndOfBasicBlock = false;
-    for (auto it = code.cbegin() + pc; it != code.cend() && !isEndOfBasicBlock; ++it)
+    vm::Code code_{};
+    Cpu cpu_{};
+    DemoJit jit_{};
+
+    auto Resolve(uint32_t pc) -> CpuFunc
     {
-        const auto& ins = *it;
-        switch (ins.op)
+        CpuFunc func = jit_.Resolve(pc);
+        if (func)
         {
-        case vm::HALT:
-            jit.EmitTrap();
-            isEndOfBasicBlock = true;
-            break;
-        case vm::ADD:
-            jit.EmitAdd(ins.reg3.r1, ins.reg3.r2, ins.reg3.r3);
-            break;
-        case vm::ADDI:
-            jit.EmitAddi(ins.reg2imm.r1, ins.reg2imm.r2, ins.reg2imm.imm);
-            break;
-        case vm::BNE:
-            jit.EmitBne(ins.reg2imm.r1, ins.reg2imm.r2, ins.reg2imm.imm);
-            isEndOfBasicBlock = true;
-            break;
-        case vm::BEQ:
-            jit.EmitBeq(ins.reg2imm.r1, ins.reg2imm.r2, ins.reg2imm.imm);
-            isEndOfBasicBlock = true;
-            break;
+            return func;
+        }
+        return jit_.JitBlock(code_, pc);
+    }
+
+public:
+    System(vm::Code&& code) : code_{std::move(code)} {}
+
+    auto Run() -> void
+    {
+        // JIT the VM's code, one basic block at a time, and run it.
+        uint32_t pc = 0;
+        for (CpuFunc func = Resolve(pc); func != nullptr && !cpu_.isTrapped; func = Resolve(pc))
+        {
+            // Call the native code.
+            func(&cpu_);
+            std::cout << "x1 = " << cpu_.xreg[1] << '\n';
+
+            // Get the VM address of the next instruction.
+            pc = cpu_.nextPc;
         }
     }
-
-    return isEndOfBasicBlock ? jit.Compile() : nullptr;
-}
-
-auto Resolve(DemoJit& jit, const vm::Code& code, uint32_t pc) -> CpuFunc
-{
-    CpuFunc func = jit.Resolve(pc);
-    if (func)
-    {
-        return func;
-    }
-    return JitBlock(jit, code, pc);
-}
+};
 
 auto main() -> int
 {
     try
     {
-        // Create a VM and load it up with some instructions. This is what we'll be jitting *from*. The instructions
-        // are simple and would have little to no decoding overhead if we actually decoded them.
+        // Assemble some VM instructions into `code`.
         vm::Code code;
         vm::Assembler a(code);
 
@@ -391,23 +415,9 @@ auto main() -> int
         // Basic block. Halt. Do not catch fire.
         a.Halt(); // 14
 
-        // Create a JIT.
-        auto jit = DemoJit();
-
-        // Create a CPU.
-        Cpu cpu{};
-
-        // JIT the VM's code, one basic block at a time, and run it.
-        uint32_t pc = 0;
-        for (CpuFunc func = Resolve(jit, code, pc); func != nullptr && !cpu.isTrapped; func = Resolve(jit, code, pc))
-        {
-            // Call the native code.
-            func(&cpu);
-            std::cout << "x1 = " << cpu.xreg[1] << '\n';
-
-            // Get the VM address of the next instruction.
-            pc = cpu.nextPc;
-        }
+        // Move the code into a system that can run it.
+        System system(std::move(code));
+        system.Run();
 
         return 0;
     }
