@@ -315,7 +315,7 @@ auto JitBlock(DemoJit& jit, vm::Machine& machine, uint32_t pc) -> CpuFunc
     bool isEndOfBasicBlock = false;
     for (size_t index = pc; !isEndOfBasicBlock && index < machine.code_.size(); index++)
     {
-        auto ins = machine.code_[index];
+        const auto& ins = machine.code_[index];
         switch (ins.op)
         {
         case vm::HALT:
@@ -339,6 +339,16 @@ auto JitBlock(DemoJit& jit, vm::Machine& machine, uint32_t pc) -> CpuFunc
         }
     }
     return isEndOfBasicBlock ? jit.Compile() : nullptr;
+}
+
+auto Resolve(DemoJit& jit, vm::Machine& machine, uint32_t pc) -> CpuFunc
+{
+    CpuFunc func = jit.Resolve(pc);
+    if (func == nullptr)
+    {
+        func = JitBlock(jit, machine, pc);
+    }
+    return func;
 }
 
 auto main() -> int
@@ -381,30 +391,15 @@ auto main() -> int
         Cpu cpu{};
 
         // JIT the VM's code, one basic block at a time, and run it.
-        // TODO: this is very, very hacky. Fix.
         uint32_t pc = 0;
-        CpuFunc func = nullptr;
-        while (!cpu.isTrapped)
+        for (CpuFunc func = Resolve(jit, vm, pc); func != nullptr && !cpu.isTrapped; func = Resolve(jit, vm, pc))
         {
-            // If we don't have a function to call then attempt to JIT from the current VM PC.
-            if (func == nullptr)
-            {
-                func = JitBlock(jit, vm, pc);
-
-                // If we couldn't JIT it then something went wrong and we're done.
-                if (func == nullptr)
-                {
-                    break;
-                }
-            }
-
             // Call the native code.
             func(&cpu);
             std::cout << "x1 = " << cpu.xreg[1] << '\n';
 
-            // Get the VM address of the next instruction and see if the JIT knows about it.
+            // Get the VM address of the next instruction.
             pc = cpu.nextPc;
-            func = jit.Resolve(pc);
         }
 
         return 0;
