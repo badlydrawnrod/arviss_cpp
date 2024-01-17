@@ -13,6 +13,7 @@
 // addi - rd <- rs1 + imm32
 // bne  - pc <- pc + imm32 if rs1 != rs2 else pc + 1
 // beq  - pc <- pc + imm32 if rs1 == rs2 else pc + 1
+// jmp  - pc <- rs1 + rs2 + imm32
 
 struct Cpu
 {
@@ -33,6 +34,7 @@ namespace vm
         ADDI,
         BNE,
         BEQ,
+        JMP,
     };
 
     struct Empty
@@ -78,6 +80,7 @@ namespace vm
         auto Addi(Reg rd, Reg rs1, int32_t imm) -> void { code_.emplace_back(Instruction{.op = ADDI, .reg2imm = {.r1 = rd, .r2 = rs1, .imm = imm}}); }
         auto Bne(Reg rs1, Reg rs2, int32_t imm) -> void { code_.emplace_back(Instruction{.op = BNE, .reg2imm{.r1 = rs1, .r2 = rs2, .imm = imm}}); }
         auto Beq(Reg rs1, Reg rs2, int32_t imm) -> void { code_.emplace_back(Instruction{.op = BEQ, .reg2imm{.r1 = rs1, .r2 = rs2, .imm = imm}}); }
+        auto Jmp(Reg rs1, Reg rs2, int32_t imm) -> void { code_.emplace_back(Instruction{.op = JMP, .reg2imm{.r1 = rs1, .r2 = rs2, .imm = imm}}); }
     };
 } // namespace vm
 
@@ -312,6 +315,22 @@ public:
         return pc;
     }
 
+    // Do an indirect jmp ro [rs1 + rs2 + imm].
+    auto EmitJmp(Reg rs1, Reg rs2, int32_t imm) -> uint32_t
+    {
+        const auto pc = AddOffset();
+        const auto addrRs1 = XregOfs(rs1);
+        const auto addrRs2 = XregOfs(rs2);
+
+        a_.mov(asmjit::x86::eax, addrRs1);
+        a_.mov(asmjit::x86::eax, addrRs2);
+        a_.add(asmjit::x86::eax, imm);
+        a_.mov(NextPcOfs(), asmjit::x86::eax);
+        a_.ret(); // Return to the execution environment.
+
+        return pc;
+    }
+
     auto JitBlock(const vm::Code& code, uint32_t pc) -> CpuFunc
     {
         std::cout << std::format("Compiling from 0x{:04x}\n", pc);
@@ -338,6 +357,10 @@ public:
                 break;
             case vm::BEQ:
                 EmitBeq(ins.reg2imm.r1, ins.reg2imm.r2, ins.reg2imm.imm);
+                isEndOfBasicBlock = true;
+                break;
+            case vm::JMP:
+                EmitJmp(ins.reg2imm.r1, ins.reg2imm.r2, ins.reg2imm.imm);
                 isEndOfBasicBlock = true;
                 break;
             }
@@ -412,8 +435,13 @@ auto main() -> int
         a.Addi(1, 1, -1); // 12
         a.Bne(1, 0, -1);  // 13
 
-        // Basic block. Halt. Do not catch fire.
-        a.Halt(); // 14
+        // // Basic Block. Do an indirect jump to [x1 + x0 + 0].
+        a.Addi(1, 0, 16); // 14
+        a.Jmp(1, 0, 0);   // 15
+
+        // Basic block. Load a value into x1. Halt. Do not catch fire.
+        a.Addi(1, 0, 1337); // 16
+        a.Halt();           // 17
 
         // Move the code into a system that can run it.
         System system(std::move(code));
