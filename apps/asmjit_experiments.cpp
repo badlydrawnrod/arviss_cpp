@@ -5,6 +5,13 @@
 #include <iostream>
 #include <unordered_map>
 
+enum class Trap : uint32_t
+{
+    NONE,        // The CPU is not trapped.
+    HALT,        // The CPU has been requested to halt.
+    BAD_ADDRESS, // The CPU attempted to execute code from a bad address.
+};
+
 // Enough of a CPU for experimental purposes.
 //
 // Instructions supported:
@@ -17,10 +24,10 @@
 
 struct Cpu
 {
-    uint32_t pc;       // The address of the current instruction.
-    uint32_t nextPc;   // The address of the next instruction.
-    uint32_t xreg[32]; // Integer registers.
-    bool isTrapped;    // Is the CPU trapped.
+    uint32_t pc;           // The address of the current instruction.
+    uint32_t nextPc;       // The address of the next instruction.
+    uint32_t xreg[32];     // Integer registers.
+    Trap trap{Trap::NONE}; // Set to a value other than Trap::NONE if the CPU is trapped.
 };
 
 using Reg = uint32_t;
@@ -29,16 +36,12 @@ namespace vm
 {
     enum Opcode
     {
-        HALT,
+        TRAP,
         ADD,
         ADDI,
         BNE,
         BEQ,
         JMP,
-    };
-
-    struct Empty
-    {
     };
 
     struct Reg3
@@ -60,7 +63,7 @@ namespace vm
         Opcode op;
         union
         {
-            struct Empty empty;
+            Trap trap;
             struct Reg3 reg3;
             struct Reg2Imm reg2imm;
         };
@@ -75,7 +78,7 @@ namespace vm
     public:
         Assembler(Code& code) : code_{code} {}
 
-        auto Halt() -> void { code_.emplace_back(Instruction{.op = HALT, .empty = {}}); }
+        auto Trap(Trap trap) -> void { code_.emplace_back(Instruction{.op = TRAP, .trap = trap}); }
         auto Add(Reg rd, Reg rs1, Reg rs2) -> void { code_.emplace_back(Instruction{.op = ADD, .reg3 = {.r1 = rd, .r2 = rs1, .r3 = rs2}}); }
         auto Addi(Reg rd, Reg rs1, int32_t imm) -> void { code_.emplace_back(Instruction{.op = ADDI, .reg2imm = {.r1 = rd, .r2 = rs1, .imm = imm}}); }
         auto Bne(Reg rs1, Reg rs2, int32_t imm) -> void { code_.emplace_back(Instruction{.op = BNE, .reg2imm{.r1 = rs1, .r2 = rs2, .imm = imm}}); }
@@ -108,10 +111,10 @@ inline auto NextPcOfs() -> asmjit::x86::Mem
     return asmjit::x86::ptr(ARG0, static_cast<int32_t>(offsetof(Cpu, nextPc)));
 }
 
-inline auto IsTrappedOfs() -> asmjit::x86::Mem
+inline auto TrapOfs() -> asmjit::x86::Mem
 {
-    // What's the address of isTrapped relative to ARG0.
-    return asmjit::x86::ptr(ARG0, static_cast<int32_t>(offsetof(Cpu, isTrapped)));
+    // What's the address of trap relative to ARG0.
+    return asmjit::x86::ptr(ARG0, static_cast<int32_t>(offsetof(Cpu, trap)));
 }
 
 class DemoJit
@@ -203,12 +206,12 @@ public:
         return pc;
     }
 
-    auto EmitTrap() -> uint32_t
+    auto EmitTrap(Trap trap) -> uint32_t
     {
         const auto pc = AddOffset();
 
-        const auto addr = IsTrappedOfs();
-        a_.mov(asmjit::x86::eax, 1);
+        const auto addr = TrapOfs();
+        a_.mov(asmjit::x86::eax, static_cast<uint32_t>(trap));
         a_.mov(addr, asmjit::x86::eax);
         a_.ret();
 
@@ -322,9 +325,9 @@ public:
         const auto addrRs1 = XregOfs(rs1);
         const auto addrRs2 = XregOfs(rs2);
 
-        a_.mov(asmjit::x86::eax, addrRs1);
-        a_.mov(asmjit::x86::eax, addrRs2);
-        a_.add(asmjit::x86::eax, imm);
+        a_.mov(asmjit::x86::eax, addrRs1); // TODO: what if this was x0 ?
+        a_.add(asmjit::x86::eax, addrRs2); // TODO: what if this was x0 ?
+        a_.add(asmjit::x86::eax, imm);     // TODO: what if this was zero ?
         a_.mov(NextPcOfs(), asmjit::x86::eax);
         a_.ret(); // Return to the execution environment.
 
@@ -334,6 +337,10 @@ public:
     auto JitBlock(const vm::Code& code, uint32_t pc) -> CpuFunc
     {
         std::cout << std::format("Compiling from 0x{:04x}\n", pc);
+        if (pc >= code.size())
+        {
+            return nullptr;
+        }
         SetPc(pc);
         bool isEndOfBasicBlock = false;
         for (auto it = code.cbegin() + pc; it != code.cend() && !isEndOfBasicBlock; ++it)
@@ -341,8 +348,8 @@ public:
             const auto& ins = *it;
             switch (ins.op)
             {
-            case vm::HALT:
-                EmitTrap();
+            case vm::TRAP:
+                EmitTrap(ins.trap);
                 isEndOfBasicBlock = true;
                 break;
             case vm::ADD:
@@ -378,12 +385,23 @@ class System
 
     auto Resolve(uint32_t pc) -> CpuFunc
     {
+        // If the JIT already knows about the address then return it.
         CpuFunc func = jit_.Resolve(pc);
         if (func)
         {
             return func;
         }
-        return jit_.JitBlock(code_, pc);
+
+        // If the JIT doesn't know about the address then attempt to JIT a basic block.
+        func = jit_.JitBlock(code_, pc);
+
+        // If that fails, then we have a bad address, so signal a trap on the CPU.
+        if (func == nullptr)
+        {
+            cpu_.trap = Trap::BAD_ADDRESS;
+        }
+
+        return func;
     }
 
 public:
@@ -393,7 +411,8 @@ public:
     {
         // JIT the VM's code, one basic block at a time, and run it.
         uint32_t pc = 0;
-        for (CpuFunc func = Resolve(pc); func != nullptr && !cpu_.isTrapped; func = Resolve(pc))
+        CpuFunc func = nullptr;
+        for (func = Resolve(pc); func != nullptr && cpu_.trap == Trap::NONE; func = Resolve(pc))
         {
             // Call the native code.
             func(&cpu_);
@@ -401,7 +420,22 @@ public:
 
             // Get the VM address of the next instruction.
             pc = cpu_.nextPc;
+
+            std::cout << "pc = " << pc << '\n'; // TODO: remove.
         }
+        std::cout << "Execution ended with status: ";
+        switch (cpu_.trap)
+        {
+        case Trap::NONE:
+            std::cout << "Success";
+            break;
+        case Trap::BAD_ADDRESS:
+            std::cout << std::format("Bad Address: 0x{:04x}", pc);
+            break;
+        case Trap::HALT:
+            std::cout << "Halt";
+        }
+        std::cout << '\n';
     }
 };
 
@@ -414,34 +448,34 @@ auto main() -> int
         vm::Assembler a(code);
 
         // Basic block. Add a few things together and fall through.
-        a.Add(1, 2, 3); // 0
-        a.Add(0, 1, 1); // 1
-        a.Add(2, 2, 2); // 2
-        a.Beq(0, 0, 1); // 3
+        a.Add(1, 2, 3); // 0: add x1, x2, x3
+        a.Add(0, 1, 1); // 1: add x0, x1, x1
+        a.Add(2, 2, 2); // 2: add x2, x2, x2
+        a.Beq(0, 0, 1); // 3: beq x0, x0, +1
 
         // Basic block. A loop that counts down from 10 to 0.
-        a.Addi(1, 0, 10); // 4
-        a.Addi(1, 1, -1); // 5
-        a.Bne(1, 0, -1);  // 6
+        a.Addi(1, 0, 10); // 4: addi x1, 0, 10
+        a.Addi(1, 1, -1); // 5: addi x1, x1, -1
+        a.Bne(1, 0, -1);  // 6: bne x1, x0, -1
 
         // Basic block. Set up a few registers.
-        a.Addi(1, 0, 15360); // 7
-        a.Addi(2, 0, 15361); // 8
-        a.Addi(3, 0, 1023);  // 9
-        a.Beq(0, 0, 1);      // 10
+        a.Addi(1, 0, 15360); //  7: addi x1, 0, 3c00h
+        a.Addi(2, 0, 15361); //  8: addi x2, 0, 3c01h
+        a.Addi(3, 0, 1023);  //  9: addi x3, 0, 3ffh
+        a.Beq(0, 0, 1);      // 10: beq x0, x0, +1
 
         // Basic block. A loop that counts down from 10 to 0.
-        a.Addi(1, 0, 10); // 11
-        a.Addi(1, 1, -1); // 12
-        a.Bne(1, 0, -1);  // 13
+        a.Addi(1, 0, 10); // 11: addi x1, x0, 10
+        a.Addi(1, 1, -1); // 12: addi x1, x1, -1
+        a.Bne(1, 0, -1);  // 13: bne x1, x0, -1
 
-        // // Basic Block. Do an indirect jump to [x1 + x0 + 0].
-        a.Addi(1, 0, 16); // 14
-        a.Jmp(1, 0, 0);   // 15
+        // // Basic Block. Do an indirect jump to x1 + x0 + 0.
+        a.Addi(1, 0, 16); // 14: addi x1, x0, 16
+        a.Jmp(1, 0, 0);   // 15: jmp x1 + x0 + 0
 
         // Basic block. Load a value into x1. Halt. Do not catch fire.
-        a.Addi(1, 0, 1337); // 16
-        a.Halt();           // 17
+        a.Addi(1, 0, 1337); // 16: addi x1, x0, 1337
+        a.Trap(Trap::HALT); // 17: trap halt
 
         // Move the code into a system that can run it.
         System system(std::move(code));
