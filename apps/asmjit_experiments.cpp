@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <asmjit/asmjit.h>
 #include <asmjit/core.h>
 #include <cstddef>
@@ -88,10 +89,11 @@ namespace vm
 } // namespace vm
 
 // How we invoke a function that works on the CPU.
-using CpuFunc = void (*)(Cpu*);
+using CpuFunc = void (*)(Cpu*, uint32_t);
 
-// Let's assume WIN32, x64 for now. Calling convention is that the first argument is in rcx.
+// Let's assume WIN32, x64 for now. Calling convention is that the first argument is in rcx and the second is in rdx.
 constexpr asmjit::x86::Gp ARG0 = asmjit::x86::rcx; // First argument.
+constexpr asmjit::x86::Gp ARG1 = asmjit::x86::rdx; // Second argument.
 
 inline auto XregOfs(Reg r) -> asmjit::x86::Mem
 {
@@ -135,7 +137,7 @@ class DemoJit
     std::unordered_map<uint32_t, CpuFunc> offsetMap_{};
 
     // Pending offsets, yet to be resolved to addresses and added to the map.
-    using OffsetPair = std::pair<uint32_t, size_t>;
+    using OffsetPair = std::pair<uint32_t, asmjit::Label>;
     std::vector<OffsetPair> pendingOffsets_{};
 
     uint32_t pc_{};
@@ -151,10 +153,28 @@ public:
 
     auto SetPc(uint32_t pc) -> void { pc_ = pc; }
 
-    // Adds an offset whose address we need to fix up later.
+    // Adds an offset whose label we need to bind later.
+    auto MakeLabelAt(uint32_t addr) -> asmjit::Label
+    {
+        auto label = a_.newLabel();
+        pendingOffsets_.emplace_back(addr, label);
+        return label;
+    }
+
+    // Adds an offset at pc, increment pc and return its old value.
     auto AddOffset() -> uint32_t
     {
-        pendingOffsets_.emplace_back(OffsetPair(pc_, a_.offset()));
+        if (auto it = std::ranges::find_if(pendingOffsets_, [dst = pc_](const auto& p) -> bool { return p.first == dst; }); it != pendingOffsets_.end())
+        {
+            // Bind the label because now we know where we want to put it.
+            a_.bind(it->second);
+        }
+        else
+        {
+            auto label = a_.newLabel();
+            a_.bind(label);
+            pendingOffsets_.emplace_back(pc_, label);
+        }
         const auto oldPc = pc_;
         pc_ += 1;
         return oldPc;
@@ -179,9 +199,9 @@ public:
         // Fix up those offsets so that we have a direct mapping from VM addresses to native addresses.
         const auto baseAddress = code_.baseAddress();
         std::cout << std::format("Base address of compiled code: 0x{:08x}\n", baseAddress);
-        for (auto [vmAddr, offset] : pendingOffsets_)
+        for (auto [vmAddr, label] : pendingOffsets_)
         {
-            const std::uintptr_t addr = baseAddress + offset;
+            const std::uintptr_t addr = baseAddress + code_.labelOffset(label);
             std::cout << std::format("vm address 0x{:04x} is native address 0x{:08x}\n", vmAddr, addr);
             offsetMap_[vmAddr] = asmjit::ptr_as_func<CpuFunc>(reinterpret_cast<void*>(addr));
         }
@@ -201,18 +221,38 @@ public:
     // Returns from JITted code to the execution environment.
     auto ReturnToEE() -> void { a_.ret(); }
 
-    // Sets next pc from EAX and returns.
+    // Sets next pc from EAX and returns from JITted code to the execution environment.
     auto SetNextAndReturn()
     {
         a_.mov(NextPcOfs(), asmjit::x86::eax);
         ReturnToEE();
     }
 
+    // Decrements `ticks` and returns to the execution environment if it goes negative.
+    auto CountZero(uint32_t pc)
+    {
+        const asmjit::Label branchNotTaken = a_.newLabel();
+        a_.dec(ARG1);
+        a_.jge(branchNotTaken);
+        a_.mov(asmjit::x86::eax, pc);
+        SetNextAndReturn();
+
+        a_.bind(branchNotTaken);
+    }
+
     // Branches relative to pc.
     auto Branch(uint32_t pc, int32_t imm)
     {
-        a_.mov(asmjit::x86::eax, pc + imm);
-        SetNextAndReturn();
+        const auto dst = pc + imm;
+        if (auto it = std::ranges::find_if(pendingOffsets_, [dst](const auto& p) -> bool { return p.first == dst; }); it != pendingOffsets_.end())
+        {
+            a_.jmp(it->second);
+        }
+        else
+        {
+            auto label = MakeLabelAt(dst);
+            a_.jmp(label);
+        }
     }
 
     // Signals a trap on the CPU.
@@ -278,6 +318,7 @@ public:
     auto EmitBne(Reg rs1, Reg rs2, int32_t imm) -> uint32_t
     {
         const auto pc = AddOffset();
+        CountZero(pc);
         const auto addrRs1 = XregOfs(rs1);
         const auto addrRs2 = XregOfs(rs2);
         const asmjit::Label branchNotTaken = a_.newLabel();
@@ -292,7 +333,6 @@ public:
 
         // We didn't take the branch. nextPc <- pc + 1
         a_.bind(branchNotTaken);
-        Branch(pc, 1);
 
         return pc;
     }
@@ -301,6 +341,7 @@ public:
     auto EmitBeq(Reg rs1, Reg rs2, int32_t imm) -> uint32_t
     {
         const auto pc = AddOffset();
+        CountZero(pc);
         const auto addrRs1 = XregOfs(rs1);
         const auto addrRs2 = XregOfs(rs2);
         const asmjit::Label branchNotTaken = a_.newLabel();
@@ -315,7 +356,6 @@ public:
 
         // We didn't take the branch. nextPc <- pc + 1
         a_.bind(branchNotTaken);
-        Branch(pc, 1);
 
         return pc;
     }
@@ -343,15 +383,15 @@ public:
             return nullptr;
         }
         SetPc(pc);
-        bool isEndOfBasicBlock = false;
-        for (auto it = code.cbegin() + pc; it != code.cend() && !isEndOfBasicBlock; ++it)
+        bool stopHere = false;
+        for (auto it = code.cbegin() + pc; it != code.cend() && !stopHere; ++it)
         {
             const auto& ins = *it;
             switch (ins.op)
             {
             case vm::TRAP:
                 EmitTrap(ins.trap);
-                isEndOfBasicBlock = true;
+                stopHere = true;
                 break;
             case vm::ADD:
                 EmitAdd(ins.reg3.r1, ins.reg3.r2, ins.reg3.r3);
@@ -361,20 +401,18 @@ public:
                 break;
             case vm::BNE:
                 EmitBne(ins.reg2imm.r1, ins.reg2imm.r2, ins.reg2imm.imm);
-                isEndOfBasicBlock = true;
                 break;
             case vm::BEQ:
                 EmitBeq(ins.reg2imm.r1, ins.reg2imm.r2, ins.reg2imm.imm);
-                isEndOfBasicBlock = true;
                 break;
             case vm::JMP:
                 EmitJmp(ins.reg2imm.r1, ins.reg2imm.r2, ins.reg2imm.imm);
-                isEndOfBasicBlock = true;
+                stopHere = true;
                 break;
             }
         }
 
-        return isEndOfBasicBlock ? Compile() : nullptr;
+        return stopHere ? Compile() : nullptr;
     }
 };
 
@@ -410,13 +448,15 @@ public:
 
     auto Run() -> void
     {
+        uint32_t ticks = 8;
+
         // JIT the VM's code, one basic block at a time, and run it.
         uint32_t pc = 0;
         CpuFunc func = nullptr;
         for (func = Resolve(pc); func != nullptr && cpu_.trap == Trap::NONE; func = Resolve(pc))
         {
-            // Call the native code.
-            func(&cpu_);
+            // Call the native code and run it for `ticks` ticks.
+            func(&cpu_, ticks);
             std::cout << "x1 = " << cpu_.xreg[1] << '\n';
 
             // Get the VM address of the next instruction.
