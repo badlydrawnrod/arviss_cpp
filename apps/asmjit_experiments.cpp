@@ -198,14 +198,10 @@ public:
         return generatedFunc;
     }
 
-    // Ends a function and returns to the execution environment.
-    auto EmitEndFunc() -> uint32_t
-    {
-        const auto pc = AddOffset();
-        a_.ret();
-        return pc;
-    }
+    // Returns from JITted code to the execution environment.
+    auto EmitReturnToEE() -> void { a_.ret(); }
 
+    // Signals a trap on the CPU.
     auto EmitTrap(Trap trap) -> uint32_t
     {
         const auto pc = AddOffset();
@@ -213,7 +209,7 @@ public:
         const auto addr = TrapOfs();
         a_.mov(asmjit::x86::eax, static_cast<uint32_t>(trap));
         a_.mov(addr, asmjit::x86::eax);
-        a_.ret();
+        EmitReturnToEE();
 
         return pc;
     }
@@ -280,13 +276,13 @@ public:
         // We took the branch. nextPc <- pc + imm
         a_.mov(asmjit::x86::eax, pc + imm);
         a_.mov(NextPcOfs(), asmjit::x86::eax);
-        a_.ret(); // Return to the execution environment.
+        EmitReturnToEE();
 
         // We didn't take the branch. nextPc <- pc + 1
         a_.bind(branchNotTaken);
         a_.mov(asmjit::x86::eax, pc + 1);
         a_.mov(NextPcOfs(), asmjit::x86::eax);
-        a_.ret(); // Return to the execution environment.
+        EmitReturnToEE();
 
         return pc;
     }
@@ -307,13 +303,13 @@ public:
         // We took the branch. nextPc <- pc + imm
         a_.mov(asmjit::x86::eax, pc + imm);
         a_.mov(NextPcOfs(), asmjit::x86::eax);
-        a_.ret(); // Return to the execution environment.
+        EmitReturnToEE();
 
         // We didn't take the branch. nextPc <- pc + 1
         a_.bind(branchNotTaken);
         a_.mov(asmjit::x86::eax, pc + 1);
         a_.mov(NextPcOfs(), asmjit::x86::eax);
-        a_.ret(); // Return to the execution environment.
+        EmitReturnToEE();
 
         return pc;
     }
@@ -329,7 +325,7 @@ public:
         a_.add(asmjit::x86::eax, addrRs2); // TODO: what if this was x0 ?
         a_.add(asmjit::x86::eax, imm);     // TODO: what if this was zero ?
         a_.mov(NextPcOfs(), asmjit::x86::eax);
-        a_.ret(); // Return to the execution environment.
+        EmitReturnToEE();
 
         return pc;
     }
