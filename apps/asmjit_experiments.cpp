@@ -199,7 +199,21 @@ public:
     }
 
     // Returns from JITted code to the execution environment.
-    auto EmitReturnToEE() -> void { a_.ret(); }
+    auto ReturnToEE() -> void { a_.ret(); }
+
+    // Sets next pc from EAX and returns.
+    auto SetNextAndReturn()
+    {
+        a_.mov(NextPcOfs(), asmjit::x86::eax);
+        ReturnToEE();
+    }
+
+    // Branches relative to pc.
+    auto Branch(uint32_t pc, int32_t imm)
+    {
+        a_.mov(asmjit::x86::eax, pc + imm);
+        SetNextAndReturn();
+    }
 
     // Signals a trap on the CPU.
     auto EmitTrap(Trap trap) -> uint32_t
@@ -209,7 +223,7 @@ public:
         const auto addr = TrapOfs();
         a_.mov(asmjit::x86::eax, static_cast<uint32_t>(trap));
         a_.mov(addr, asmjit::x86::eax);
-        EmitReturnToEE();
+        ReturnToEE();
 
         return pc;
     }
@@ -274,15 +288,11 @@ public:
         a_.je(branchNotTaken);             // Ironically.
 
         // We took the branch. nextPc <- pc + imm
-        a_.mov(asmjit::x86::eax, pc + imm);
-        a_.mov(NextPcOfs(), asmjit::x86::eax);
-        EmitReturnToEE();
+        Branch(pc, imm);
 
         // We didn't take the branch. nextPc <- pc + 1
         a_.bind(branchNotTaken);
-        a_.mov(asmjit::x86::eax, pc + 1);
-        a_.mov(NextPcOfs(), asmjit::x86::eax);
-        EmitReturnToEE();
+        Branch(pc, 1);
 
         return pc;
     }
@@ -301,15 +311,11 @@ public:
         a_.jne(branchNotTaken);            // Ironically.
 
         // We took the branch. nextPc <- pc + imm
-        a_.mov(asmjit::x86::eax, pc + imm);
-        a_.mov(NextPcOfs(), asmjit::x86::eax);
-        EmitReturnToEE();
+        Branch(pc, imm);
 
         // We didn't take the branch. nextPc <- pc + 1
         a_.bind(branchNotTaken);
-        a_.mov(asmjit::x86::eax, pc + 1);
-        a_.mov(NextPcOfs(), asmjit::x86::eax);
-        EmitReturnToEE();
+        Branch(pc, 1);
 
         return pc;
     }
@@ -324,8 +330,7 @@ public:
         a_.mov(asmjit::x86::eax, addrRs1); // TODO: what if this was x0 ?
         a_.add(asmjit::x86::eax, addrRs2); // TODO: what if this was x0 ?
         a_.add(asmjit::x86::eax, imm);     // TODO: what if this was zero ?
-        a_.mov(NextPcOfs(), asmjit::x86::eax);
-        EmitReturnToEE();
+        SetNextAndReturn();
 
         return pc;
     }
