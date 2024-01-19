@@ -153,28 +153,23 @@ public:
 
     auto SetPc(uint32_t pc) -> void { pc_ = pc; }
 
-    // Adds an offset whose label we need to bind later.
-    auto MakeLabelAt(uint32_t addr) -> asmjit::Label
+    // If a label exists for a pending offset then return it, otherwise create a new pending offset and return its label.
+    auto FindOrCreateLabel(uint32_t offset) -> asmjit::Label
     {
+        if (auto it = std::ranges::find_if(pendingOffsets_, [dst = offset](const auto& p) -> bool { return p.first == dst; }); it != pendingOffsets_.end())
+        {
+            return it->second;
+        }
         auto label = a_.newLabel();
-        pendingOffsets_.emplace_back(addr, label);
+        pendingOffsets_.emplace_back(offset, label);
         return label;
     }
 
     // Adds an offset at pc, increment pc and return its old value.
     auto AddOffset() -> uint32_t
     {
-        if (auto it = std::ranges::find_if(pendingOffsets_, [dst = pc_](const auto& p) -> bool { return p.first == dst; }); it != pendingOffsets_.end())
-        {
-            // Bind the label because now we know where we want to put it.
-            a_.bind(it->second);
-        }
-        else
-        {
-            auto label = a_.newLabel();
-            a_.bind(label);
-            pendingOffsets_.emplace_back(pc_, label);
-        }
+        auto label = FindOrCreateLabel(pc_);
+        a_.bind(label);
         const auto oldPc = pc_;
         pc_ += 1;
         return oldPc;
@@ -243,16 +238,8 @@ public:
     // Branches relative to pc.
     auto Branch(uint32_t pc, int32_t imm)
     {
-        const auto dst = pc + imm;
-        if (auto it = std::ranges::find_if(pendingOffsets_, [dst](const auto& p) -> bool { return p.first == dst; }); it != pendingOffsets_.end())
-        {
-            a_.jmp(it->second);
-        }
-        else
-        {
-            auto label = MakeLabelAt(dst);
-            a_.jmp(label);
-        }
+        auto label = FindOrCreateLabel(pc + imm);
+        a_.jmp(label);
     }
 
     // Signals a trap on the CPU.
@@ -448,7 +435,7 @@ public:
 
     auto Run() -> void
     {
-        uint32_t ticks = 8;
+        uint32_t ticks = 16;
 
         // JIT the VM's code, one basic block at a time, and run it.
         uint32_t pc = 0;
