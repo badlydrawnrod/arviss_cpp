@@ -133,8 +133,8 @@ class DemoJit
     // An assembler that can emit code to the code holder.
     asmjit::x86::Assembler a_;
 
-    // A map from VM addresses to their code offsets in the generated function.
-    std::unordered_map<uint32_t, CpuFunc> offsetMap_{};
+    // A map from VM addresses to the corresponding generated code.
+    std::unordered_map<uint32_t, CpuFunc> vmToJit_{};
 
     // Pending offsets, yet to be resolved to addresses and added to the map.
     using OffsetPair = std::pair<uint32_t, asmjit::Label>;
@@ -176,7 +176,7 @@ public:
     };
 
     // Resolves a VM address into a native address.
-    auto Resolve(uint32_t vmAddr) -> CpuFunc { return offsetMap_[vmAddr]; }
+    auto Resolve(uint32_t vmAddr) -> CpuFunc { return vmToJit_[vmAddr]; }
 
     auto Compile() -> CpuFunc
     {
@@ -198,7 +198,7 @@ public:
         {
             const std::uintptr_t addr = baseAddress + code_.labelOffset(label);
             std::cout << std::format("vm address 0x{:04x} is native address 0x{:08x}\n", vmAddr, addr);
-            offsetMap_[vmAddr] = asmjit::ptr_as_func<CpuFunc>(reinterpret_cast<void*>(addr));
+            vmToJit_[vmAddr] = asmjit::ptr_as_func<CpuFunc>(reinterpret_cast<void*>(addr));
         }
 
         // Reset so that we're ready for the next round of compilation.
