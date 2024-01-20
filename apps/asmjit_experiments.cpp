@@ -4,6 +4,7 @@
 #include <cstddef>
 #include <format>
 #include <iostream>
+#include <ranges>
 #include <unordered_map>
 
 enum class Trap : uint32_t
@@ -180,6 +181,22 @@ public:
 
     auto Compile() -> CpuFunc
     {
+        // Partition the pending offsets into those whose labels are bound and those whose labels are not bound.
+        const auto unboundOffsets = std::ranges::partition(pendingOffsets_, [this](auto it) {
+            const auto& label = it.second;
+            return code_.isLabelBound(label);
+        });
+        const auto boundOffsets = std::ranges::subrange(std::ranges::begin(pendingOffsets_), std::ranges::begin(unboundOffsets));
+
+        // For each unbound label, bind it to a shim that returns to the execution environment via SetNextAndReturn()
+        // so that the execution environment can resolve the address.
+        for (auto [nextPc, label] : unboundOffsets)
+        {
+            a_.bind(label);
+            a_.mov(asmjit::x86::eax, nextPc);
+            SetNextAndReturn();
+        }
+
         // The assembler is no longer needed from here, so detach it from the code holder.
         code_.detach(&a_);
 
@@ -194,7 +211,7 @@ public:
         // Fix up those offsets so that we have a direct mapping from VM addresses to native addresses.
         const auto baseAddress = code_.baseAddress();
         std::cout << std::format("Base address of compiled code: 0x{:08x}\n", baseAddress);
-        for (auto [vmAddr, label] : pendingOffsets_)
+        for (auto [vmAddr, label] : boundOffsets)
         {
             const std::uintptr_t addr = baseAddress + code_.labelOffset(label);
             std::cout << std::format("vm address 0x{:04x} is native address 0x{:08x}\n", vmAddr, addr);
@@ -217,7 +234,7 @@ public:
     auto ReturnToEE() -> void { a_.ret(); }
 
     // Sets next pc from EAX and returns from JITted code to the execution environment.
-    auto SetNextAndReturn()
+    auto SetNextAndReturn() -> void
     {
         a_.mov(NextPcOfs(), asmjit::x86::eax);
         ReturnToEE();
@@ -246,7 +263,6 @@ public:
     auto EmitTrap(Trap trap) -> uint32_t
     {
         const auto pc = AddOffset();
-
         const auto addr = TrapOfs();
         a_.mov(asmjit::x86::eax, static_cast<uint32_t>(trap));
         a_.mov(addr, asmjit::x86::eax);
@@ -259,7 +275,6 @@ public:
     auto EmitAdd(Reg rd, Reg rs1, Reg rs2) -> uint32_t
     {
         const auto pc = AddOffset();
-
         const auto addrRs1 = XregOfs(rs1);
         const auto addrRs2 = XregOfs(rs2);
         const auto addrRd = XregOfs(rd);
@@ -435,7 +450,7 @@ public:
 
     auto Run() -> void
     {
-        uint32_t ticks = 16;
+        uint32_t ticks = 1;
 
         // JIT the VM's code, one basic block at a time, and run it.
         uint32_t pc = 0;
@@ -444,7 +459,7 @@ public:
         {
             // Call the native code and run it for `ticks` ticks.
             func(&cpu_, ticks);
-            std::cout << "x1 = " << cpu_.xreg[1] << '\n';
+            std::cout << "x1 = " << cpu_.xreg[1] << ", x5 = " << cpu_.xreg[5] << '\n';
 
             // Get the VM address of the next instruction.
             pc = cpu_.nextPc;
@@ -481,29 +496,37 @@ auto main() -> int
         a.Add(2, 2, 2); // 2: add x2, x2, x2
         a.Beq(0, 0, 1); // 3: beq x0, x0, +1
 
+        // Basic block. Set a counter.
+        a.Addi(5, 0, 5); // 4: addi x5, x0, 5
+
         // Basic block. A loop that counts down from 10 to 0.
-        a.Addi(1, 0, 10); // 4: addi x1, 0, 10
-        a.Addi(1, 1, -1); // 5: addi x1, x1, -1
-        a.Bne(1, 0, -1);  // 6: bne x1, x0, -1
+        a.Addi(1, 0, 10); // 5: addi x1, 0, 10
+        a.Addi(1, 1, -1); // 6: addi x1, x1, -1
+        a.Bne(1, 0, -1);  // 7: bne x1, x0, -1
 
         // Basic block. Set up a few registers.
-        a.Addi(1, 0, 15360); //  7: addi x1, 0, 3c00h
-        a.Addi(2, 0, 15361); //  8: addi x2, 0, 3c01h
-        a.Addi(3, 0, 1023);  //  9: addi x3, 0, 3ffh
-        a.Beq(0, 0, 1);      // 10: beq x0, x0, +1
+        a.Addi(1, 0, 15360); //  8: addi x1, 0, 3c00h
+        a.Addi(2, 0, 15361); //  9: addi x2, 0, 3c01h
+        a.Addi(3, 0, 1023);  // 10: addi x3, 0, 3ffh
+        a.Beq(0, 0, 1);      // 11: beq x0, x0, +1
 
         // Basic block. A loop that counts down from 10 to 0.
-        a.Addi(1, 0, 10); // 11: addi x1, x0, 10
-        a.Addi(1, 1, -1); // 12: addi x1, x1, -1
-        a.Bne(1, 0, -1);  // 13: bne x1, x0, -1
+        a.Addi(1, 0, 10); // 12: addi x1, x0, 10
+        a.Addi(1, 1, -1); // 13: addi x1, x1, -1
+        a.Bne(1, 0, -1);  // 14: bne x1, x0, -1
 
-        // // Basic Block. Do an indirect jump to x1 + x0 + 0.
-        a.Addi(1, 0, 16); // 14: addi x1, x0, 16
-        a.Jmp(1, 0, 0);   // 15: jmp x1 + x0 + 0
+        // Basic Block. Do an indirect jump to x1 + x0 + 0.
+        a.Addi(1, 0, 17); // 15: addi x1, x0, 17
+        a.Jmp(1, 0, 0);   // 16: jmp x1 + x0 + 0
+
+        // Basic Block. Decrement counter in x5 and branch back if not zero. Note that the branch goes to a different
+        // compiled function so we're not (yet) able to resolve it at compile time.
+        a.Addi(5, 5, -1); // 17: addi x5, x5, -1
+        a.Bne(5, 0, -13); // 18: bne x5, x0, -13
 
         // Basic block. Load a value into x1. Halt. Do not catch fire.
-        a.Addi(1, 0, 1337); // 16: addi x1, x0, 1337
-        a.Trap(Trap::HALT); // 17: trap halt
+        a.Addi(1, 0, 1337); // 19: addi x1, x0, 1337
+        a.Trap(Trap::HALT); // 20: trap halt
 
         // Move the code into a system that can run it.
         System system(std::move(code));
