@@ -4,6 +4,7 @@
 #include <cstddef>
 #include <format>
 #include <iostream>
+#include <optional>
 #include <unordered_map>
 
 enum class Trap : uint32_t
@@ -119,6 +120,104 @@ inline auto TrapOfs() -> asmjit::x86::Mem
     return asmjit::x86::ptr(ARG0, static_cast<int32_t>(offsetof(Cpu, trap)));
 }
 
+class OffsetMap
+{
+    struct Entry
+    {
+        std::uint8_t pc;
+        std::uint8_t offset;
+    };
+
+    uint32_t startPc_{};         // The VM address of the start of the function.
+    uint32_t lastPc_{};          // The VM address of the last entry to be written to the map.
+    uint64_t lastOffset_{};      // The native offset of the last entry to be written to the map.
+    std::vector<Entry> entries_; // Relative offsets from the previous entry.
+
+public:
+    OffsetMap(uint32_t startPc) : startPc_{startPc}, lastPc_{startPc} {}
+
+    auto Append(uint32_t pc, uint64_t offset) -> bool
+    {
+        // Addresses cannot go backwards.
+        if (pc < lastPc_ || offset < lastOffset_)
+        {
+            return false;
+        }
+
+        uint32_t pcOfs = pc - lastPc_;
+        uint64_t nativeOfs = offset - lastOffset_;
+
+        // Relative values cannot exceed 255.
+        if (pcOfs > 255 || nativeOfs > 255)
+        {
+            return false;
+        }
+
+        lastPc_ = pc;
+        lastOffset_ = offset;
+
+        entries_.emplace_back(static_cast<uint8_t>(pcOfs), static_cast<uint8_t>(nativeOfs));
+
+        std::cout << std::format("vm address 0x{:08x} is native offset  0x{:016x} in offset map\n", pc, offset);
+
+        return true;
+    }
+
+    auto Find(uint32_t pc) const -> std::optional<uint64_t>
+    {
+        // Bail early if pc is out of bounds.
+        if (pc < startPc_ || pc > lastPc_)
+        {
+            return {};
+        }
+
+        uint32_t pcAcc = startPc_;
+        uint32_t offsetAcc = 0;
+        // TODO: could probably optimize for entry (0, 0).
+        for (auto entry : entries_)
+        {
+            pcAcc += entry.pc;
+            offsetAcc += entry.offset;
+            if (pcAcc == pc)
+            {
+                return offsetAcc; // Return the offset as we found a mapping.
+            }
+            else if (pcAcc > pc)
+            {
+                return {}; // We've overshot, so there's no mapping.
+            }
+        }
+        return {};
+    }
+};
+
+struct CompiledFunction
+{
+    CpuFunc func_;      // The compiled output. Effectively the base address of the function.
+    OffsetMap offsets_; // A mapping from VM address to offset relative to base address.
+};
+
+class CompiledFunctionTable
+{
+    std::vector<CompiledFunction> compiledFunctions_;
+
+public:
+    auto Add(CompiledFunction func) -> void { compiledFunctions_.push_back(func); }
+
+    auto Find(uint32_t vmAddr) -> CpuFunc
+    {
+        for (const auto& func : compiledFunctions_)
+        {
+            if (auto offset = func.offsets_.Find(vmAddr))
+            {
+                auto lookedUpAddr = asmjit::ptr_as_func<CpuFunc>(reinterpret_cast<std::byte*>(func.func_) + offset.value());
+                return lookedUpAddr;
+            }
+        }
+        return nullptr;
+    }
+};
+
 class DemoJit
 {
     // Runtime designed for JIT - it holds relocated functions and controls their lifetime.
@@ -134,12 +233,16 @@ class DemoJit
     asmjit::x86::Assembler a_;
 
     // A map from VM addresses to the corresponding generated code.
-    std::unordered_map<uint32_t, CpuFunc> vmToJit_{};
+    std::unordered_map<uint32_t, CpuFunc> vmToJit_;
 
     // Pending offsets, yet to be resolved to addresses and added to the map.
     using OffsetPair = std::pair<uint32_t, asmjit::Label>;
-    std::vector<OffsetPair> pendingOffsets_{};
+    std::vector<OffsetPair> pendingOffsets_;
 
+    // A table of compiled functions.
+    CompiledFunctionTable compiledFunctions_{};
+
+    uint32_t startPc_{};
     uint32_t pc_{};
 
 public:
@@ -151,7 +254,11 @@ public:
         code_.attach(&a_);
     }
 
-    auto SetPc(uint32_t pc) -> void { pc_ = pc; }
+    auto SetPc(uint32_t pc) -> void
+    {
+        startPc_ = pc;
+        pc_ = pc;
+    }
 
     // If a label exists for a pending offset then return it, otherwise create a new pending offset and return its label.
     auto FindOrCreateLabel(uint32_t offset) -> asmjit::Label
@@ -176,7 +283,29 @@ public:
     };
 
     // Resolves a VM address into a native address.
-    auto Resolve(uint32_t vmAddr) -> CpuFunc { return vmToJit_[vmAddr]; }
+    auto Resolve(uint32_t vmAddr) -> CpuFunc
+    {
+        // Look up the function using the address map.
+        auto result = vmToJit_[vmAddr];
+        if (result)
+        {
+            std::cout << std::format("Function was known   : 0x{:016x}", reinterpret_cast<uintptr_t>(result)) << '\n';
+            return result;
+        }
+
+        // Look up the function using the function table.
+        auto lookedUpAddr = compiledFunctions_.Find(vmAddr);
+        if (lookedUpAddr)
+        {
+            std::cout << std::format("Function was resolved: 0x{:016x}", reinterpret_cast<uintptr_t>(lookedUpAddr)) << '\n';
+            vmToJit_[vmAddr] = lookedUpAddr;
+            return lookedUpAddr;
+        }
+
+        std::cout << "Function is unknown.\n";
+
+        return result;
+    }
 
     auto Compile() -> CpuFunc
     {
@@ -184,22 +313,24 @@ public:
         code_.detach(&a_);
 
         // Copy and relocate the generated code from the code holder to the JitRuntime.
-        CpuFunc generatedFunc;
+        CpuFunc generatedFunc{};
         if (asmjit::Error err = runtime_.add(&generatedFunc, &code_))
         {
             std::cerr << "AsmJit failed: " << asmjit::DebugUtils::errorAsString(err) << '\n';
             // TODO: error handling.
         }
 
+        OffsetMap offsetMap_{startPc_};
+
         // Fix up those offsets so that we have a direct mapping from VM addresses to native addresses.
         const auto baseAddress = code_.baseAddress();
         std::cout << std::format("Base address of compiled code: 0x{:08x}\n", baseAddress);
         for (auto [vmAddr, label] : pendingOffsets_)
         {
-            const std::uintptr_t addr = baseAddress + code_.labelOffset(label);
-            std::cout << std::format("vm address 0x{:04x} is native address 0x{:08x}\n", vmAddr, addr);
-            vmToJit_[vmAddr] = asmjit::ptr_as_func<CpuFunc>(reinterpret_cast<void*>(addr));
+            auto offset = code_.labelOffset(label);
+            offsetMap_.Append(vmAddr, offset);
         }
+        compiledFunctions_.Add(CompiledFunction{.func_ = generatedFunc, .offsets_ = offsetMap_});
 
         // Reset so that we're ready for the next round of compilation.
         // TODO: there's probably a nicer way of doing this.
@@ -481,29 +612,36 @@ auto main() -> int
         a.Add(2, 2, 2); // 2: add x2, x2, x2
         a.Beq(0, 0, 1); // 3: beq x0, x0, +1
 
+        // Basic block. Set a counter.
+        a.Add(5, 0, 5); // 4: add x5, x0, 5
+
         // Basic block. A loop that counts down from 10 to 0.
-        a.Addi(1, 0, 10); // 4: addi x1, 0, 10
-        a.Addi(1, 1, -1); // 5: addi x1, x1, -1
-        a.Bne(1, 0, -1);  // 6: bne x1, x0, -1
+        a.Addi(1, 0, 10); // 5: addi x1, 0, 10
+        a.Addi(1, 1, -1); // 6: addi x1, x1, -1
+        a.Bne(1, 0, -1);  // 7: bne x1, x0, -1
 
         // Basic block. Set up a few registers.
-        a.Addi(1, 0, 15360); //  7: addi x1, 0, 3c00h
-        a.Addi(2, 0, 15361); //  8: addi x2, 0, 3c01h
-        a.Addi(3, 0, 1023);  //  9: addi x3, 0, 3ffh
-        a.Beq(0, 0, 1);      // 10: beq x0, x0, +1
+        a.Addi(1, 0, 15360); //  8: addi x1, 0, 3c00h
+        a.Addi(2, 0, 15361); //  9: addi x2, 0, 3c01h
+        a.Addi(3, 0, 1023);  // 10: addi x3, 0, 3ffh
+        a.Beq(0, 0, 1);      // 11: beq x0, x0, +1
 
         // Basic block. A loop that counts down from 10 to 0.
-        a.Addi(1, 0, 10); // 11: addi x1, x0, 10
-        a.Addi(1, 1, -1); // 12: addi x1, x1, -1
-        a.Bne(1, 0, -1);  // 13: bne x1, x0, -1
+        a.Addi(1, 0, 10); // 12: addi x1, x0, 10
+        a.Addi(1, 1, -1); // 13: addi x1, x1, -1
+        a.Bne(1, 0, -1);  // 14: bne x1, x0, -1
 
-        // // Basic Block. Do an indirect jump to x1 + x0 + 0.
-        a.Addi(1, 0, 16); // 14: addi x1, x0, 16
-        a.Jmp(1, 0, 0);   // 15: jmp x1 + x0 + 0
+        // Basic Block. Do an indirect jump to x1 + x0 + 0.
+        a.Addi(1, 0, 17); // 15: addi x1, x0, 17
+        a.Jmp(1, 0, 0);   // 16: jmp x1 + x0 + 0
+
+        // // Basic Block. Decrement counter in x5 and jump back if not zero.
+        a.Addi(5, 0, -1); // 17: addi x5, x0, -1
+        a.Bne(5, 0, -13); // 18: bne x5, x0, -13 <<<<< this may be a problem as we don't know which function we're in
 
         // Basic block. Load a value into x1. Halt. Do not catch fire.
-        a.Addi(1, 0, 1337); // 16: addi x1, x0, 1337
-        a.Trap(Trap::HALT); // 17: trap halt
+        a.Addi(1, 0, 1337); // 19: addi x1, x0, 1337
+        a.Trap(Trap::HALT); // 20: trap halt
 
         // Move the code into a system that can run it.
         System system(std::move(code));
