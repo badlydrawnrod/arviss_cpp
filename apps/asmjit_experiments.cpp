@@ -125,8 +125,8 @@ class OffsetMap
 {
     struct Entry
     {
-        std::uint8_t pc;
-        std::uint8_t offset;
+        std::uint8_t pc;     // pc relative to previous entry.
+        std::uint8_t offset; // native offset relative to previous entry.
     };
 
     uint32_t startPc_{};         // The VM address of the start of the function.
