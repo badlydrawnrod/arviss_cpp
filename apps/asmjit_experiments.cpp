@@ -582,7 +582,7 @@ public:
 
     auto Run() -> void
     {
-        uint32_t ticks = 1;
+        uint32_t ticks = 100;
 
         // JIT the VM's code, one basic block at a time, and run it.
         uint32_t pc = 0;
@@ -629,7 +629,7 @@ auto main() -> int
         a.Beq(0, 0, 1); // 3: beq x0, x0, +1
 
         // Basic block. Set a counter.
-        a.Addi(5, 0, 5); // 4: addi x5, x0, 5
+        a.Addi(5, 0, 500); // 4: addi x5, x0, 500
 
         // Basic block. A loop that counts down from 10 to 0.
         a.Addi(1, 0, 10); // 5: addi x1, 0, 10
@@ -659,6 +659,12 @@ auto main() -> int
         // Basic block. Load a value into x1. Halt. Do not catch fire.
         a.Addi(1, 0, 1337); // 19: addi x1, x0, 1337
         a.Trap(Trap::HALT); // 20: trap halt
+
+        // Basic block. A loop that counts down from 10 to 0.
+        a.Addi(1, 0, 10);   // 0: addi x1, 0, 10
+        a.Addi(1, 1, -1);   // 1: addi x1, x1, -1
+        a.Bne(1, 0, -1);    // 2: bne x1, x0, -1
+        a.Trap(Trap::HALT); // 3: trap halt
 
         // Move the code into an execution environment that can run it.
         ExecutionEnvironment executionEnvironment(std::move(code));
