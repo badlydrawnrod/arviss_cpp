@@ -194,8 +194,8 @@ public:
 
 struct CompiledFunction
 {
-    CpuFunc func_;      // The compiled output. Effectively the base address of the function.
-    OffsetMap offsets_; // A mapping from VM address to offset relative to base address.
+    CpuFunc baseAddress; // The compiled output. Effectively the base address of the function.
+    OffsetMap offsets;   // A mapping from VM address to offset relative to base address.
 };
 
 class CompiledFunctionTable
@@ -209,9 +209,9 @@ public:
     {
         for (const auto& func : compiledFunctions_)
         {
-            if (auto offset = func.offsets_.Find(vmAddr))
+            if (auto offset = func.offsets.Find(vmAddr))
             {
-                auto lookedUpAddr = asmjit::ptr_as_func<CpuFunc>(reinterpret_cast<std::byte*>(func.func_) + offset.value());
+                auto lookedUpAddr = asmjit::ptr_as_func<CpuFunc>(reinterpret_cast<std::byte*>(func.baseAddress) + offset.value());
                 return lookedUpAddr;
             }
         }
@@ -234,9 +234,9 @@ class DemoJit
     asmjit::x86::Assembler a_;
 
     // A map from VM addresses to the corresponding generated code.
-    std::unordered_map<uint32_t, CpuFunc> vmToJit_;
+    std::unordered_map<uint32_t, CpuFunc> addressMap_;
 
-    // Pending offsets, yet to be resolved to addresses and added to the map.
+    // Pending offsets, yet to be resolved to addresses.
     using OffsetPair = std::pair<uint32_t, asmjit::Label>;
     std::vector<OffsetPair> pendingOffsets_;
 
@@ -261,7 +261,7 @@ public:
         pc_ = pc;
     }
 
-    // If a label exists for a pending offset then return it, otherwise create a new pending offset and return its label.
+    // If a label exists for a given offset then return it, otherwise create a new pending offset and return its label.
     auto FindOrCreateLabel(uint32_t offset) -> asmjit::Label
     {
         if (auto it = std::ranges::find_if(pendingOffsets_, [dst = offset](const auto& p) -> bool { return p.first == dst; }); it != pendingOffsets_.end())
@@ -288,27 +288,25 @@ public:
     {
         std::cout << std::format("Resolving function at pc = {:2}: ", vmAddr);
         // Look up the function using the address map.
-        auto result = vmToJit_[vmAddr];
-        if (result)
+        if (auto result = addressMap_[vmAddr])
         {
-            std::cout << std::format("   known: 0x{:016x}", reinterpret_cast<uintptr_t>(result));
-            std::cout << std::format(" address map contains {} items\n", vmToJit_.size());
+            std::cout << std::format("0x{:016x} from address map - ", reinterpret_cast<uintptr_t>(result));
+            std::cout << std::format(" address map contains {} items\n", addressMap_.size());
             return result;
         }
 
         // Look up the function using the function table.
-        auto lookedUpAddr = compiledFunctions_.Find(vmAddr);
-        if (lookedUpAddr)
+        if (auto lookedUpAddr = compiledFunctions_.Find(vmAddr))
         {
-            std::cout << std::format("compiled: 0x{:016x}", reinterpret_cast<uintptr_t>(lookedUpAddr));
-            vmToJit_[vmAddr] = lookedUpAddr;
-            std::cout << std::format(" address map contains {} items\n", vmToJit_.size());
+            std::cout << std::format("0x{:016x} from compiled function table - ", reinterpret_cast<uintptr_t>(lookedUpAddr));
+            addressMap_[vmAddr] = lookedUpAddr;
+            std::cout << std::format(" address map contains {} items\n", addressMap_.size());
             return lookedUpAddr;
         }
 
-        std::cout << "   unknown\n";
+        std::cout << "unknown\n";
 
-        return result;
+        return nullptr;
     }
 
     auto Compile() -> CpuFunc
@@ -340,17 +338,17 @@ public:
             // TODO: error handling.
         }
 
-        OffsetMap offsetMap_{startPc_};
-
         // Fix up those offsets so that we have a direct mapping from VM addresses to native addresses.
         const auto baseAddress = code_.baseAddress();
         std::cout << std::format("Base address of compiled code: 0x{:08x}\n", baseAddress);
+        OffsetMap offsetMap_{startPc_};
         for (auto [vmAddr, label] : boundOffsets)
         {
             auto offset = code_.labelOffset(label);
             offsetMap_.Append(vmAddr, offset);
         }
-        compiledFunctions_.Add(CompiledFunction{.func_ = generatedFunc, .offsets_ = offsetMap_});
+        compiledFunctions_.Add(CompiledFunction{.baseAddress = generatedFunc, .offsets = offsetMap_});
+        addressMap_[startPc_] = generatedFunc;
 
         // Reset so that we're ready for the next round of compilation.
         // TODO: there's probably a nicer way of doing this.
@@ -552,7 +550,7 @@ public:
     }
 };
 
-class System
+class ExecutionEnvironment
 {
     vm::Code code_{};
     Cpu cpu_{};
@@ -580,7 +578,7 @@ class System
     }
 
 public:
-    System(vm::Code&& code) : code_{std::move(code)} {}
+    ExecutionEnvironment(vm::Code&& code) : code_{std::move(code)} {}
 
     auto Run() -> void
     {
@@ -598,7 +596,7 @@ public:
             // Get the VM address of the next instruction.
             pc = cpu_.nextPc;
 
-            std::cout << "pc = " << pc << '\n'; // TODO: remove.
+            std::cout << "pc = " << pc << '\n';
         }
         std::cout << "Execution ended with status: ";
         switch (cpu_.trap)
@@ -662,9 +660,9 @@ auto main() -> int
         a.Addi(1, 0, 1337); // 19: addi x1, x0, 1337
         a.Trap(Trap::HALT); // 20: trap halt
 
-        // Move the code into a system that can run it.
-        System system(std::move(code));
-        system.Run();
+        // Move the code into an execution environment that can run it.
+        ExecutionEnvironment executionEnvironment(std::move(code));
+        executionEnvironment.Run();
 
         return 0;
     }
