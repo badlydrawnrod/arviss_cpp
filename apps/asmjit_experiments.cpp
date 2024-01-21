@@ -91,7 +91,7 @@ namespace vm
 } // namespace vm
 
 // How we invoke a function that works on the CPU.
-using CpuFunc = void (*)(Cpu*, uint32_t);
+using CpuFunc = uintptr_t (*)(Cpu*, uint32_t);
 
 // Let's assume WIN32, x64 for now. Calling convention is that the first argument is in rcx and the second is in rdx.
 constexpr asmjit::x86::Gp ARG0 = asmjit::x86::rcx; // First argument.
@@ -323,8 +323,7 @@ public:
         for (auto [nextPc, label] : unboundOffsets)
         {
             a_.bind(label);
-            a_.mov(asmjit::x86::eax, nextPc);
-            SetNextAndReturn();
+            SetNextPcAndReturn(nextPc);
         }
 
         // The assembler is no longer needed from here, so detach it from the code holder.
@@ -362,26 +361,53 @@ public:
         return generatedFunc;
     }
 
+    // Returns from JITted code to the execution environment setting the return value to the address of the compiled
+    // code to call next.
+    auto ReturnWithAddress(asmjit::Label next) -> void
+    {
+        a_.lea(asmjit::x86::rax, asmjit::x86::ptr(next));
+        a_.ret();
+    }
+
     // Returns from JITted code to the execution environment.
-    auto ReturnToEE() -> void { a_.ret(); }
+    auto ReturnWithNull() -> void
+    {
+        a_.mov(asmjit::x86::rax, 0);
+        a_.ret();
+    }
 
     // Sets next pc from EAX and returns from JITted code to the execution environment.
-    auto SetNextAndReturn() -> void
+    auto SetNextPcAndReturn() -> void
     {
         a_.mov(NextPcOfs(), asmjit::x86::eax);
-        ReturnToEE();
+        ReturnWithNull();
+    }
+
+    // Sets next pc to the given value.
+    auto SetNextPc(uint32_t nextPc) -> void
+    {
+        a_.mov(asmjit::x86::eax, nextPc);
+        a_.mov(NextPcOfs(), asmjit::x86::eax);
+    }
+
+    // Sets next pc to the given value and returns from JITted code to the execution environment.
+    auto SetNextPcAndReturn(uint32_t nextPc) -> void
+    {
+        SetNextPc(nextPc);
+        ReturnWithNull();
     }
 
     // Decrements `ticks` and returns to the execution environment if it goes negative.
-    auto CountZero(uint32_t pc)
+    auto CountZero(uint32_t pc, asmjit::Label myself)
     {
-        const asmjit::Label branchNotTaken = a_.newLabel();
+        const asmjit::Label doNotReturn = a_.newLabel();
         a_.dec(ARG1);
-        a_.jge(branchNotTaken);
-        a_.mov(asmjit::x86::eax, pc);
-        SetNextAndReturn();
+        a_.jge(doNotReturn);
 
-        a_.bind(branchNotTaken);
+        SetNextPc(pc);
+        ReturnWithAddress(myself);
+
+        a_.bind(doNotReturn);
     }
 
     // Branches relative to pc.
@@ -398,7 +424,7 @@ public:
         const auto addr = TrapOfs();
         a_.mov(asmjit::x86::eax, static_cast<uint32_t>(trap));
         a_.mov(addr, asmjit::x86::eax);
-        ReturnToEE();
+        ReturnWithNull();
 
         return pc;
     }
@@ -451,8 +477,11 @@ public:
     // Compares two registers and branches if they aren't equal.
     auto EmitBne(Reg rs1, Reg rs2, int32_t imm) -> uint32_t
     {
+        // TODO: amalgamate this with AddOffset() as that also creates a label.
+        auto myself = a_.newLabel();
+        a_.bind(myself);
         const auto pc = AddOffset();
-        CountZero(pc);
+        CountZero(pc, myself);
         const auto addrRs1 = XregOfs(rs1);
         const auto addrRs2 = XregOfs(rs2);
         const asmjit::Label branchNotTaken = a_.newLabel();
@@ -474,8 +503,11 @@ public:
     // Compares two registers and branches if they are equal.
     auto EmitBeq(Reg rs1, Reg rs2, int32_t imm) -> uint32_t
     {
+        // TODO: amalgamate this with AddOffset() as that also creates a label.
+        auto myself = a_.newLabel();
+        a_.bind(myself);
         const auto pc = AddOffset();
-        CountZero(pc);
+        CountZero(pc, myself);
         const auto addrRs1 = XregOfs(rs1);
         const auto addrRs2 = XregOfs(rs2);
         const asmjit::Label branchNotTaken = a_.newLabel();
@@ -504,7 +536,7 @@ public:
         a_.mov(asmjit::x86::eax, addrRs1); // TODO: what if this was x0 ?
         a_.add(asmjit::x86::eax, addrRs2); // TODO: what if this was x0 ?
         a_.add(asmjit::x86::eax, imm);     // TODO: what if this was zero ?
-        SetNextAndReturn();
+        SetNextPcAndReturn();
 
         return pc;
     }
@@ -582,16 +614,21 @@ public:
 
     auto Run() -> void
     {
-        uint32_t ticks = 100;
+        constexpr uint32_t ticks = 8;
 
-        // JIT the VM's code, one basic block at a time, and run it.
+        // JIT the VM's code, one basic block (sort of) at a time, and run it.
         uint32_t pc = 0;
         CpuFunc func = nullptr;
         for (func = Resolve(pc); func != nullptr && cpu_.trap == Trap::NONE; func = Resolve(pc))
         {
-            // Call the native code and run it for `ticks` ticks.
-            func(&cpu_, ticks);
-            std::cout << "x1 = " << cpu_.xreg[1] << ", x5 = " << cpu_.xreg[5] << '\n';
+            // Run native code until we need to resolve an address.
+            while (func != nullptr && cpu_.trap == Trap::NONE)
+            {
+                // Call the native code and run it for `ticks` ticks.
+                func = reinterpret_cast<CpuFunc>(func(&cpu_, ticks));
+                std::cout << std::format("pc {:2}, native func = 0x{:016x}", cpu_.nextPc, reinterpret_cast<uintptr_t>(func)) << '\n';
+                std::cout << "x1 = " << cpu_.xreg[1] << ", x5 = " << cpu_.xreg[5] << '\n';
+            }
 
             // Get the VM address of the next instruction.
             pc = cpu_.nextPc;
@@ -629,7 +666,7 @@ auto main() -> int
         a.Beq(0, 0, 1); // 3: beq x0, x0, +1
 
         // Basic block. Set a counter.
-        a.Addi(5, 0, 500); // 4: addi x5, x0, 500
+        a.Addi(5, 0, 50); // 4: addi x5, x0, 50
 
         // Basic block. A loop that counts down from 10 to 0.
         a.Addi(1, 0, 10); // 5: addi x1, 0, 10
