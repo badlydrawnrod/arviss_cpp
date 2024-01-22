@@ -216,6 +216,24 @@ public:
     }
 };
 
+// using AddressMap = std::unordered_map<uint32_t, CpuFunc>;
+
+class AddressMap
+{
+    std::vector<std::pair<uint32_t, CpuFunc>> map_;
+
+public:
+    CpuFunc& operator[](uint32_t vmAddr)
+    {
+        if (auto it = std::ranges::find_if(map_, [this, vmAddr](const auto& e) { return e.first == vmAddr; }); it != map_.end())
+        {
+            return it->second;
+        }
+        map_.emplace_back(vmAddr, nullptr);
+        return map_.back().second;
+    }
+};
+
 class DemoJit
 {
     // Runtime designed for JIT - it holds relocated functions and controls their lifetime.
@@ -231,7 +249,7 @@ class DemoJit
     asmjit::x86::Assembler a_;
 
     // A map from VM addresses to the corresponding generated code.
-    std::unordered_map<uint32_t, CpuFunc> addressMap_;
+    AddressMap addressMap_;
 
     // Pending offsets, yet to be resolved to addresses.
     using OffsetPair = std::pair<uint32_t, asmjit::Label>;
@@ -621,7 +639,7 @@ public:
 
     auto Run() -> void
     {
-        constexpr uint32_t ticks = 8;
+        constexpr uint32_t ticks = 100;
 
         // JIT the VM's code, one basic block (sort of) at a time, and run it.
         uint32_t pc = 0;
@@ -744,7 +762,7 @@ auto main() -> int
 {
     try
     {
-        constexpr uint32_t ITERATIONS = 100000000;
+        constexpr uint32_t ITERATIONS = 1000000000;
 
         // Assemble some VM instructions into `code`.
         vm::Code code;
