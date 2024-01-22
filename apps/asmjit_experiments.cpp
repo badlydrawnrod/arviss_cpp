@@ -137,12 +137,12 @@ class OffsetMap
 public:
     OffsetMap(uint32_t startPc) : startPc_{startPc}, lastPc_{startPc} {}
 
-    auto Append(uint32_t pc, uint64_t offset) -> bool
+    auto Append(uint32_t pc, uint64_t offset) -> void
     {
         // Addresses cannot go backwards.
         if (pc < lastPc_ || offset < lastOffset_)
         {
-            return false;
+            throw std::runtime_error("Input value out of range");
         }
 
         uint32_t pcOfs = pc - lastPc_;
@@ -151,7 +151,7 @@ public:
         // Relative values cannot exceed 255.
         if (pcOfs > 255 || nativeOfs > 255)
         {
-            return false;
+            throw std::runtime_error("Relative value out of range");
         }
 
         lastPc_ = pc;
@@ -160,8 +160,6 @@ public:
         entries_.emplace_back(static_cast<uint8_t>(pcOfs), static_cast<uint8_t>(nativeOfs));
 
         std::cout << std::format("vm address {:2} is native offset 0x{:04x} in offset map\n", pc, offset);
-
-        return true;
     }
 
     auto Find(uint32_t pc) const -> std::optional<uint64_t>
@@ -206,11 +204,11 @@ public:
 
     auto Find(uint32_t vmAddr) -> CpuFunc
     {
-        for (const auto& func : compiledFunctions_)
+        for (const auto& [baseAddress, offsets] : compiledFunctions_)
         {
-            if (auto offset = func.offsets.Find(vmAddr))
+            if (auto offset = offsets.Find(vmAddr))
             {
-                auto lookedUpAddr = asmjit::ptr_as_func<CpuFunc>(reinterpret_cast<std::byte*>(func.baseAddress) + offset.value());
+                const auto lookedUpAddr = asmjit::ptr_as_func<CpuFunc>(reinterpret_cast<std::byte*>(baseAddress) + offset.value());
                 return lookedUpAddr;
             }
         }
@@ -282,7 +280,6 @@ public:
         return oldPc;
     };
 
-
     // Returns the label of the most recently added offset.
     auto LastLabel() -> asmjit::Label { return pendingOffsets_.back().second; }
 
@@ -315,7 +312,7 @@ public:
     auto Compile() -> CpuFunc
     {
         // Partition the pending offsets into those whose labels are bound and those whose labels are not bound.
-        const auto unboundOffsets = std::ranges::partition(pendingOffsets_, [this](auto it) {
+        const auto unboundOffsets = std::ranges::stable_partition(pendingOffsets_, [this](auto it) {
             const auto& label = it.second;
             return code_.isLabelBound(label);
         });
@@ -484,18 +481,23 @@ public:
         CountZero(pc, LastLabel());
         const auto addrRs1 = XregOfs(rs1);
         const auto addrRs2 = XregOfs(rs2);
-        const asmjit::Label branchNotTaken = a_.newLabel();
 
-        // TODO: what if it's the same register?
-        a_.mov(asmjit::x86::eax, addrRs1); // TODO: what if this was x0 ?
-        a_.cmp(asmjit::x86::eax, addrRs2); // TODO: what if this was x0 ?
-        a_.je(branchNotTaken);             // Ironically.
+        // Only emit code if we're using different register numbers, because otherwise their contents are guaranteed to
+        // be equal and we'll never take the branch.
+        if (rs1 != rs2)
+        {
+            const asmjit::Label branchNotTaken = a_.newLabel();
+            a_.mov(asmjit::x86::eax, addrRs1);
 
-        // We took the branch. nextPc <- pc + imm
-        Branch(pc, imm);
+            a_.cmp(asmjit::x86::eax, addrRs2);
+            a_.je(branchNotTaken);
 
-        // We didn't take the branch. nextPc <- pc + 1
-        a_.bind(branchNotTaken);
+            // We took the branch. nextPc <- pc + imm
+            Branch(pc, imm);
+
+            // We didn't take the branch. nextPc <- pc + 1
+            a_.bind(branchNotTaken);
+        }
 
         return pc;
     }
@@ -509,16 +511,23 @@ public:
         const auto addrRs2 = XregOfs(rs2);
         const asmjit::Label branchNotTaken = a_.newLabel();
 
-        // TODO: what if it's the same register?
-        a_.mov(asmjit::x86::eax, addrRs1); // TODO: what if this was x0 ?
-        a_.cmp(asmjit::x86::eax, addrRs2); // TODO: what if this was x0 ?
-        a_.jne(branchNotTaken);            // Ironically.
+        // Only emit code if we're using different register numbers, because otherwise their contents are guaranteed to
+        // be equal and we'll always take the branch.
+        if (rs1 != rs2)
+        {
+            a_.mov(asmjit::x86::eax, addrRs1);
+            a_.cmp(asmjit::x86::eax, addrRs2);
+            a_.jne(branchNotTaken);
+        }
 
         // We took the branch. nextPc <- pc + imm
         Branch(pc, imm);
 
         // We didn't take the branch. nextPc <- pc + 1
-        a_.bind(branchNotTaken);
+        if (rs1 != rs2)
+        {
+            a_.bind(branchNotTaken);
+        }
 
         return pc;
     }
