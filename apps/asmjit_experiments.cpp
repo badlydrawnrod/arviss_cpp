@@ -174,7 +174,6 @@ public:
 
         uint32_t pcAcc = startPc_;
         uint32_t offsetAcc = 0;
-        // TODO: could probably optimize for entry (0, 0).
         for (auto entry : entries_)
         {
             pcAcc += entry.pc;
@@ -282,6 +281,10 @@ public:
         pc_ += 1;
         return oldPc;
     };
+
+
+    // Returns the label of the most recently added offset.
+    auto LastLabel() -> asmjit::Label { return pendingOffsets_.back().second; }
 
     // Resolves a VM address into a native address.
     auto Resolve(uint32_t vmAddr) -> CpuFunc
@@ -477,11 +480,8 @@ public:
     // Compares two registers and branches if they aren't equal.
     auto EmitBne(Reg rs1, Reg rs2, int32_t imm) -> uint32_t
     {
-        // TODO: amalgamate this with AddOffset() as that also creates a label.
-        auto myself = a_.newLabel();
-        a_.bind(myself);
         const auto pc = AddOffset();
-        CountZero(pc, myself);
+        CountZero(pc, LastLabel());
         const auto addrRs1 = XregOfs(rs1);
         const auto addrRs2 = XregOfs(rs2);
         const asmjit::Label branchNotTaken = a_.newLabel();
@@ -503,11 +503,8 @@ public:
     // Compares two registers and branches if they are equal.
     auto EmitBeq(Reg rs1, Reg rs2, int32_t imm) -> uint32_t
     {
-        // TODO: amalgamate this with AddOffset() as that also creates a label.
-        auto myself = a_.newLabel();
-        a_.bind(myself);
         const auto pc = AddOffset();
-        CountZero(pc, myself);
+        CountZero(pc, LastLabel());
         const auto addrRs1 = XregOfs(rs1);
         const auto addrRs2 = XregOfs(rs2);
         const asmjit::Label branchNotTaken = a_.newLabel();
