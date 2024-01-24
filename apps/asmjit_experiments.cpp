@@ -642,15 +642,28 @@ class ExecutionEnvironment
         cpus_.reserve(n);
         for (size_t i = 0; i < n; i++)
         {
-            cpus_.emplace_back();
+            Cpu cpu{};
+            cpu.xreg[5] = 1 + static_cast<uint32_t>(i);
+            cpus_.push_back(cpu);
         }
     }
 
 public:
-    static constexpr size_t NUM_CPUS = 32;
+    static constexpr size_t NUM_CPUS = 4;
 
     ExecutionEnvironment(vm::Code& code) : code_{code} { Populate(NUM_CPUS); }
     ExecutionEnvironment(vm::Code&& code) : code_{std::move(code)} { Populate(NUM_CPUS); }
+
+    auto SwitchContext() -> uint32_t
+    {
+        auto pc = currentCpu_->nextPc;
+        std::cout << std::format("--- SwitchContext before: cpu={:04} pc={:04} trap={}\n", currentIndex_, pc, static_cast<uint32_t>(currentCpu_->trap));
+        currentIndex_ = (currentIndex_ + 1) % cpus_.size();
+        currentCpu_ = &cpus_[currentIndex_];
+        pc = currentCpu_->nextPc;
+        std::cout << std::format("--- SwitchContext  after: cpu={:04} pc={:04} trap={}\n", currentIndex_, pc, static_cast<uint32_t>(currentCpu_->trap));
+        return pc;
+    }
 
     auto Run() -> void
     {
@@ -664,6 +677,7 @@ public:
         // Run while there's at least one CPU that can make progress.
         while (std::ranges::any_of(cpus_, [](const auto& cpu) { return cpu.trap == Trap::NONE; }))
         {
+            std::cout << std::format("Running on cpu {} pc {}\n", currentIndex_, pc);
             for (func = Resolve(pc); func != nullptr && currentCpu_->trap == Trap::NONE; func = Resolve(pc))
             {
                 // Run native code until we need to resolve an address.
@@ -671,21 +685,15 @@ public:
                 {
                     // Call the native code and run it for `ticks` ticks.
                     func = reinterpret_cast<CpuFunc>(func(currentCpu_, ticks));
-                    std::cout << std::format("pc {:2}, native func = 0x{:016x}", currentCpu_->nextPc, reinterpret_cast<uintptr_t>(func)) << '\n';
-                    std::cout << "x1 = " << currentCpu_->xreg[1] << ", x5 = " << currentCpu_->xreg[5] << '\n';
+                    std::cout << std::format("pc {:2}, native func = 0x{:016x}\n", currentCpu_->nextPc, reinterpret_cast<uintptr_t>(func));
+                    std::cout << std::format("cpu={:04} pc={:04} trap={}, x5={}\n", currentIndex_, pc, static_cast<uint32_t>(currentCpu_->trap),
+                                             currentCpu_->xreg[5]);
                 }
 
-                // Get the VM address of the next instruction.
-                pc = currentCpu_->nextPc;
-
-
-                // Context switch.
-                std::cout << "----------- Switching context inline  -----------\n";
-                std::cout << std::format("BEFORE: cpu {} pc {}\n", currentIndex_, pc);
-                currentIndex_ = (currentIndex_ + 1) % cpus_.size();
-                currentCpu_ = &cpus_[currentIndex_];
-                pc = currentCpu_->nextPc;
-                std::cout << std::format(" AFTER: cpu {} pc {}\n", currentIndex_, pc);
+                if (currentCpu_->trap == Trap::NONE)
+                {
+                    pc = SwitchContext();
+                }
             }
             std::cout << std::format("cpu {} execution ended with status: ", currentIndex_);
 
@@ -703,11 +711,8 @@ public:
             }
             std::cout << '\n';
 
-            std::cout << "=========== Switching context after trap ===========\n";
-            currentIndex_ = (currentIndex_ + 1) % cpus_.size();
-            currentCpu_ = &cpus_[currentIndex_];
-            pc = currentCpu_->nextPc;
-            std::cout << std::format("cpu {} pc {}\n", currentIndex_, pc);
+            std::cout << "----------------------------------------------------------------------------\n";
+            pc = SwitchContext();
         }
     }
 };
@@ -729,7 +734,8 @@ auto main() -> int
         a.Beq(0, 0, 1); // 3: beq x0, x0, +1
 
         // Basic block. Set a counter.
-        a.Addi(5, 0, ITERATIONS); // 4: addi x5, x0, ITERATIONS
+        // a.Addi(5, 0, ITERATIONS); // 4: addi x5, x0, ITERATIONS
+        a.Addi(0, 0, 0); // Filler so that I don't have to renumber.
 
         // Basic block. A loop that counts down from 10 to 0.
         a.Addi(1, 0, 10); // 5: addi x1, 0, 10
