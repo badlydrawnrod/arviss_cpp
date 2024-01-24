@@ -647,7 +647,7 @@ class ExecutionEnvironment
     }
 
 public:
-    static constexpr size_t NUM_CPUS = 2;
+    static constexpr size_t NUM_CPUS = 32;
 
     ExecutionEnvironment(vm::Code& code) : code_{code} { Populate(NUM_CPUS); }
     ExecutionEnvironment(vm::Code&& code) : code_{std::move(code)} { Populate(NUM_CPUS); }
