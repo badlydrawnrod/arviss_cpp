@@ -159,7 +159,7 @@ public:
 
         entries_.emplace_back(static_cast<uint8_t>(pcOfs), static_cast<uint8_t>(nativeOfs));
 
-        // std::cout << std::format("vm address {:2} is native offset 0x{:04x} in offset map\n", pc, offset);
+        std::cout << std::format("vm address {:2} is native offset 0x{:04x} in offset map\n", pc, offset);
     }
 
     auto Find(uint32_t pc) const -> std::optional<uint64_t>
@@ -232,6 +232,8 @@ public:
         map_.emplace_back(vmAddr, nullptr);
         return map_.back().second;
     }
+
+    size_t size() const { return map_.size(); }
 };
 
 class DemoJit
@@ -304,25 +306,25 @@ public:
     // Resolves a VM address into a native address.
     auto Resolve(uint32_t vmAddr) -> CpuFunc
     {
-        // std::cout << std::format("Resolving function at pc = {:2}: ", vmAddr);
+        std::cout << std::format("Resolving function at pc = {:2}: ", vmAddr);
         // Look up the function using the address map.
         if (auto result = addressMap_[vmAddr])
         {
-            // std::cout << std::format("0x{:016x} from address map - ", reinterpret_cast<uintptr_t>(result));
-            // std::cout << std::format(" address map contains {} items\n", addressMap_.size());
+            std::cout << std::format("0x{:016x} from address map - ", reinterpret_cast<uintptr_t>(result));
+            std::cout << std::format(" address map contains {} items\n", addressMap_.size());
             return result;
         }
 
         // Look up the function using the function table.
         if (auto lookedUpAddr = compiledFunctions_.Find(vmAddr))
         {
-            // std::cout << std::format("0x{:016x} from compiled function table - ", reinterpret_cast<uintptr_t>(lookedUpAddr));
+            std::cout << std::format("0x{:016x} from compiled function table - ", reinterpret_cast<uintptr_t>(lookedUpAddr));
             addressMap_[vmAddr] = lookedUpAddr;
-            // std::cout << std::format(" address map contains {} items\n", addressMap_.size());
+            std::cout << std::format(" address map contains {} items\n", addressMap_.size());
             return lookedUpAddr;
         }
 
-        // std::cout << "unknown\n";
+        std::cout << "unknown\n";
 
         return nullptr;
     }
@@ -357,7 +359,7 @@ public:
 
         // Fix up those offsets so that we have a direct mapping from VM addresses to native addresses.
         const auto baseAddress = code_.baseAddress();
-        // std::cout << std::format("Base address of compiled code: 0x{:08x}\n", baseAddress);
+        std::cout << std::format("Base address of compiled code: 0x{:08x}\n", baseAddress);
         OffsetMap offsetMap_{startPc_};
         for (auto [vmAddr, label] : boundOffsets)
         {
@@ -567,7 +569,7 @@ public:
 
     auto JitBlock(const vm::Code& code, uint32_t pc) -> CpuFunc
     {
-        // std::cout << std::format("Compiling from pc = {}\n", pc);
+        std::cout << std::format("Compiling from pc = {}\n", pc);
         if (pc >= code.size())
         {
             return nullptr;
@@ -609,7 +611,8 @@ public:
 class ExecutionEnvironment
 {
     vm::Code code_{};
-    Cpu cpu_{};
+    std::vector<Cpu> cpus_{};
+    Cpu* currentCpu_{};
     DemoJit jit_{};
 
     auto Resolve(uint32_t pc) -> CpuFunc
@@ -627,134 +630,63 @@ class ExecutionEnvironment
         // If that fails, then we have a bad address, so signal a trap on the CPU.
         if (func == nullptr)
         {
-            cpu_.trap = Trap::BAD_ADDRESS;
+            currentCpu_->trap = Trap::BAD_ADDRESS;
         }
 
         return func;
     }
 
+    void Populate(size_t n)
+    {
+        cpus_.reserve(n);
+        for (size_t i = 0; i < n; i++)
+        {
+            cpus_.emplace_back();
+        }
+    }
+
 public:
-    ExecutionEnvironment(vm::Code& code) : code_{code} {}
-    ExecutionEnvironment(vm::Code&& code) : code_{std::move(code)} {}
+    ExecutionEnvironment(vm::Code& code) : code_{code} { Populate(1); }
+    ExecutionEnvironment(vm::Code&& code) : code_{std::move(code)} { Populate(1); }
 
     auto Run() -> void
     {
         constexpr uint32_t ticks = 100;
+        currentCpu_ = &cpus_[0];
 
         // JIT the VM's code, one basic block (sort of) at a time, and run it.
         uint32_t pc = 0;
         CpuFunc func = nullptr;
-        for (func = Resolve(pc); func != nullptr && cpu_.trap == Trap::NONE; func = Resolve(pc))
+        for (func = Resolve(pc); func != nullptr && currentCpu_->trap == Trap::NONE; func = Resolve(pc))
         {
             // Run native code until we need to resolve an address.
-            while (func != nullptr && cpu_.trap == Trap::NONE)
+            while (func != nullptr && currentCpu_->trap == Trap::NONE)
             {
                 // Call the native code and run it for `ticks` ticks.
-                func = reinterpret_cast<CpuFunc>(func(&cpu_, ticks));
-                // std::cout << std::format("pc {:2}, native func = 0x{:016x}", cpu_.nextPc, reinterpret_cast<uintptr_t>(func)) << '\n';
-                // std::cout << "x1 = " << cpu_.xreg[1] << ", x5 = " << cpu_.xreg[5] << '\n';
+                func = reinterpret_cast<CpuFunc>(func(currentCpu_, ticks));
+                std::cout << std::format("pc {:2}, native func = 0x{:016x}", currentCpu_->nextPc, reinterpret_cast<uintptr_t>(func)) << '\n';
+                std::cout << "x1 = " << currentCpu_->xreg[1] << ", x5 = " << currentCpu_->xreg[5] << '\n';
             }
 
             // Get the VM address of the next instruction.
-            pc = cpu_.nextPc;
+            pc = currentCpu_->nextPc;
 
-            // std::cout << "pc = " << pc << '\n';
+            std::cout << "pc = " << pc << '\n';
         }
-        // std::cout << "Execution ended with status: ";
-        switch (cpu_.trap)
+        std::cout << "Execution ended with status: ";
+        switch (currentCpu_->trap)
         {
         case Trap::NONE:
-            // std::cout << "Success";
+            std::cout << "Success";
             break;
         case Trap::BAD_ADDRESS:
-            // std::cout << std::format("Bad Address: 0x{:04x}", pc);
+            std::cout << std::format("Bad Address: 0x{:04x}", pc);
             break;
         case Trap::HALT:
-            // std::cout << "Halt";
+            std::cout << "Halt";
             break;
         }
-        // std::cout << '\n';
-    }
-};
-
-class Interpreter
-{
-    vm::Code code_{};
-    Cpu cpu_{};
-
-public:
-    Interpreter(vm::Code& code) : code_{code} {}
-    Interpreter(vm::Code&& code) : code_{std::move(code)} {}
-
-    auto Run() -> void
-    {
-        uint32_t pc = 0;
-        while (cpu_.trap == Trap::NONE)
-        {
-            const auto& ins = code_[pc];
-            switch (ins.op)
-            {
-            case vm::TRAP: {
-                cpu_.trap = Trap::HALT;
-                break;
-            }
-            case vm::ADD: {
-                if (ins.reg3.r1 != 0)
-                {
-                    const auto a = cpu_.xreg[ins.reg3.r2];
-                    const auto b = cpu_.xreg[ins.reg3.r3];
-                    cpu_.xreg[ins.reg3.r1] = a + b;
-                }
-                ++pc;
-                break;
-            }
-            case vm::ADDI: {
-                if (ins.reg2imm.r1 != 0)
-                {
-                    const auto a = cpu_.xreg[ins.reg2imm.r2];
-                    const auto b = ins.reg2imm.imm;
-                    cpu_.xreg[ins.reg2imm.r1] = a + b;
-                }
-                ++pc;
-                break;
-            }
-            case vm::BNE: {
-                const auto a = cpu_.xreg[ins.reg2imm.r1];
-                const auto b = cpu_.xreg[ins.reg2imm.r2];
-                if (a != b)
-                {
-                    pc += ins.reg2imm.imm;
-                }
-                else
-                {
-                    ++pc;
-                }
-                break;
-            }
-            case vm::BEQ: {
-                const auto a = cpu_.xreg[ins.reg2imm.r1];
-                const auto b = cpu_.xreg[ins.reg2imm.r2];
-                if (a == b)
-                {
-                    pc += ins.reg2imm.imm;
-                }
-                else
-                {
-                    ++pc;
-                }
-                break;
-            }
-            case vm::JMP: {
-                const auto a = cpu_.xreg[ins.reg2imm.r1];
-                const auto b = cpu_.xreg[ins.reg2imm.r2];
-                const auto c = ins.reg2imm.imm;
-                pc = a + b + c;
-            }
-            default:
-                break;
-            }
-            // std::cout << "x1 = " << cpu_.xreg[1] << ", x5 = " << cpu_.xreg[5] << '\n';
-        }
+        std::cout << '\n';
     }
 };
 
@@ -762,7 +694,7 @@ auto main() -> int
 {
     try
     {
-        constexpr uint32_t ITERATIONS = 1000000000;
+        constexpr uint32_t ITERATIONS = 10;
 
         // Assemble some VM instructions into `code`.
         vm::Code code;
@@ -806,19 +738,9 @@ auto main() -> int
         a.Addi(1, 0, 1337); // 19: addi x1, x0, 1337
         a.Trap(Trap::HALT); // 20: trap halt
 
-        // Basic block. A loop that counts down from 10 to 0.
-        a.Addi(1, 0, 10);   // 0: addi x1, 0, 10
-        a.Addi(1, 1, -1);   // 1: addi x1, x1, -1
-        a.Bne(1, 0, -1);    // 2: bne x1, x0, -1
-        a.Trap(Trap::HALT); // 3: trap halt
-
         // Run the code on the JIT.
         ExecutionEnvironment executionEnvironment(code);
         executionEnvironment.Run();
-
-        // Run the code on the interpreter.
-        Interpreter interpreter(code);
-        interpreter.Run();
 
         return 0;
     }
