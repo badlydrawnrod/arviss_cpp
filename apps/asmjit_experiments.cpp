@@ -613,6 +613,7 @@ class ExecutionEnvironment
     vm::Code code_{};
     std::vector<Cpu> cpus_{};
     Cpu* currentCpu_{};
+    size_t currentIndex_{};
     DemoJit jit_{};
 
     auto Resolve(uint32_t pc) -> CpuFunc
@@ -646,47 +647,68 @@ class ExecutionEnvironment
     }
 
 public:
-    ExecutionEnvironment(vm::Code& code) : code_{code} { Populate(1); }
-    ExecutionEnvironment(vm::Code&& code) : code_{std::move(code)} { Populate(1); }
+    static constexpr size_t NUM_CPUS = 2;
+
+    ExecutionEnvironment(vm::Code& code) : code_{code} { Populate(NUM_CPUS); }
+    ExecutionEnvironment(vm::Code&& code) : code_{std::move(code)} { Populate(NUM_CPUS); }
 
     auto Run() -> void
     {
-        constexpr uint32_t ticks = 100;
-        currentCpu_ = &cpus_[0];
+        constexpr uint32_t ticks = 10;
+        currentCpu_ = &cpus_[currentIndex_];
 
         // JIT the VM's code, one basic block (sort of) at a time, and run it.
         uint32_t pc = 0;
         CpuFunc func = nullptr;
-        for (func = Resolve(pc); func != nullptr && currentCpu_->trap == Trap::NONE; func = Resolve(pc))
+
+        // Run while there's at least one CPU that can make progress.
+        while (std::ranges::any_of(cpus_, [](const auto& cpu) { return cpu.trap == Trap::NONE; }))
         {
-            // Run native code until we need to resolve an address.
-            while (func != nullptr && currentCpu_->trap == Trap::NONE)
+            for (func = Resolve(pc); func != nullptr && currentCpu_->trap == Trap::NONE; func = Resolve(pc))
             {
-                // Call the native code and run it for `ticks` ticks.
-                func = reinterpret_cast<CpuFunc>(func(currentCpu_, ticks));
-                std::cout << std::format("pc {:2}, native func = 0x{:016x}", currentCpu_->nextPc, reinterpret_cast<uintptr_t>(func)) << '\n';
-                std::cout << "x1 = " << currentCpu_->xreg[1] << ", x5 = " << currentCpu_->xreg[5] << '\n';
+                // Run native code until we need to resolve an address.
+                while (func != nullptr && currentCpu_->trap == Trap::NONE)
+                {
+                    // Call the native code and run it for `ticks` ticks.
+                    func = reinterpret_cast<CpuFunc>(func(currentCpu_, ticks));
+                    std::cout << std::format("pc {:2}, native func = 0x{:016x}", currentCpu_->nextPc, reinterpret_cast<uintptr_t>(func)) << '\n';
+                    std::cout << "x1 = " << currentCpu_->xreg[1] << ", x5 = " << currentCpu_->xreg[5] << '\n';
+                }
+
+                // Get the VM address of the next instruction.
+                pc = currentCpu_->nextPc;
+
+
+                // Context switch.
+                std::cout << "----------- Switching context inline  -----------\n";
+                std::cout << std::format("BEFORE: cpu {} pc {}\n", currentIndex_, pc);
+                currentIndex_ = (currentIndex_ + 1) % cpus_.size();
+                currentCpu_ = &cpus_[currentIndex_];
+                pc = currentCpu_->nextPc;
+                std::cout << std::format(" AFTER: cpu {} pc {}\n", currentIndex_, pc);
             }
+            std::cout << std::format("cpu {} execution ended with status: ", currentIndex_);
 
-            // Get the VM address of the next instruction.
+            switch (currentCpu_->trap)
+            {
+            case Trap::NONE:
+                std::cout << "Success";
+                break;
+            case Trap::BAD_ADDRESS:
+                std::cout << std::format("Bad Address: 0x{:04x}", pc);
+                break;
+            case Trap::HALT:
+                std::cout << "Halt";
+                break;
+            }
+            std::cout << '\n';
+
+            std::cout << "=========== Switching context after trap ===========\n";
+            currentIndex_ = (currentIndex_ + 1) % cpus_.size();
+            currentCpu_ = &cpus_[currentIndex_];
             pc = currentCpu_->nextPc;
-
-            std::cout << "pc = " << pc << '\n';
+            std::cout << std::format("cpu {} pc {}\n", currentIndex_, pc);
         }
-        std::cout << "Execution ended with status: ";
-        switch (currentCpu_->trap)
-        {
-        case Trap::NONE:
-            std::cout << "Success";
-            break;
-        case Trap::BAD_ADDRESS:
-            std::cout << std::format("Bad Address: 0x{:04x}", pc);
-            break;
-        case Trap::HALT:
-            std::cout << "Halt";
-            break;
-        }
-        std::cout << '\n';
     }
 };
 
