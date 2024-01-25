@@ -661,6 +661,12 @@ public:
         currentIndex_ = (currentIndex_ + 1) % cpus_.size();
         currentCpu_ = &cpus_[currentIndex_];
         pc = currentCpu_->nextPc;
+        for (size_t count = 1; count < cpus_.size() && currentCpu_->trap != Trap::NONE; ++count)
+        {
+            currentIndex_ = (currentIndex_ + 1) % cpus_.size();
+            currentCpu_ = &cpus_[currentIndex_];
+            pc = currentCpu_->nextPc;
+        }
         std::cout << std::format("--- SwitchContext  after: cpu={:04} pc={:04} trap={}\n", currentIndex_, pc, static_cast<uint32_t>(currentCpu_->trap));
         return pc;
     }
@@ -690,13 +696,15 @@ public:
                                              currentCpu_->xreg[5]);
                 }
 
+                // Context switch if the CPU isn't trapped.
                 if (currentCpu_->trap == Trap::NONE)
                 {
                     pc = SwitchContext();
                 }
             }
-            std::cout << std::format("cpu {} execution ended with status: ", currentIndex_);
 
+            // The CPU is trapped, so handle the trap before context switching.
+            std::cout << std::format("cpu {} execution ended with status: ", currentIndex_);
             switch (currentCpu_->trap)
             {
             case Trap::NONE:
@@ -710,8 +718,6 @@ public:
                 break;
             }
             std::cout << '\n';
-
-            std::cout << "----------------------------------------------------------------------------\n";
             pc = SwitchContext();
         }
     }
