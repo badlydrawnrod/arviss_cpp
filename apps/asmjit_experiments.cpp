@@ -727,8 +727,6 @@ auto main() -> int
 {
     try
     {
-        constexpr uint32_t ITERATIONS = 10;
-
         // Assemble some VM instructions into `code`.
         vm::Code code;
         vm::Assembler a(code);
@@ -739,8 +737,7 @@ auto main() -> int
         a.Add(2, 2, 2); // 2: add x2, x2, x2
         a.Beq(0, 0, 1); // 3: beq x0, x0, +1
 
-        // Basic block. Set a counter.
-        // a.Addi(5, 0, ITERATIONS); // 4: addi x5, x0, ITERATIONS
+        // Basic block. Originally this set a counter in x5, but now that's poked in from outside.
         a.Addi(0, 0, 0); // Filler so that I don't have to renumber.
 
         // Basic block. A loop that counts down from 10 to 0.
