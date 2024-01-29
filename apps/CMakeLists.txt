@@ -24,6 +24,7 @@ add_app(bencher)
 add_app(re-encoder)
 add_app(runner)
 add_app(windows_memory)
+add_app(escape_sequences)
 
 add_folders(Apps)
 
