@@ -97,8 +97,8 @@ namespace arviss
                 }
                 else if constexpr (std::endian::native == std::endian::big)
                 {
-                    mem_[address] = (halfWord >> 8) & 0xff;
-                    mem_[address + 1] = halfWord & 0xff;
+                    mem_[address] = (halfWord >> 8u) & 0xffu;
+                    mem_[address + 1] = halfWord & 0xffu;
                 }
             }
             else
@@ -217,8 +217,8 @@ namespace arviss
                 }
                 else if constexpr (std::endian::native == std::endian::big)
                 {
-                    mem_[address] = (halfWord >> 8) & 0xff;
-                    mem_[address + 1] = halfWord & 0xff;
+                    mem_[address] = (halfWord >> 8u) & 0xffu;
+                    mem_[address + 1] = halfWord & 0xffu;
                 }
             }
             else
