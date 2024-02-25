@@ -34,12 +34,9 @@ namespace arviss::remix
     template<IsRemixDispatchable T>
     class RemixDispatcher : public T
     {
-        // We want a different encoder dependending on the capabilities of the instruction handler, because otherwise
-        // the dispatcher has to do work unnecessarily.
-        using EncoderType = decltype(EncoderFor<T>());
-
         auto Self() -> T& { return static_cast<T&>(*this); }
 
+        // TODO: support multiple converter types.
         Rv32iDispatcher<Rv32iToRemixConverter> converter_;
 
     public:
