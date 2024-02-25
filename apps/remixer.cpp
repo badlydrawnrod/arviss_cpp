@@ -45,9 +45,11 @@ auto main(int argc, char* argv[]) -> int
 
         // Create a CPU.
         using Cpu = Rv32iCpuIntegerCore<NoIoMem>;
+        // Uncomment the following line if you want actual output.
+        // using Cpu = Rv32iCpuIntegerCore<BasicMem>;
         static_assert(IsRv32iCpu<Cpu>);
 
-        // Use the Remix decoder with it.
+        // Dispatch using the Remix dispatcher.
         remix::RemixDispatcher<Cpu> cpu;
 
         // Populate its memory with the contents of the image.
@@ -70,7 +72,7 @@ auto main(int argc, char* argv[]) -> int
                 switch (cpu.TrapCause()->type_)
                 {
                 case TrapType::Breakpoint:
-                    //std::cerr << "ebreak\n";
+                    // std::cerr << "ebreak\n";
                     break;
                 case TrapType::EnvironmentCallFromMMode:
                     std::cerr << "ecall from M mode\n";

@@ -196,9 +196,8 @@ namespace arviss::remix
         // | bimm | unused | rs2 | rs1 | opc |
         // |   12 |      3 |   5 |   5 |   7 |
         // +------+--------+-----+-----+-----+
-        //
-        // Note: shift by 19 not 20 because the normal decoder has already done the maths, so we have
-        // to slightly undo it.
+
+        // Note: shift bimm by 19 not 20 because the normal decoder has already done the multiply by 2
         F2b(Opcode opc, u32 rs1, u32 rs2, u32 bimm) : v{(bimm << 19) | (rs2 << 12) | (rs1 << 7) | opc} {}
 
         auto opc() const -> Opcode { return Opcode(v & 0x7f); }
@@ -271,9 +270,8 @@ namespace arviss::remix
         // | jimm20 | rd | opc |
         // |   20   |  5 |   7 |
         // +--------+----+-----+
-        //
-        // Note: shift by 11 not 12 because the normal decoder has already done the maths, so we have
-        // to slightly undo it.
+
+        // Note: shift jimm by 11 not 12 because the normal decoder has already done the multiply by 2
         F4j(Opcode opc, u32 rd, u32 uimm) : v{(uimm << 11) | (rd << 7) | opc} {}
 
         auto opc() const -> Opcode { return Opcode(v & 0x7f); }
@@ -291,8 +289,8 @@ namespace arviss::remix
         // | uimm20 | rd | opc |
         // |   20   |  5 |   7 |
         // +--------+----+-----+
-        //
-        // Note: we're not shifting uimm because the normal decoder has already done it.
+
+        // Note: don't shift uimm because the normal decoder has already done it.
         F4u(Opcode opc, u32 rd, u32 uimm) : v{uimm | (rd << 7) | opc} {}
 
         auto opc() const -> Opcode { return Opcode(v & 0x7f); }
