@@ -142,84 +142,165 @@ namespace arviss::remix
 
     struct F0
     {
-        uint32_t _ : 25;  // unused
-        uint32_t opc : 7; // opcode
+        // +--------+-----+
+        // | unused | opc |
+        // |     25 |   7 |
+        // +--------+-----+
+        F0(Opcode opc) : v{opc} {}
+        auto opc() const -> Opcode { return Opcode(v & 0x7f); }
+
+    private:
+        u32 v;
     };
     static_assert(sizeof(F0) == sizeof(uint32_t));
 
     struct F1a
     {
-        uint32_t rs2 : 5; // rs2
-        uint32_t _ : 10;  // unused
-        uint32_t rs1 : 5; // rs1
-        uint32_t rd : 5;  // rd
-        uint32_t opc : 7; // opcode
+        // +-----+--------+-----+----+-----+
+        // | rs2 | unused | rs1 | rd | opc |
+        // |   5 |     10 |   5 |  5 |   7 |
+        // +-----+--------+-----+----+-----+
+        F1a(Opcode opc, u32 rd, u32 rs1, u32 rs2) : v{(rs2 << 27) | (rs1 << 12) | (rd << 7) | opc} {}
+
+        auto opc() const -> Opcode { return Opcode(v & 0x7f); }
+        auto rd() const -> u32 { return (v >> 7) & 0x1f; }
+        auto rs1() const -> u32 { return (v >> 12) & 0x1f; }
+        auto rs2() const -> u32 { return (v >> 27) & 0x1f; }
+
+    private:
+        u32 v;
     };
     static_assert(sizeof(F1a) == sizeof(uint32_t));
 
     struct F1s
     {
-        uint32_t shamtw : 5; // shamtw
-        uint32_t _ : 10;     // unused
-        uint32_t rs1 : 5;    // rs1
-        uint32_t rd : 5;     // rd
-        uint32_t opc : 7;    // opcode
+        // +-------+--------+-----+----+-----+
+        // | shamt | unused | rs1 | rd | opc |
+        // |     5 |     10 |   5 |  5 |   7 |
+        // +-------+--------+-----+----+-----+
+        F1s(Opcode opc, u32 rd, u32 rs1, u32 shamt) : v{(shamt << 27) | (rs1 << 12) | (rd << 7) | opc} {}
+
+        auto opc() const -> Opcode { return Opcode(v & 0x7f); }
+        auto rd() const -> u32 { return (v >> 7) & 0x1f; }
+        auto rs1() const -> u32 { return (v >> 12) & 0x1f; }
+        auto shamt() const -> u32 { return (v >> 27) & 0x1f; }
+
+    private:
+        u32 v;
     };
     static_assert(sizeof(F1s) == sizeof(uint32_t));
 
     struct F2b
     {
-        uint32_t bimm : 12; // bimmediate
-        uint32_t _ : 3;     // unused
-        uint32_t rs2 : 5;   // rs2
-        uint32_t rs1 : 5;   // rs1
-        uint32_t opc : 7;   // opcode
+        // +------+--------+-----+-----+-----+
+        // | bimm | unused | rs2 | rs1 | opc |
+        // |   12 |      3 |   5 |   5 |   7 |
+        // +------+--------+-----+-----+-----+
+        //
+        // Note: shift by 19 not 20 because the normal decoder has already done the maths, so we have
+        // to slightly undo it.
+        F2b(Opcode opc, u32 rs1, u32 rs2, u32 bimm) : v{(bimm << 19) | (rs2 << 12) | (rs1 << 7) | opc} {}
+
+        auto opc() const -> Opcode { return Opcode(v & 0x7f); }
+        auto rs1() const -> u32 { return (v >> 7) & 0x1f; }
+        auto rs2() const -> u32 { return (v >> 12) & 0x1f; }
+        auto bimm() const -> u32 { return u32(i32(v) >> 19) & 0xfffffffe; }
+
+    private:
+        u32 v;
     };
     static_assert(sizeof(F2b) == sizeof(uint32_t));
 
     struct F2s
     {
-        uint32_t simm : 12; // simmediate
-        uint32_t _ : 3;     // unused
-        uint32_t rs2 : 5;   // rs2
-        uint32_t rs1 : 5;   // rs1
-        uint32_t opc : 7;   // opcode
+        // +------+--------+-----+-----+-----+
+        // | simm | unused | rs2 | rs1 | opc |
+        // |   12 |      3 |   5 |   5 |   7 |
+        // +------+--------+-----+-----+-----+
+        F2s(Opcode opc, u32 rs1, u32 rs2, u32 simm) : v{(simm << 20) | (rs2 << 12) | (rs1 << 7) | opc} {}
+
+        auto opc() const -> Opcode { return Opcode(v & 0x7f); }
+        auto rs1() const -> u32 { return (v >> 7) & 0x1f; }
+        auto rs2() const -> u32 { return (v >> 12) & 0x1f; }
+        auto simm() const -> u32 { return u32(i32(v) >> 20); }
+
+    private:
+        u32 v;
     };
     static_assert(sizeof(F2s) == sizeof(uint32_t));
 
     struct F2i
     {
-        uint32_t iimm : 12; // iimmediate
-        uint32_t _ : 3;     // unused
-        uint32_t rs1 : 5;   // rs1
-        uint32_t rd : 5;    // rd
-        uint32_t opc : 7;   // opcode
+        // +------+--------+-----+----+-----+
+        // | iimm | unused | rs1 | rd | opc |
+        // |   12 |      3 |   5 |  5 |   7 |
+        // +------+--------+-----+----+-----+
+        F2i(Opcode opc, u32 rd, u32 rs1, u32 iimm) : v{(iimm << 20) | (rs1 << 12) | (rd << 7) | opc} {}
+
+        auto opc() const -> Opcode { return Opcode(v & 0x7f); }
+        auto rd() const -> u32 { return (v >> 7) & 0x1f; }
+        auto rs1() const -> u32 { return (v >> 12) & 0x1f; }
+        auto iimm() const -> u32 { return u32(i32(v) >> 20); }
+
+    private:
+        u32 v;
     };
     static_assert(sizeof(F2i) == sizeof(uint32_t));
 
     struct F3
     {
-        uint32_t fm : 4;  // fm
-        uint32_t _ : 11;  // unused
-        uint32_t rs1 : 5; // rs1
-        uint32_t rd : 5;  // rd
-        uint32_t opc : 7; // opcode
+        // +----+--------+-----+----+-----+
+        // | fm | unused | rs1 | rd | opc |
+        // |  4 |     11 |   5 |  5 |   7 |
+        // +----+--------+-----+----+-----+
+        F3(Opcode opc, u32 rd, u32 rs1, u32 fm) : v{(fm << 28) | (rs1 << 12) | (rd << 7) | opc} {}
+
+        auto opc() const -> Opcode { return Opcode(v & 0x7f); }
+        auto rd() const -> u32 { return (v >> 7) & 0x1f; }
+        auto rs1() const -> u32 { return (v >> 12) & 0x1f; }
+        auto fm() const -> u32 { return (v >> 28) & 0xf; }
+
+    private:
+        u32 v;
     };
     static_assert(sizeof(F3) == sizeof(uint32_t));
 
     struct F4j
     {
-        uint32_t jimm : 20; // jimmediate
-        uint32_t rd : 5;    // rd
-        uint32_t opc : 7;   // opcode
+        // +--------+----+-----+
+        // | jimm20 | rd | opc |
+        // |   20   |  5 |   7 |
+        // +--------+----+-----+
+        //
+        // Note: shift by 11 not 12 because the normal decoder has already done the maths, so we have
+        // to slightly undo it.
+        F4j(Opcode opc, u32 rd, u32 uimm) : v{(uimm << 11) | (rd << 7) | opc} {}
+
+        auto opc() const -> Opcode { return Opcode(v & 0x7f); }
+        auto rd() const -> u32 { return (v >> 7) & 0x1f; }
+        auto jimm() const -> u32 { return u32(i32(v) >> 11) & 0xfffffffe; }
+
+    private:
+        u32 v;
     };
     static_assert(sizeof(F4j) == sizeof(uint32_t));
 
     struct F4u
     {
-        uint32_t uimm : 20; // uimmediate
-        uint32_t rd : 5;    // rd
-        uint32_t opc : 7;   // opcode
+        // +--------+----+-----+
+        // | uimm20 | rd | opc |
+        // |   20   |  5 |   7 |
+        // +--------+----+-----+
+        //
+        // Note: we're not shifting uimm because the normal decoder has already done it.
+        F4u(Opcode opc, u32 rd, u32 uimm) : v{uimm | (rd << 7) | opc} {}
+
+        auto opc() const -> Opcode { return Opcode(v & 0x7f); }
+        auto rd() const -> u32 { return (v >> 7) & 0x1f; }
+        auto uimm() const -> u32 { return v & 0xfffff000; }
+
+    private:
+        u32 v;
     };
     static_assert(sizeof(F4u) == sizeof(uint32_t));
 
@@ -228,14 +309,14 @@ namespace arviss::remix
         union
         {
             F0 f0;
-            F1a f1a;
-            F1s f1s;
-            F2b f2b;
-            F2s f2s;
-            F2i f2i;
-            F3 f3;
-            F4j f4j;
-            F4u f4u;
+            F1a arithType;
+            F1s immShiftType;
+            F2b btype;
+            F2s stype;
+            F2i itype;
+            F3 fenceType;
+            F4j jtype;
+            F4u utype;
         };
     };
     static_assert(sizeof(Remix) == sizeof(uint32_t));
@@ -248,74 +329,74 @@ namespace arviss::remix
 
         // Illegal instruction.
 
-        auto Illegal(u32 ins) -> Item { return {.f0 = {._ = 0, .opc = Opcode::Illegal}}; }
+        auto Illegal(u32 /*ins*/) -> Item { return {.f0 = F0(Opcode::Illegal)}; }
 
         // B-type instructions.
 
-        auto Beq(Reg rs1, Reg rs2, u32 bimm) -> Item { return {.f2b = {.bimm = bimm, ._ = 0, .rs2 = rs2, .rs1 = rs1, .opc = Opcode::Beq}}; }
-        auto Bne(Reg rs1, Reg rs2, u32 bimm) -> Item { return {.f2b = {.bimm = bimm, ._ = 0, .rs2 = rs2, .rs1 = rs1, .opc = Opcode::Bne}}; }
-        auto Blt(Reg rs1, Reg rs2, u32 bimm) -> Item { return {.f2b = {.bimm = bimm, ._ = 0, .rs2 = rs2, .rs1 = rs1, .opc = Opcode::Blt}}; }
-        auto Bge(Reg rs1, Reg rs2, u32 bimm) -> Item { return {.f2b = {.bimm = bimm, ._ = 0, .rs2 = rs2, .rs1 = rs1, .opc = Opcode::Bge}}; }
-        auto Bltu(Reg rs1, Reg rs2, u32 bimm) -> Item { return {.f2b = {.bimm = bimm, ._ = 0, .rs2 = rs2, .rs1 = rs1, .opc = Opcode::Bltu}}; }
-        auto Bgeu(Reg rs1, Reg rs2, u32 bimm) -> Item { return {.f2b = {.bimm = bimm, ._ = 0, .rs2 = rs2, .rs1 = rs1, .opc = Opcode::Bgeu}}; }
+        auto Beq(Reg rs1, Reg rs2, u32 bimm) -> Item { return {.btype = F2b(Opcode::Beq, rs1, rs2, bimm)}; }
+        auto Bne(Reg rs1, Reg rs2, u32 bimm) -> Item { return {.btype = F2b(Opcode::Bne, rs1, rs2, bimm)}; }
+        auto Blt(Reg rs1, Reg rs2, u32 bimm) -> Item { return {.btype = F2b(Opcode::Blt, rs1, rs2, bimm)}; }
+        auto Bge(Reg rs1, Reg rs2, u32 bimm) -> Item { return {.btype = F2b(Opcode::Bge, rs1, rs2, bimm)}; }
+        auto Bltu(Reg rs1, Reg rs2, u32 bimm) -> Item { return {.btype = F2b(Opcode::Bltu, rs1, rs2, bimm)}; }
+        auto Bgeu(Reg rs1, Reg rs2, u32 bimm) -> Item { return {.btype = F2b(Opcode::Bgeu, rs1, rs2, bimm)}; }
 
         // I-type instructions.
 
-        auto Lb(Reg rd, Reg rs1, u32 iimm) -> Item { return {.f2i = {.iimm = iimm, ._ = 0, .rs1 = rs1, .rd = rs1, .opc = Opcode::Lb}}; }
-        auto Lh(Reg rd, Reg rs1, u32 iimm) -> Item { return {.f2i = {.iimm = iimm, ._ = 0, .rs1 = rs1, .rd = rs1, .opc = Opcode::Lh}}; }
-        auto Lw(Reg rd, Reg rs1, u32 iimm) -> Item { return {.f2i = {.iimm = iimm, ._ = 0, .rs1 = rs1, .rd = rs1, .opc = Opcode::Lw}}; }
-        auto Lbu(Reg rd, Reg rs1, u32 iimm) -> Item { return {.f2i = {.iimm = iimm, ._ = 0, .rs1 = rs1, .rd = rs1, .opc = Opcode::Lbu}}; }
-        auto Lhu(Reg rd, Reg rs1, u32 iimm) -> Item { return {.f2i = {.iimm = iimm, ._ = 0, .rs1 = rs1, .rd = rs1, .opc = Opcode::Lhu}}; }
-        auto Addi(Reg rd, Reg rs1, u32 iimm) -> Item { return {.f2i = {.iimm = iimm, ._ = 0, .rs1 = rs1, .rd = rs1, .opc = Opcode::Addi}}; }
-        auto Slti(Reg rd, Reg rs1, u32 iimm) -> Item { return {.f2i = {.iimm = iimm, ._ = 0, .rs1 = rs1, .rd = rs1, .opc = Opcode::Slti}}; }
-        auto Sltiu(Reg rd, Reg rs1, u32 iimm) -> Item { return {.f2i = {.iimm = iimm, ._ = 0, .rs1 = rs1, .rd = rs1, .opc = Opcode::Sltiu}}; }
-        auto Xori(Reg rd, Reg rs1, u32 iimm) -> Item { return {.f2i = {.iimm = iimm, ._ = 0, .rs1 = rs1, .rd = rs1, .opc = Opcode::Xori}}; }
-        auto Ori(Reg rd, Reg rs1, u32 iimm) -> Item { return {.f2i = {.iimm = iimm, ._ = 0, .rs1 = rs1, .rd = rs1, .opc = Opcode::Ori}}; }
-        auto Andi(Reg rd, Reg rs1, u32 iimm) -> Item { return {.f2i = {.iimm = iimm, ._ = 0, .rs1 = rs1, .rd = rs1, .opc = Opcode::Andi}}; }
-        auto Jalr(Reg rd, Reg rs1, u32 iimm) -> Item { return {.f2i = {.iimm = iimm, ._ = 0, .rs1 = rs1, .rd = rs1, .opc = Opcode::Jalr}}; }
+        auto Lb(Reg rd, Reg rs1, u32 iimm) -> Item { return {.itype = F2i(Opcode::Lb, rd, rs1, iimm)}; }
+        auto Lh(Reg rd, Reg rs1, u32 iimm) -> Item { return {.itype = F2i(Opcode::Lh, rd, rs1, iimm)}; }
+        auto Lw(Reg rd, Reg rs1, u32 iimm) -> Item { return {.itype = F2i(Opcode::Lw, rd, rs1, iimm)}; }
+        auto Lbu(Reg rd, Reg rs1, u32 iimm) -> Item { return {.itype = F2i(Opcode::Lbu, rd, rs1, iimm)}; }
+        auto Lhu(Reg rd, Reg rs1, u32 iimm) -> Item { return {.itype = F2i(Opcode::Lhu, rd, rs1, iimm)}; }
+        auto Addi(Reg rd, Reg rs1, u32 iimm) -> Item { return {.itype = F2i(Opcode::Addi, rd, rs1, iimm)}; }
+        auto Slti(Reg rd, Reg rs1, u32 iimm) -> Item { return {.itype = F2i(Opcode::Slti, rd, rs1, iimm)}; }
+        auto Sltiu(Reg rd, Reg rs1, u32 iimm) -> Item { return {.itype = F2i(Opcode::Sltiu, rd, rs1, iimm)}; }
+        auto Xori(Reg rd, Reg rs1, u32 iimm) -> Item { return {.itype = F2i(Opcode::Xori, rd, rs1, iimm)}; }
+        auto Ori(Reg rd, Reg rs1, u32 iimm) -> Item { return {.itype = F2i(Opcode::Ori, rd, rs1, iimm)}; }
+        auto Andi(Reg rd, Reg rs1, u32 iimm) -> Item { return {.itype = F2i(Opcode::Andi, rd, rs1, iimm)}; }
+        auto Jalr(Reg rd, Reg rs1, u32 iimm) -> Item { return {.itype = F2i(Opcode::Jalr, rd, rs1, iimm)}; }
 
         // S-type instructions.
 
-        auto Sb(Reg rs1, Reg rs2, u32 simm) -> Item { return {.f2s = {.simm = simm, ._ = 0, .rs2 = rs2, .rs1 = rs1, .opc = Opcode::Sb}}; }
-        auto Sh(Reg rs1, Reg rs2, u32 simm) -> Item { return {.f2s = {.simm = simm, ._ = 0, .rs2 = rs2, .rs1 = rs1, .opc = Opcode::Sh}}; }
-        auto Sw(Reg rs1, Reg rs2, u32 simm) -> Item { return {.f2s = {.simm = simm, ._ = 0, .rs2 = rs2, .rs1 = rs1, .opc = Opcode::Sw}}; }
+        auto Sb(Reg rs1, Reg rs2, u32 simm) -> Item { return {.stype = F2s(Opcode::Sb, rs1, rs2, simm)}; }
+        auto Sh(Reg rs1, Reg rs2, u32 simm) -> Item { return {.stype = F2s(Opcode::Sh, rs1, rs2, simm)}; }
+        auto Sw(Reg rs1, Reg rs2, u32 simm) -> Item { return {.stype = F2s(Opcode::Sw, rs1, rs2, simm)}; }
 
         // U-type instructions.
 
-        auto Auipc(Reg rd, u32 uimm) -> Item { return {.f4u = {.uimm = uimm, .rd = rd, .opc = Opcode::Auipc}}; }
-        auto Lui(Reg rd, u32 uimm) -> Item { return {.f4u = {.uimm = uimm, .rd = rd, .opc = Opcode::Lui}}; }
+        auto Auipc(Reg rd, u32 uimm) -> Item { return {.utype = F4u(Opcode::Auipc, rd, uimm)}; }
+        auto Lui(Reg rd, u32 uimm) -> Item { return {.utype = F4u(Opcode::Lui, rd, uimm)}; }
 
         // J-type instructions.
 
-        auto Jal(Reg rd, u32 jimm) -> Item { return {.f4j = {.jimm = jimm, .rd = rd, .opc = Opcode::Jal}}; }
+        auto Jal(Reg rd, u32 jimm) -> Item { return {.jtype = F4j(Opcode::Jal, rd, jimm)}; }
 
         // Arithmetic instructions.
 
-        auto Add(Reg rd, Reg rs1, Reg rs2) -> Item { return {.f1a = {.rs2 = rs2, ._ = 0, .rs1 = rs1, .rd = rd, .opc = Opcode::Add}}; }
-        auto Sub(Reg rd, Reg rs1, Reg rs2) -> Item { return {.f1a = {.rs2 = rs2, ._ = 0, .rs1 = rs1, .rd = rd, .opc = Opcode::Sub}}; }
-        auto Sll(Reg rd, Reg rs1, Reg rs2) -> Item { return {.f1a = {.rs2 = rs2, ._ = 0, .rs1 = rs1, .rd = rd, .opc = Opcode::Sll}}; }
-        auto Slt(Reg rd, Reg rs1, Reg rs2) -> Item { return {.f1a = {.rs2 = rs2, ._ = 0, .rs1 = rs1, .rd = rd, .opc = Opcode::Slt}}; }
-        auto Sltu(Reg rd, Reg rs1, Reg rs2) -> Item { return {.f1a = {.rs2 = rs2, ._ = 0, .rs1 = rs1, .rd = rd, .opc = Opcode::Sltu}}; }
-        auto Xor(Reg rd, Reg rs1, Reg rs2) -> Item { return {.f1a = {.rs2 = rs2, ._ = 0, .rs1 = rs1, .rd = rd, .opc = Opcode::Xor}}; }
-        auto Srl(Reg rd, Reg rs1, Reg rs2) -> Item { return {.f1a = {.rs2 = rs2, ._ = 0, .rs1 = rs1, .rd = rd, .opc = Opcode::Srl}}; }
-        auto Sra(Reg rd, Reg rs1, Reg rs2) -> Item { return {.f1a = {.rs2 = rs2, ._ = 0, .rs1 = rs1, .rd = rd, .opc = Opcode::Sra}}; }
-        auto Or(Reg rd, Reg rs1, Reg rs2) -> Item { return {.f1a = {.rs2 = rs2, ._ = 0, .rs1 = rs1, .rd = rd, .opc = Opcode::Or}}; }
-        auto And(Reg rd, Reg rs1, Reg rs2) -> Item { return {.f1a = {.rs2 = rs2, ._ = 0, .rs1 = rs1, .rd = rd, .opc = Opcode::And}}; }
+        auto Add(Reg rd, Reg rs1, Reg rs2) -> Item { return {.arithType = F1a(Opcode::Add, rd, rs1, rs2)}; }
+        auto Sub(Reg rd, Reg rs1, Reg rs2) -> Item { return {.arithType = F1a(Opcode::Sub, rd, rs1, rs2)}; }
+        auto Sll(Reg rd, Reg rs1, Reg rs2) -> Item { return {.arithType = F1a(Opcode::Sll, rd, rs1, rs2)}; }
+        auto Slt(Reg rd, Reg rs1, Reg rs2) -> Item { return {.arithType = F1a(Opcode::Slt, rd, rs1, rs2)}; }
+        auto Sltu(Reg rd, Reg rs1, Reg rs2) -> Item { return {.arithType = F1a(Opcode::Sltu, rd, rs1, rs2)}; }
+        auto Xor(Reg rd, Reg rs1, Reg rs2) -> Item { return {.arithType = F1a(Opcode::Xor, rd, rs1, rs2)}; }
+        auto Srl(Reg rd, Reg rs1, Reg rs2) -> Item { return {.arithType = F1a(Opcode::Srl, rd, rs1, rs2)}; }
+        auto Sra(Reg rd, Reg rs1, Reg rs2) -> Item { return {.arithType = F1a(Opcode::Sra, rd, rs1, rs2)}; }
+        auto Or(Reg rd, Reg rs1, Reg rs2) -> Item { return {.arithType = F1a(Opcode::Or, rd, rs1, rs2)}; }
+        auto And(Reg rd, Reg rs1, Reg rs2) -> Item { return {.arithType = F1a(Opcode::And, rd, rs1, rs2)}; }
 
         // Immediate shift instructions.
 
-        auto Slli(Reg rd, Reg rs1, u32 shamt) -> Item { return {.f1s = {.shamtw = shamt, ._ = 0, .rs1 = rs1, .rd = rd, .opc = Opcode::Slli}}; }
-        auto Srli(Reg rd, Reg rs1, u32 shamt) -> Item { return {.f1s = {.shamtw = shamt, ._ = 0, .rs1 = rs1, .rd = rd, .opc = Opcode::Srli}}; }
-        auto Srai(Reg rd, Reg rs1, u32 shamt) -> Item { return {.f1s = {.shamtw = shamt, ._ = 0, .rs1 = rs1, .rd = rd, .opc = Opcode::Srai}}; }
+        auto Slli(Reg rd, Reg rs1, u32 shamt) -> Item { return {.immShiftType = F1s(Opcode::Slli, rd, rs1, shamt)}; }
+        auto Srli(Reg rd, Reg rs1, u32 shamt) -> Item { return {.immShiftType = F1s(Opcode::Srli, rd, rs1, shamt)}; }
+        auto Srai(Reg rd, Reg rs1, u32 shamt) -> Item { return {.immShiftType = F1s(Opcode::Srai, rd, rs1, shamt)}; }
 
         // Fence instructions.
 
-        auto Fence(u32 fm, Reg rd, Reg rs1) -> Item { return {.f3 = {.fm = fm, ._ = 0, .rs1 = rs1, .rd = rd, .opc = Opcode::Fence}}; }
+        auto Fence(u32 fm, Reg rd, Reg rs1) -> Item { return {.fenceType = F3(Opcode::Fence, rd, rs1, fm)}; }
 
         // System instructions.
 
-        auto Ecall() -> Item { return {.f0 = {._ = 0, .opc = Opcode::Ecall}}; }
-        auto Ebreak() -> Item { return {.f0 = {._ = 0, .opc = Opcode::Ebreak}}; }
+        auto Ecall() -> Item { return {.f0 = F0(Opcode::Ecall)}; }
+        auto Ebreak() -> Item { return {.f0 = F0(Opcode::Ebreak)}; }
     };
 
     static_assert(IsRv32iInstructionHandler<Rv32iToRemixConverter>);

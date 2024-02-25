@@ -3,6 +3,7 @@
 #include "arviss/dcode/executors.h"
 #include "arviss/platforms/basic/cpus.h"
 #include "arviss/remix/encoder.h"
+#include "arviss/remix/executors.h"
 #include "arviss/rv32/concepts.h"
 
 #include <format>
@@ -17,7 +18,8 @@ auto Run(T& t, size_t count) -> void
 {
     while (count > 0 && !t.IsTrapped())
     {
-        t.QuickDispatch();
+        auto ins = t.Fetch(); // Fetch.
+        t.Dispatch(ins);      // Execute.
         --count;
     }
 }
@@ -42,17 +44,11 @@ auto main(int argc, char* argv[]) -> int
         fileHandle.close();
 
         // Create a CPU.
-
-        // An interpreting CPU that decodes each RV32 instruction before executing it.
-        using Cpu = Rv32imfCpuFloatCore<NoIoMem>;
+        using Cpu = Rv32iCpuIntegerCore<NoIoMem>;
         static_assert(IsRv32iCpu<Cpu>);
 
-        // A CPU that caches decoded instructions as DCode, and executes the DCode. This eliminates much of the
-        // overhead of decoding for a ~2.5x speedup.
-        using DCodeCpu = DCodeDispatcher<Cpu, SimpleCache>;
-        static_assert(IsRv32iCpu<DCodeCpu>);
-
-        DCodeCpu cpu{SimpleCache()};
+        // Use the Remix decoder with it.
+        remix::RemixDispatcher<Cpu> cpu;
 
         // Populate its memory with the contents of the image.
         Address addr = 0;
@@ -74,6 +70,7 @@ auto main(int argc, char* argv[]) -> int
                 switch (cpu.TrapCause()->type_)
                 {
                 case TrapType::Breakpoint:
+                    //std::cerr << "ebreak\n";
                     break;
                 case TrapType::EnvironmentCallFromMMode:
                     std::cerr << "ecall from M mode\n";

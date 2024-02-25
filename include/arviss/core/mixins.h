@@ -77,17 +77,19 @@ namespace arviss
         {
             auto pc = Transfer();
             auto ins = Fetch32(pc);
-            if ((ins & 0b11) == 0b11)
-            {
-                // 32-bit instruction.
-                SetNextPc(pc + 4);
-            }
-            else
-            {
-                // 16-bit compressed instruction.
-                SetNextPc(pc + 2);
-                ins = ins & 0xffff;
-            }
+            // TODO: make this work for both scenarios, i.e., when we do and don't want to handle compressed instructions
+            // if ((ins & 0b11) == 0b11)
+            // {
+            //     // 32-bit instruction.
+            //     SetNextPc(pc + 4);
+            // }
+            // else
+            // {
+            //     // 16-bit compressed instruction.
+            //     SetNextPc(pc + 2);
+            //     ins = ins & 0xffff;
+            // }
+            SetNextPc(pc + 4);
             return ins;
         }
 
