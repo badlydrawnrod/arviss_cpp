@@ -302,6 +302,135 @@ namespace arviss::remix
     };
     static_assert(sizeof(F4u) == sizeof(uint32_t));
 
+    struct FloatRdRs1
+    {
+        // +--------+-----+----+-----+
+        // | unused | rs1 | rd | opc |
+        // |     15 |   5 |  5 |   7 |
+        // +--------+-----+----+-----+
+        FloatRdRs1(Opcode opc, u32 rd, u32 rs1) : v{(rs1 << 12) | (rd << 7) | opc} {}
+
+        auto opc() const -> Opcode { return Opcode(v & 0x7f); }
+        auto rd() const -> u32 { return (v >> 7) & 0x1f; }
+        auto rs1() const -> u32 { return (v >> 12) & 0x1f; }
+
+    private:
+        u32 v;
+    };
+    static_assert(sizeof(FloatRdRs1) == sizeof(uint32_t));
+
+    struct FloatRdRs1Rm
+    {
+        // +--------+----+-----+----+-----+
+        // | unused | rm | rs1 | rd | opc |
+        // |     12 |  3 |   5 |  5 |   7 |
+        // +--------+----+-----+----+-----+
+        FloatRdRs1Rm(Opcode opc, u32 rd, u32 rs1, u32 rm) : v{(rm << 17) | (rs1 << 12) | (rd << 7) | opc} {}
+
+        auto opc() const -> Opcode { return Opcode(v & 0x7f); }
+        auto rd() const -> u32 { return (v >> 7) & 0x1f; }
+        auto rs1() const -> u32 { return (v >> 12) & 0x1f; }
+        auto rm() const -> u32 { return (v >> 17) & 0x7; }
+
+    private:
+        u32 v;
+    };
+    static_assert(sizeof(FloatRdRs1Rm) == sizeof(uint32_t));
+
+    struct FloatRdRs1Rs2
+    {
+        // +--------+-----+-----+----+-----+
+        // | unused | rs2 | rs1 | rd | opc |
+        // |     10 |   5 |   5 |  5 |   7 |
+        // +--------+-----+-----+----+-----+
+        FloatRdRs1Rs2(Opcode opc, u32 rd, u32 rs1, u32 rs2) : v{(rs2 << 17) | (rs1 << 12) | (rd << 7) | opc} {}
+
+        auto opc() const -> Opcode { return Opcode(v & 0x7f); }
+        auto rd() const -> u32 { return (v >> 7) & 0x1f; }
+        auto rs1() const -> u32 { return (v >> 12) & 0x1f; }
+        auto rs2() const -> u32 { return (v >> 17) & 0x1f; }
+
+    private:
+        u32 v;
+    };
+    static_assert(sizeof(FloatRdRs1Rs2) == sizeof(uint32_t));
+
+    struct FloatRdRs1Rs2Rm
+    {
+        // +--------+----+-----+-----+----+-----+
+        // | unused | rm | rs2 | rs1 | rd | opc |
+        // |      7 |  3 |   5 |   5 |  5 |   7 |
+        // +--------+----+-----+-----+----+-----+
+        FloatRdRs1Rs2Rm(Opcode opc, u32 rd, u32 rs1, u32 rs2, u32 rm) : v{(rm << 22) | (rs2 << 17) | (rs1 << 12) | (rd << 7) | opc} {}
+
+        auto opc() const -> Opcode { return Opcode(v & 0x7f); }
+        auto rd() const -> u32 { return (v >> 7) & 0x1f; }
+        auto rs1() const -> u32 { return (v >> 12) & 0x1f; }
+        auto rs2() const -> u32 { return (v >> 17) & 0x1f; }
+        auto rm() const -> u32 { return (v >> 22) & 0x7; }
+
+    private:
+        u32 v;
+    };
+    static_assert(sizeof(FloatRdRs1Rs2Rm) == sizeof(uint32_t));
+
+    struct FloatRdRs1Rs2Rs3Rm
+    {
+        // +--------+----+-----+-----+-----+----+-----+
+        // | unused | rm | rs3 | rs2 | rs1 | rd | opc |
+        // |      2 |  3 |   5 |   5 |   5 |  5 |   7 |
+        // +--------+----+-----+-----+-----+----+-----+
+        FloatRdRs1Rs2Rs3Rm(Opcode opc, u32 rd, u32 rs1, u32 rs2, u32 rs3, u32 rm) : v{(rm << 27) | (rs3 << 22) | (rs2 << 17) | (rs1 << 12) | (rd << 7) | opc} {}
+
+        auto opc() const -> Opcode { return Opcode(v & 0x7f); }
+        auto rd() const -> u32 { return (v >> 7) & 0x1f; }
+        auto rs1() const -> u32 { return (v >> 12) & 0x1f; }
+        auto rs2() const -> u32 { return (v >> 17) & 0x1f; }
+        auto rs3() const -> u32 { return (v >> 22) & 0x1f; }
+        auto rm() const -> u32 { return (v >> 27) & 0x7; }
+
+    private:
+        u32 v;
+    };
+    static_assert(sizeof(FloatRdRs1Rs2Rs3Rm) == sizeof(uint32_t));
+
+    struct FloatRdRs1Imm // TODO: Same as F2i?
+    {
+
+        // +------+--------+-----+----+-----+
+        // | iimm | unused | rs1 | rd | opc |
+        // |   12 |      3 |   5 |  5 |   7 |
+        // +------+--------+-----+----+-----+
+        FloatRdRs1Imm(Opcode opc, u32 rd, u32 rs1, u32 iimm) : v{(iimm << 20) | (rs1 << 12) | (rd << 7) | opc} {}
+
+        auto opc() const -> Opcode { return Opcode(v & 0x7f); }
+        auto rd() const -> u32 { return (v >> 7) & 0x1f; }
+        auto rs1() const -> u32 { return (v >> 12) & 0x1f; }
+        auto iimm() const -> u32 { return u32(i32(v) >> 20); }
+
+    private:
+        u32 v;
+    };
+    static_assert(sizeof(FloatRdRs1Imm) == sizeof(uint32_t));
+
+    struct FloatRs1Rs2Imm // TODO: Same as F2s?
+    {
+        // +------+--------+-----+-----+-----+
+        // | simm | unused | rs2 | rs1 | opc |
+        // |   12 |      3 |   5 |   5 |   7 |
+        // +------+--------+-----+-----+-----+
+        FloatRs1Rs2Imm(Opcode opc, u32 rs1, u32 rs2, u32 simm) : v{(simm << 20) | (rs2 << 12) | (rs1 << 7) | opc} {}
+
+        auto opc() const -> Opcode { return Opcode(v & 0x7f); }
+        auto rs1() const -> u32 { return (v >> 7) & 0x1f; }
+        auto rs2() const -> u32 { return (v >> 12) & 0x1f; }
+        auto simm() const -> u32 { return u32(i32(v) >> 20); }
+
+    private:
+        u32 v;
+    };
+    static_assert(sizeof(FloatRs1Rs2Imm) == sizeof(uint32_t));
+
     struct Remix
     {
         union
@@ -315,6 +444,13 @@ namespace arviss::remix
             F3 fenceType;
             F4j jtype;
             F4u utype;
+            FloatRdRs1 floatRdRs1;
+            FloatRdRs1Rm floatRdRs1Rm;
+            FloatRdRs1Rs2 floatRdRs1Rs2;
+            FloatRdRs1Rs2Rm floatRdRs1Rs2Rm;
+            FloatRdRs1Rs2Rs3Rm floatRdRs1Rs2Rs3Rm;
+            FloatRdRs1Imm floatRdRs1Imm;
+            FloatRs1Rs2Imm floatRs1Rs2Imm;
         };
     };
     static_assert(sizeof(Remix) == sizeof(uint32_t));
@@ -399,7 +535,7 @@ namespace arviss::remix
 
     static_assert(IsRv32iInstructionHandler<Rv32iToRemixConverter>);
 
-    // An Rv32im instruction handler that re-encodes instructions for Arviss.
+    // An Rv32im instruction handler that re-encodes instructions for Remix.
     class Rv32imToRemixConverter : public Rv32iToRemixConverter
     {
     public:
@@ -417,124 +553,61 @@ namespace arviss::remix
 
     static_assert(IsRv32imInstructionHandler<Rv32imToRemixConverter>);
 
-    // class Rv32imfToRemixConverter : public Rv32imToRemixConverter
-    // {
-    // public:
-    //     using Item = Rv32imToRemixConverter::Item;
+    // An Rv32imf instruction handler that re-encodes instructions for Remix.
+    class Rv32imfToRemixConverter : public Rv32imToRemixConverter
+    {
+    public:
+        using Item = Rv32imToRemixConverter::Item;
 
-    //     auto Fmv_x_w(Reg rd, Reg rs1) -> Item { return {.opcode = Opcode::Fmv_x_w, .floatRdRs1{.rd = rd, .rs1 =
-    //     rs1}}; } auto Fclass_s(Reg rd, Reg rs1) -> Item
-    //     {
-    //         return {.opcode = Opcode::Fclass_s, .floatRdRs1{.rd = rd, .rs1 = rs1}};
-    //     }
-    //     auto Fmv_w_x(Reg rd, Reg rs1) -> Item { return {.opcode = Opcode::Fmv_w_x, .floatRdRs1{.rd = rd, .rs1 =
-    //     rs1}}; } auto Fsqrt_s(Reg rd, Reg rs1, u32 rm) -> Item
-    //     {
-    //         return {.opcode = Opcode::Fsqrt_s, .floatRdRs1Rm{.rd = rd, .rs1 = rs1, .rm = rm}};
-    //     }
-    //     auto Fcvt_w_s(Reg rd, Reg rs1, u32 rm) -> Item
-    //     {
-    //         return {.opcode = Opcode::Fcvt_w_s, .floatRdRs1Rm{.rd = rd, .rs1 = rs1, .rm = rm}};
-    //     }
-    //     auto Fcvt_wu_s(Reg rd, Reg rs1, u32 rm) -> Item
-    //     {
-    //         return {.opcode = Opcode::Fcvt_wu_s, .floatRdRs1Rm{.rd = rd, .rs1 = rs1, .rm = rm}};
-    //     }
-    //     auto Fcvt_s_w(Reg rd, Reg rs1, u32 rm) -> Item
-    //     {
-    //         return {.opcode = Opcode::Fcvt_s_w, .floatRdRs1Rm{.rd = rd, .rs1 = rs1, .rm = rm}};
-    //     }
-    //     auto Fcvt_s_wu(Reg rd, Reg rs1, u32 rm) -> Item
-    //     {
-    //         return {.opcode = Opcode::Fcvt_s_wu, .floatRdRs1Rm{.rd = rd, .rs1 = rs1, .rm = rm}};
-    //     }
-    //     auto Fsgnj_s(Reg rd, Reg rs1, Reg rs2) -> Item
-    //     {
-    //         return {.opcode = Opcode::Fsgnj_s, .floatRdRs1Rs2{.rd = rd, .rs1 = rs1, .rs2 = rs2}};
-    //     }
-    //     auto Fsgnjn_s(Reg rd, Reg rs1, Reg rs2) -> Item
-    //     {
-    //         return {.opcode = Opcode::Fsgnjn_s, .floatRdRs1Rs2{.rd = rd, .rs1 = rs1, .rs2 = rs2}};
-    //     }
-    //     auto Fsgnjx_s(Reg rd, Reg rs1, Reg rs2) -> Item
-    //     {
-    //         return {.opcode = Opcode::Fsgnjx_s, .floatRdRs1Rs2{.rd = rd, .rs1 = rs1, .rs2 = rs2}};
-    //     }
-    //     auto Fmin_s(Reg rd, Reg rs1, Reg rs2) -> Item
-    //     {
-    //         return {.opcode = Opcode::Fmin_s, .floatRdRs1Rs2{.rd = rd, .rs1 = rs1, .rs2 = rs2}};
-    //     }
-    //     auto Fmax_s(Reg rd, Reg rs1, Reg rs2) -> Item
-    //     {
-    //         return {.opcode = Opcode::Fmax_s, .floatRdRs1Rs2{.rd = rd, .rs1 = rs1, .rs2 = rs2}};
-    //     }
-    //     auto Fle_s(Reg rd, Reg rs1, Reg rs2) -> Item
-    //     {
-    //         return {.opcode = Opcode::Fle_s, .floatRdRs1Rs2{.rd = rd, .rs1 = rs1, .rs2 = rs2}};
-    //     }
-    //     auto Flt_s(Reg rd, Reg rs1, Reg rs2) -> Item
-    //     {
-    //         return {.opcode = Opcode::Flt_s, .floatRdRs1Rs2{.rd = rd, .rs1 = rs1, .rs2 = rs2}};
-    //     }
-    //     auto Feq_s(Reg rd, Reg rs1, Reg rs2) -> Item
-    //     {
-    //         return {.opcode = Opcode::Feq_s, .floatRdRs1Rs2{.rd = rd, .rs1 = rs1, .rs2 = rs2}};
-    //     }
+        auto Fmv_x_w(Reg rd, Reg rs1) -> Item { return {.floatRdRs1 = FloatRdRs1(Opcode::Fmv_x_w, rd, rs1)}; }
+        auto Fclass_s(Reg rd, Reg rs1) -> Item { return {.floatRdRs1 = FloatRdRs1(Opcode::Fclass_s, rd, rs1)}; }
+        auto Fmv_w_x(Reg rd, Reg rs1) -> Item { return {.floatRdRs1 = FloatRdRs1(Opcode::Fmv_w_x, rd, rs1)}; }
 
-    //     auto Fadd_s(Reg rd, Reg rs1, Reg rs2, u32 rm) -> Item
-    //     {
-    //         return {.opcode = Opcode::Fadd_s, .floatRdRs1Rs2Rm{.rd = rd, .rs1 = rs1, .rs2 = rs2, .rm = rm}};
-    //     }
+        auto Fsqrt_s(Reg rd, Reg rs1, u32 rm) -> Item { return {.floatRdRs1Rm = FloatRdRs1Rm(Opcode::Fsqrt_s, rd, rs1, rm)}; }
+        auto Fcvt_w_s(Reg rd, Reg rs1, u32 rm) -> Item { return {.floatRdRs1Rm = FloatRdRs1Rm(Opcode::Fcvt_w_s, rd, rs1, rm)}; }
+        auto Fcvt_wu_s(Reg rd, Reg rs1, u32 rm) -> Item { return {.floatRdRs1Rm = FloatRdRs1Rm(Opcode::Fcvt_wu_s, rd, rs1, rm)}; }
+        auto Fcvt_s_w(Reg rd, Reg rs1, u32 rm) -> Item { return {.floatRdRs1Rm = FloatRdRs1Rm(Opcode::Fcvt_s_w, rd, rs1, rm)}; }
+        auto Fcvt_s_wu(Reg rd, Reg rs1, u32 rm) -> Item { return {.floatRdRs1Rm = FloatRdRs1Rm(Opcode::Fcvt_s_wu, rd, rs1, rm)}; }
 
-    //     auto Fsub_s(Reg rd, Reg rs1, Reg rs2, u32 rm) -> Item
-    //     {
-    //         return {.opcode = Opcode::Fsub_s, .floatRdRs1Rs2Rm{.rd = rd, .rs1 = rs1, .rs2 = rs2, .rm = rm}};
-    //     }
+        auto Fsgnj_s(Reg rd, Reg rs1, Reg rs2) -> Item { return {.floatRdRs1Rs2 = FloatRdRs1Rs2(Opcode::Fsgnj_s, rd, rs1, rs2)}; }
+        auto Fsgnjn_s(Reg rd, Reg rs1, Reg rs2) -> Item { return {.floatRdRs1Rs2 = FloatRdRs1Rs2(Opcode::Fsgnjn_s, rd, rs1, rs2)}; }
+        auto Fsgnjx_s(Reg rd, Reg rs1, Reg rs2) -> Item { return {.floatRdRs1Rs2 = FloatRdRs1Rs2(Opcode::Fsgnjx_s, rd, rs1, rs2)}; }
+        auto Fmin_s(Reg rd, Reg rs1, Reg rs2) -> Item { return {.floatRdRs1Rs2 = FloatRdRs1Rs2(Opcode::Fmin_s, rd, rs1, rs2)}; }
+        auto Fmax_s(Reg rd, Reg rs1, Reg rs2) -> Item { return {.floatRdRs1Rs2 = FloatRdRs1Rs2(Opcode::Fmax_s, rd, rs1, rs2)}; }
+        auto Fle_s(Reg rd, Reg rs1, Reg rs2) -> Item { return {.floatRdRs1Rs2 = FloatRdRs1Rs2(Opcode::Fle_s, rd, rs1, rs2)}; }
+        auto Flt_s(Reg rd, Reg rs1, Reg rs2) -> Item { return {.floatRdRs1Rs2 = FloatRdRs1Rs2(Opcode::Flt_s, rd, rs1, rs2)}; }
+        auto Feq_s(Reg rd, Reg rs1, Reg rs2) -> Item { return {.floatRdRs1Rs2 = FloatRdRs1Rs2(Opcode::Feq_s, rd, rs1, rs2)}; }
 
-    //     auto Fmul_s(Reg rd, Reg rs1, Reg rs2, u32 rm) -> Item
-    //     {
-    //         return {.opcode = Opcode::Fmul_s, .floatRdRs1Rs2Rm{.rd = rd, .rs1 = rs1, .rs2 = rs2, .rm = rm}};
-    //     }
+        auto Fadd_s(Reg rd, Reg rs1, Reg rs2, u32 rm) -> Item { return {.floatRdRs1Rs2Rm = FloatRdRs1Rs2Rm(Opcode::Fadd_s, rd, rs1, rs2, rm)}; }
+        auto Fsub_s(Reg rd, Reg rs1, Reg rs2, u32 rm) -> Item { return {.floatRdRs1Rs2Rm = FloatRdRs1Rs2Rm(Opcode::Fsub_s, rd, rs1, rs2, rm)}; }
+        auto Fmul_s(Reg rd, Reg rs1, Reg rs2, u32 rm) -> Item { return {.floatRdRs1Rs2Rm = FloatRdRs1Rs2Rm(Opcode::Fmul_s, rd, rs1, rs2, rm)}; }
+        auto Fdiv_s(Reg rd, Reg rs1, Reg rs2, u32 rm) -> Item { return {.floatRdRs1Rs2Rm = FloatRdRs1Rs2Rm(Opcode::Fdiv_s, rd, rs1, rs2, rm)}; }
 
-    //     auto Fdiv_s(Reg rd, Reg rs1, Reg rs2, u32 rm) -> Item
-    //     {
-    //         return {.opcode = Opcode::Fdiv_s, .floatRdRs1Rs2Rm{.rd = rd, .rs1 = rs1, .rs2 = rs2, .rm = rm}};
-    //     }
+        auto Flw(Reg rd, Reg rs1, u32 imm) -> Item { return {.floatRdRs1Imm = FloatRdRs1Imm(Opcode::Flw, rd, rs1, imm)}; }
 
-    //     auto Flw(Reg rd, Reg rs1, u32 imm) -> Item
-    //     {
-    //         return {.opcode = Opcode::Flw, .floatRdRs1Imm{.rd = rd, .rs1 = rs1, .imm = imm}};
-    //     }
-    //     auto Fsw(Reg rs1, Reg rs2, u32 imm) -> Item
-    //     {
-    //         return {.opcode = Opcode::Fsw, .floatRs1Rs2Imm{.rs1 = rs1, .rs2 = rs2, .imm = imm}};
-    //     }
+        auto Fsw(Reg rs1, Reg rs2, u32 imm) -> Item { return {.floatRs1Rs2Imm = FloatRs1Rs2Imm(Opcode::Fsw, rs1, rs2, imm)}; }
 
-    //     auto Fmadd_s(Reg rd, Reg rs1, Reg rs2, Reg rs3, u32 rm) -> Item
-    //     {
-    //         return {.opcode = Opcode::Fmadd_s,
-    //                 .floatRdRs1Rs2Rs3Rm{.rd = rd, .rs1 = rs1, .rs2 = rs2, .rs3 = rs3, .rm = rm}};
-    //     }
+        auto Fmadd_s(Reg rd, Reg rs1, Reg rs2, Reg rs3, u32 rm) -> Item
+        {
+            return {.floatRdRs1Rs2Rs3Rm = FloatRdRs1Rs2Rs3Rm(Opcode::Fmadd_s, rd, rs1, rs2, rs3, rm)};
+        }
 
-    //     auto Fmsub_s(Reg rd, Reg rs1, Reg rs2, Reg rs3, u32 rm) -> Item
-    //     {
-    //         return {.opcode = Opcode::Fmsub_s,
-    //                 .floatRdRs1Rs2Rs3Rm{.rd = rd, .rs1 = rs1, .rs2 = rs2, .rs3 = rs3, .rm = rm}};
-    //     }
+        auto Fmsub_s(Reg rd, Reg rs1, Reg rs2, Reg rs3, u32 rm) -> Item
+        {
+            return {.floatRdRs1Rs2Rs3Rm = FloatRdRs1Rs2Rs3Rm(Opcode::Fmsub_s, rd, rs1, rs2, rs3, rm)};
+        }
 
-    //     auto Fnmsub_s(Reg rd, Reg rs1, Reg rs2, Reg rs3, u32 rm) -> Item
-    //     {
-    //         return {.opcode = Opcode::Fnmsub_s,
-    //                 .floatRdRs1Rs2Rs3Rm{.rd = rd, .rs1 = rs1, .rs2 = rs2, .rs3 = rs3, .rm = rm}};
-    //     }
+        auto Fnmsub_s(Reg rd, Reg rs1, Reg rs2, Reg rs3, u32 rm) -> Item
+        {
+            return {.floatRdRs1Rs2Rs3Rm = FloatRdRs1Rs2Rs3Rm(Opcode::Fnmsub_s, rd, rs1, rs2, rs3, rm)};
+        }
 
-    //     auto Fnmadd_s(Reg rd, Reg rs1, Reg rs2, Reg rs3, u32 rm) -> Item
-    //     {
-    //         return {.opcode = Opcode::Fnmadd_s,
-    //                 .floatRdRs1Rs2Rs3Rm{.rd = rd, .rs1 = rs1, .rs2 = rs2, .rs3 = rs3, .rm = rm}};
-    //     }
-    // };
+        auto Fnmadd_s(Reg rd, Reg rs1, Reg rs2, Reg rs3, u32 rm) -> Item
+        {
+            return {.floatRdRs1Rs2Rs3Rm = FloatRdRs1Rs2Rs3Rm(Opcode::Fnmadd_s, rd, rs1, rs2, rs3, rm)};
+        }
+    };
 
-    // static_assert(IsRv32imfInstructionHandler<Rv32imfToRemixConverter>);
+    static_assert(IsRv32imfInstructionHandler<Rv32imfToRemixConverter>);
 
 } // namespace arviss::remix
