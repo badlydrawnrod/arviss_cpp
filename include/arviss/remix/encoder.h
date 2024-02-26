@@ -399,47 +399,23 @@ namespace arviss::remix
 
     static_assert(IsRv32iInstructionHandler<Rv32iToRemixConverter>);
 
-    // // An Rv32im instruction handler that re-encodes instructions for Arviss.
-    // class Rv32imToRemixConverter : public Rv32iToRemixConverter
-    // {
-    // public:
-    //     using Item = Rv32iToRemixConverter::Item;
+    // An Rv32im instruction handler that re-encodes instructions for Arviss.
+    class Rv32imToRemixConverter : public Rv32iToRemixConverter
+    {
+    public:
+        using Item = Rv32iToRemixConverter::Item;
 
-    //     auto Mul(Reg rd, Reg rs1, Reg rs2) -> Item
-    //     {
-    //         return {.opcode = Opcode::Mul, .arithType = {.rd = rd, .rs1 = rs1, .rs2 = rs2}};
-    //     }
-    //     auto Mulh(Reg rd, Reg rs1, Reg rs2) -> Item
-    //     {
-    //         return {.opcode = Opcode::Mulh, .arithType = {.rd = rd, .rs1 = rs1, .rs2 = rs2}};
-    //     }
-    //     auto Mulhsu(Reg rd, Reg rs1, Reg rs2) -> Item
-    //     {
-    //         return {.opcode = Opcode::Mulhsu, .arithType = {.rd = rd, .rs1 = rs1, .rs2 = rs2}};
-    //     }
-    //     auto Mulhu(Reg rd, Reg rs1, Reg rs2) -> Item
-    //     {
-    //         return {.opcode = Opcode::Mulhu, .arithType = {.rd = rd, .rs1 = rs1, .rs2 = rs2}};
-    //     }
-    //     auto Div(Reg rd, Reg rs1, Reg rs2) -> Item
-    //     {
-    //         return {.opcode = Opcode::Div, .arithType = {.rd = rd, .rs1 = rs1, .rs2 = rs2}};
-    //     }
-    //     auto Divu(Reg rd, Reg rs1, Reg rs2) -> Item
-    //     {
-    //         return {.opcode = Opcode::Divu, .arithType = {.rd = rd, .rs1 = rs1, .rs2 = rs2}};
-    //     }
-    //     auto Rem(Reg rd, Reg rs1, Reg rs2) -> Item
-    //     {
-    //         return {.opcode = Opcode::Rem, .arithType = {.rd = rd, .rs1 = rs1, .rs2 = rs2}};
-    //     }
-    //     auto Remu(Reg rd, Reg rs1, Reg rs2) -> Item
-    //     {
-    //         return {.opcode = Opcode::Remu, .arithType = {.rd = rd, .rs1 = rs1, .rs2 = rs2}};
-    //     }
-    // };
+        auto Mul(Reg rd, Reg rs1, Reg rs2) -> Item { return {.arithType = F1a(Opcode::Mul, rd, rs1, rs2)}; }
+        auto Mulh(Reg rd, Reg rs1, Reg rs2) -> Item { return {.arithType = F1a(Opcode::Mulh, rd, rs1, rs2)}; }
+        auto Mulhsu(Reg rd, Reg rs1, Reg rs2) -> Item { return {.arithType = F1a(Opcode::Mulhsu, rd, rs1, rs2)}; }
+        auto Mulhu(Reg rd, Reg rs1, Reg rs2) -> Item { return {.arithType = F1a(Opcode::Mulhu, rd, rs1, rs2)}; }
+        auto Div(Reg rd, Reg rs1, Reg rs2) -> Item { return {.arithType = F1a(Opcode::Div, rd, rs1, rs2)}; }
+        auto Divu(Reg rd, Reg rs1, Reg rs2) -> Item { return {.arithType = F1a(Opcode::Divu, rd, rs1, rs2)}; }
+        auto Rem(Reg rd, Reg rs1, Reg rs2) -> Item { return {.arithType = F1a(Opcode::Rem, rd, rs1, rs2)}; }
+        auto Remu(Reg rd, Reg rs1, Reg rs2) -> Item { return {.arithType = F1a(Opcode::Remu, rd, rs1, rs2)}; }
+    };
 
-    // static_assert(IsRv32imInstructionHandler<Rv32imToRemixConverter>);
+    static_assert(IsRv32imInstructionHandler<Rv32imToRemixConverter>);
 
     // class Rv32imfToRemixConverter : public Rv32imToRemixConverter
     // {

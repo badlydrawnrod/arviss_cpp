@@ -17,11 +17,11 @@ namespace arviss::remix
                 && (!IsRv32fInstructionHandler<T>) // T is NOT a handler for Rv32f.
         auto EncoderFor() -> Rv32iDispatcher<Rv32iToRemixConverter>;
 
-        // template<typename T>
-        //     requires IsRv32iInstructionHandler<T>  // T is a handler for Rv32i.
-        //         && IsRv32mInstructionHandler<T>    // T is a handler for Rv32m.
-        //         && (!IsRv32fInstructionHandler<T>) // T is NOT a handler for Rv32f.
-        // auto EncoderFor() -> Rv32imDispatcher<Rv32imToRemixConverter>;
+        template<typename T>
+            requires IsRv32iInstructionHandler<T>  // T is a handler for Rv32i.
+                && IsRv32mInstructionHandler<T>    // T is a handler for Rv32m.
+                && (!IsRv32fInstructionHandler<T>) // T is NOT a handler for Rv32f.
+        auto EncoderFor() -> Rv32imDispatcher<Rv32imToRemixConverter>;
 
         // template<typename T>
         //     requires IsRv32iInstructionHandler<T> // T is a handler for Rv32i.
@@ -36,8 +36,11 @@ namespace arviss::remix
     {
         auto Self() -> T& { return static_cast<T&>(*this); }
 
-        // TODO: support multiple converter types.
-        Rv32iDispatcher<Rv32iToRemixConverter> converter_;
+        // We want a different encoder dependending on the capabilities of the instruction handler, because otherwise
+        // the dispatcher has to do work unnecessarily.
+        using EncoderType = decltype(EncoderFor<T>());
+
+        EncoderType converter_{};
 
     public:
         using Item = typename T::Item;
@@ -180,48 +183,49 @@ namespace arviss::remix
             case Opcode::Ebreak:
                 return self.Ebreak();
 
-            // // --- RV32m.
-            // // Integer multiply and divide instructions.
-            // case Opcode::Mul:
-            //     if constexpr (IsRv32mInstructionHandler<T>)
-            //     {
-            //         self.Mul(e.arithType.rd, e.arithType.rs1, e.arithType.rs2);
-            //     }
-            // case Opcode::Mulh:
-            //     if constexpr (IsRv32mInstructionHandler<T>)
-            //     {
-            //         self.Mulh(e.arithType.rd, e.arithType.rs1, e.arithType.rs2);
-            //     }
-            // case Opcode::Mulhsu:
-            //     if constexpr (IsRv32mInstructionHandler<T>)
-            //     {
-            //         self.Mulhsu(e.arithType.rd, e.arithType.rs1, e.arithType.rs2);
-            //     }
-            // case Opcode::Mulhu:
-            //     if constexpr (IsRv32mInstructionHandler<T>)
-            //     {
-            //         self.Mulhu(e.arithType.rd, e.arithType.rs1, e.arithType.rs2);
-            //     }
-            // case Opcode::Div:
-            //     if constexpr (IsRv32mInstructionHandler<T>)
-            //     {
-            //         self.Div(e.arithType.rd, e.arithType.rs1, e.arithType.rs2);
-            //     }
-            // case Opcode::Divu:
-            //     if constexpr (IsRv32mInstructionHandler<T>)
-            //     {
-            //         self.Divu(e.arithType.rd, e.arithType.rs1, e.arithType.rs2);
-            //     }
-            // case Opcode::Rem:
-            //     if constexpr (IsRv32mInstructionHandler<T>)
-            //     {
-            //         self.Rem(e.arithType.rd, e.arithType.rs1, e.arithType.rs2);
-            //     }
-            // case Opcode::Remu:
-            //     if constexpr (IsRv32mInstructionHandler<T>)
-            //     {
-            //         self.Remu(e.arithType.rd, e.arithType.rs1, e.arithType.rs2);
-            //     }
+            // --- RV32m.
+
+            // Integer multiply and divide instructions.
+            case Opcode::Mul:
+                if constexpr (IsRv32mInstructionHandler<T>)
+                {
+                    self.Mul(e.arithType.rd(), e.arithType.rs1(), e.arithType.rs2());
+                }
+            case Opcode::Mulh:
+                if constexpr (IsRv32mInstructionHandler<T>)
+                {
+                    self.Mulh(e.arithType.rd(), e.arithType.rs1(), e.arithType.rs2());
+                }
+            case Opcode::Mulhsu:
+                if constexpr (IsRv32mInstructionHandler<T>)
+                {
+                    self.Mulhsu(e.arithType.rd(), e.arithType.rs1(), e.arithType.rs2());
+                }
+            case Opcode::Mulhu:
+                if constexpr (IsRv32mInstructionHandler<T>)
+                {
+                    self.Mulhu(e.arithType.rd(), e.arithType.rs1(), e.arithType.rs2());
+                }
+            case Opcode::Div:
+                if constexpr (IsRv32mInstructionHandler<T>)
+                {
+                    self.Div(e.arithType.rd(), e.arithType.rs1(), e.arithType.rs2());
+                }
+            case Opcode::Divu:
+                if constexpr (IsRv32mInstructionHandler<T>)
+                {
+                    self.Divu(e.arithType.rd(), e.arithType.rs1(), e.arithType.rs2());
+                }
+            case Opcode::Rem:
+                if constexpr (IsRv32mInstructionHandler<T>)
+                {
+                    self.Rem(e.arithType.rd(), e.arithType.rs1(), e.arithType.rs2());
+                }
+            case Opcode::Remu:
+                if constexpr (IsRv32mInstructionHandler<T>)
+                {
+                    self.Remu(e.arithType.rd(), e.arithType.rs1(), e.arithType.rs2());
+                }
 
             // // --- RV32f.
             // // Floating point instructions.
