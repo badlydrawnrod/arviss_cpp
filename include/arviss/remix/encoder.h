@@ -32,6 +32,8 @@ namespace arviss::remix
     - c is a variable number of bits, left aligned to simplify sign extension as c is often an immediate value.
     - c takes precedence over b and a, so if their bits overlap it's like the overlapped item isn't present.
 
+    Update: not all 'c' values are left aligned, e.g., floating point instructions.
+
     As all opcodes ending in 0b11 are placeholders for RV32 instructions, this means that there can only be 96 Remix
     opcodes rather than 128, but as the instruction set is small this is not really a problem.
 
