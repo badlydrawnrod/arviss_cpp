@@ -45,13 +45,17 @@ namespace arviss::remix
     public:
         using Item = typename T::Item;
 
-        auto Transcode(u32 code) -> void
+        auto Transcode(u32 code) -> Item
         {
-            auto remixed = converter_.Dispatch(code);
-            u32 recode = *reinterpret_cast<u32*>(&remixed);
             auto& self = Self();
+            const auto remixed = converter_.Dispatch(code);
+            if (remixed.f0.opc() == Opcode::Illegal)
+            {
+                return self.Illegal(code);
+            }
+            const u32 recode = *reinterpret_cast<const u32*>(&remixed);
             self.Write32(self.Pc(), recode);
-            Dispatch(recode);
+            return Dispatch(recode);
         }
 
         auto Dispatch(u32 code) -> Item
@@ -64,26 +68,6 @@ namespace arviss::remix
             // Illegal instruction.
             case Opcode::Illegal:
                 return self.Illegal(code);
-
-            // --- RISC-V opcodes (not remixed).
-            case Opcode::Rv03:
-            case Opcode::Rv07:
-            case Opcode::Rv0b:
-            case Opcode::Rv0f:
-            case Opcode::Rv13:
-            case Opcode::Rv17:
-            case Opcode::Rv1b:
-            case Opcode::Rv1f:
-            case Opcode::Rv23:
-            case Opcode::Rv27:
-            case Opcode::Rv2b:
-            case Opcode::Rv2f:
-            case Opcode::Rv33:
-            case Opcode::Rv37:
-            case Opcode::Rv3b:
-            case Opcode::Rv3f:
-                Transcode(code);
-                return;
 
             // --- RV32i.
 
@@ -363,8 +347,7 @@ namespace arviss::remix
 
             // If we don't know it then we assume it's RISC-V encoded and try to transcode it.
             default:
-                Transcode(code);
-                return;
+                return Transcode(code);
             }
         }
     };
