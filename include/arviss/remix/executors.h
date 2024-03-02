@@ -15,19 +15,19 @@ namespace arviss::remix
             requires IsRv32iInstructionHandler<T>  // T is a handler for Rv32i.
                 && (!IsRv32mInstructionHandler<T>) // T is NOT a handler for Rv32m.
                 && (!IsRv32fInstructionHandler<T>) // T is NOT a handler for Rv32f.
-        auto EncoderFor() -> Rv32iDispatcher<Rv32iToRemixConverter>;
+        auto ConverterFor() -> Rv32iDispatcher<Rv32iToRemixConverter>;
 
         template<typename T>
             requires IsRv32iInstructionHandler<T>  // T is a handler for Rv32i.
                 && IsRv32mInstructionHandler<T>    // T is a handler for Rv32m.
                 && (!IsRv32fInstructionHandler<T>) // T is NOT a handler for Rv32f.
-        auto EncoderFor() -> Rv32imDispatcher<Rv32imToRemixConverter>;
+        auto ConverterFor() -> Rv32imDispatcher<Rv32imToRemixConverter>;
 
         template<typename T>
             requires IsRv32iInstructionHandler<T> // T is a handler for Rv32i.
                 && IsRv32mInstructionHandler<T>   // T is a handler for Rv32i.
                 && IsRv32fInstructionHandler<T>   // T is a handler for Rv32f.
-        auto EncoderFor() -> Rv32imfDispatcher<Rv32imfToRemixConverter>;
+        auto ConverterFor() -> Rv32imfDispatcher<Rv32imfToRemixConverter>;
 
     } // namespace
 
@@ -36,11 +36,11 @@ namespace arviss::remix
     {
         auto Self() -> T& { return static_cast<T&>(*this); }
 
-        // We want a different encoder dependending on the capabilities of the instruction handler, because otherwise
-        // the dispatcher has to do work unnecessarily.
-        using EncoderType = decltype(EncoderFor<T>());
+        // We want a different converter dependending on the capabilities of the instruction handler, because otherwise
+        // its dispatcher has to do work unnecessarily.
+        using ConverterType = decltype(ConverterFor<T>());
 
-        EncoderType converter_{};
+        ConverterType converter_{};
 
     public:
         using Item = typename T::Item;
@@ -54,6 +54,7 @@ namespace arviss::remix
                 return self.Illegal(code);
             }
             const u32 recode = *reinterpret_cast<const u32*>(&remixed);
+            // TODO: Technically this should be something like WriteBack32() because it could be accessing memory that VM code can't access.
             self.Write32(self.Pc(), recode);
             return Dispatch(recode);
         }
