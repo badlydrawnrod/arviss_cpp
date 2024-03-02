@@ -54,8 +54,7 @@ namespace arviss::remix
                 return self.Illegal(code);
             }
             const u32 recode = *reinterpret_cast<const u32*>(&remixed);
-            // TODO: Technically this should be something like WriteBack32() because it could be accessing memory that VM code can't access.
-            self.Write32(self.Pc(), recode);
+            self.W32(self.Pc(), recode);
             return Dispatch(recode);
         }
 

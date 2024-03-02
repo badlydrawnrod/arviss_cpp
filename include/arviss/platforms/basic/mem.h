@@ -192,9 +192,9 @@ namespace arviss
             throw TrappedException(TrapType::LoadAccessFault);
         }
 
-        auto Write8(Address address, u8 byte) -> void
+        auto W8(Address address, u8 byte) -> void
         {
-            if (address < mem_.size())
+            if (address < MEM_SIZE)
             {
                 mem_[address] = byte;
             }
@@ -208,9 +208,19 @@ namespace arviss
             }
         }
 
-        auto Write16(Address address, u16 halfWord) -> void
+        auto Write8(Address address, u8 byte) -> void
         {
-            if (address < mem_.size() - 1)
+            if (address >= RAM_START)
+            {
+                // It's not in the ROM.
+                return W8(address, byte);
+            }
+            throw TrappedException(TrapType::StoreAccessFault);
+        }
+
+        auto W16(Address address, u16 halfWord) -> void
+        {
+            if (address < MEM_SIZE - 1)
             {
                 if constexpr (std::endian::native == std::endian::little)
                 {
@@ -229,9 +239,19 @@ namespace arviss
             }
         }
 
-        auto Write32(Address address, u32 word) -> void
+        auto Write16(Address address, u16 halfWord) -> void
         {
-            if (address < mem_.size() - 3)
+            if (address >= RAM_START)
+            {
+                // It's not in the ROM.
+                return W16(address, halfWord);
+            }
+            throw TrappedException(TrapType::StoreAccessFault);
+        }
+
+        auto W32(Address address, u32 word) -> void
+        {
+            if (address < MEM_SIZE - 3)
             {
                 if constexpr (std::endian::native == std::endian::little)
                 {
@@ -250,6 +270,16 @@ namespace arviss
             {
                 throw TrappedException(TrapType::StoreAccessFault);
             }
+        }
+
+        auto Write32(Address address, u32 word) -> void
+        {
+            if (address >= RAM_START)
+            {
+                // It's not in the ROM.
+                return W32(address, word);
+            }
+            throw TrappedException(TrapType::StoreAccessFault);
         }
     };
 

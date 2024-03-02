@@ -56,7 +56,7 @@ auto main(int argc, char* argv[]) -> int
         Address addr = 0;
         for (auto b : buf)
         {
-            cpu.Write8(addr, b);
+            cpu.W8(addr, b);
             ++addr;
         }
 
