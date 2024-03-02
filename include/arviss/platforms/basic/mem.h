@@ -11,16 +11,22 @@ namespace arviss
     // If you're not an a little-endian platform or a big-endian platform then all bets are off.
     static_assert(std::endian::native == std::endian::little || std::endian::native == std::endian::big);
 
+    // ROM and RAM.
+    constexpr Address ROM_START = 0;
+    constexpr Address RAM_START = 0x4000;
+
+    constexpr size_t MEM_SIZE = 0x8000;
+
+    // Memory mapped I/O.
+    constexpr Address TTY_STATUS = 0x8000;
+    constexpr Address TTY_DATA = 0x8001;
+
     // A mixin implementation of a simple, checked address space that can signal bad access. It also has some simple
     // memory-mapped I/O in the form of a TTY.
     class BasicMem
     {
         // 32KiB of memory.
-        std::vector<u8> mem_ = std::vector<u8>(32768);
-
-        // Memory mapped I/O.
-        const Address TTY_STATUS = 0x8000;
-        const Address TTY_DATA = 0x8001;
+        std::vector<u8> mem_ = std::vector<u8>(MEM_SIZE);
 
     public:
         auto Read8(Address address) -> u8
@@ -136,11 +142,7 @@ namespace arviss
     class NoIoMem
     {
         // 32KiB of memory.
-        std::vector<u8> mem_ = std::vector<u8>(32768);
-
-        // Memory mapped I/O.
-        const Address TTY_STATUS = 0x8000;
-        const Address TTY_DATA = 0x8001;
+        std::vector<u8> mem_ = std::vector<u8>(MEM_SIZE);
 
     public:
         auto Read8(Address address) -> u8
