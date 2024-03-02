@@ -7,6 +7,6 @@
 namespace arviss::remix
 {
     template<typename T>
-    concept IsRemixDispatchable = IsRv32iInstructionHandler<T> && HasFetch<T> && HasUncheckedMemory<T>;
+    concept IsRemixDispatchable = IsRv32iInstructionHandler<T> && HasFetch<T> && HasUnprotectedWrites<T>;
 
 } // namespace arviss::remix

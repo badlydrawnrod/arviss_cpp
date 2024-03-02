@@ -54,7 +54,7 @@ namespace arviss::remix
                 return self.Illegal(code);
             }
             const u32 recode = *reinterpret_cast<const u32*>(&remixed);
-            self.W32(self.Pc(), recode);
+            self.Write32Unprotected(self.Pc(), recode);
             return Dispatch(recode);
         }
 
