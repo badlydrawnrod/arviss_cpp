@@ -14,13 +14,20 @@ jobs:
     runs-on: ubuntu-22.04
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     - uses: actions/setup-python@v4
       with: { python-version: "3.8" }
 
+    - name: Install codespell
+      run: pip3 install codespell
+
     - name: Lint
       run: cmake -D FORMAT_COMMAND=clang-format-14 -P cmake/lint.cmake
+
+    - name: Spell check
+      if: always()
+      run: cmake -P cmake/spell.cmake
 
   coverage:
     needs: [lint]
@@ -35,7 +42,7 @@ jobs:
       && false
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     - name: Install LCov
       run: sudo apt-get update -q
@@ -67,7 +74,7 @@ jobs:
     env: { CXX: clang++-14 }
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     - name: Configure
       run: cmake --preset=ci-sanitize
@@ -91,22 +98,18 @@ jobs:
 
     strategy:
       matrix:
-        os: [macos-latest, ubuntu-22.04, windows-2022]
+        os: [macos-12, ubuntu-22.04, windows-2022]
+
+        type: [shared, static]
+
         include:
-          - os: macos-latest
-            cxx_compiler: "$(brew --prefix llvm@15)/bin/clang++"
-            preset: "ci-macos"
-          - os: ubuntu-22.04
-            cxx_compiler: g++-13
-            preset: "ci-ubuntu"
-          - os: windows-2022
-            cxx_compiler: cl
-            preset: "ci-windows"
+        - { type: shared, shared: YES }
+        - { type: static, shared: NO }
 
     runs-on: ${{ matrix.os }}
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     - name: Install static analyzers
       if: matrix.os == 'ubuntu-22.04'
@@ -117,10 +120,6 @@ jobs:
         /usr/bin/clang-tidy clang-tidy
         /usr/bin/clang-tidy-14 140
 
-        sudo update-alternatives --install
-        /usr/bin/c++ c++
-        /usr/bin/g++-13 140
-
     - name: Setup MultiToolTask
       if: matrix.os == 'windows-2022'
       run: |
@@ -128,8 +127,13 @@ jobs:
         Add-Content "$env:GITHUB_ENV" 'EnforceProcessCountAcrossBuilds=true'
 
     - name: Configure
-      run: |
-        cmake --preset=${{ matrix.preset }} -DCMAKE_CXX_COMPILER=${{ matrix.cxx_compiler }}
+      shell: pwsh
+      run: cmake "--preset=ci-$("${{ matrix.os }}".split("-")[0])"
+        -D BUILD_SHARED_LIBS=${{ matrix.shared }}
+
+    - name: Setup PATH
+      if: matrix.os == 'windows-2022' && matrix.type == 'shared'
+      run: Add-Content "$env:GITHUB_PATH" "$(Get-Location)\build\Release"
 
     - name: Build
       run: cmake --build build --config Release -j 2
@@ -164,7 +168,7 @@ jobs:
       && false
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     - uses: actions/setup-python@v4
       with: { python-version: "3.8" }

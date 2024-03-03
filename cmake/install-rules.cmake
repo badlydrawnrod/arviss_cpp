@@ -6,9 +6,6 @@ if(PROJECT_IS_TOP_LEVEL)
   set_property(CACHE CMAKE_INSTALL_INCLUDEDIR PROPERTY TYPE PATH)
 endif()
 
-# Project is configured with no languages, so tell GNUInstallDirs the lib dir
-set(CMAKE_INSTALL_LIBDIR lib CACHE PATH "")
-
 include(CMakePackageConfigHelpers)
 include(GNUInstallDirs)
 
@@ -16,7 +13,9 @@ include(GNUInstallDirs)
 set(package arviss_cpp)
 
 install(
-    DIRECTORY include/
+    DIRECTORY
+    include/
+    "${PROJECT_BINARY_DIR}/export/"
     DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
     COMPONENT arviss_cpp_Development
 )
@@ -24,18 +23,25 @@ install(
 install(
     TARGETS arviss_cpp_arviss_cpp
     EXPORT arviss_cppTargets
-    INCLUDES DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
+    RUNTIME #
+    COMPONENT arviss_cpp_Runtime
+    LIBRARY #
+    COMPONENT arviss_cpp_Runtime
+    NAMELINK_COMPONENT arviss_cpp_Development
+    ARCHIVE #
+    COMPONENT arviss_cpp_Development
+    INCLUDES #
+    DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
 )
 
 write_basic_package_version_file(
     "${package}ConfigVersion.cmake"
     COMPATIBILITY SameMajorVersion
-    ARCH_INDEPENDENT
 )
 
 # Allow package maintainers to freely override the path for the configs
 set(
-    arviss_cpp_INSTALL_CMAKEDIR "${CMAKE_INSTALL_DATADIR}/${package}"
+    arviss_cpp_INSTALL_CMAKEDIR "${CMAKE_INSTALL_LIBDIR}/cmake/${package}"
     CACHE STRING "CMake package config location relative to the install prefix"
 )
 set_property(CACHE arviss_cpp_INSTALL_CMAKEDIR PROPERTY TYPE PATH)
