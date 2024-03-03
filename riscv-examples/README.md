@@ -26,7 +26,7 @@ To install `clang`, run `winget install -i LLVM.LLVM` (the `-i` flag tells it to
 that it prompts you to add LLVM to the PATH) then restart your shell so that the path changes come into effect.
 
 ```
-C:> cd arviss_cpp\examples
+C:> cd arviss_cpp\riscv-examples
 C:> cmake -G Ninja -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=clang
 C:> cmake --build build
 ```
@@ -38,8 +38,8 @@ with two files:
 - `hello.bin` is a raw image extracted from `hello` using `llvm-objcopy`. It can be loaded by an Arviss VM
   that does not know how to read ELF files.
 
-Run these examples using the `runner` program (in the top-level project, not in the examples).
+Run these examples using the `runner` program (in the top-level project, not in the RISC-V examples).
 
 ```sh
-build/dev/apps/runner riscv-examples/images/hello.bin
+build/dev/example/runner riscv-examples/images/hello.bin
 ```
