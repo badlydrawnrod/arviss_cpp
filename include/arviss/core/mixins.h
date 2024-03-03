@@ -58,7 +58,7 @@ namespace arviss
 
     // A mixin implementation of the fetch cycle for the given memory implementation. BYO memory.
     // Satisfies: HasFetch, HasMemory
-    template<HasMemory Mem>
+    template<HasMemory Mem, bool supports_compact_instructions = false>
     class Fetcher : public Mem
     {
         Address pc_{};
@@ -77,17 +77,25 @@ namespace arviss
         {
             auto pc = Transfer();
             auto ins = Fetch32(pc);
-            if ((ins & 0b11) == 0b11)
+            if constexpr (supports_compact_instructions)
             {
-                // 32-bit instruction.
-                SetNextPc(pc + 4);
+                if ((ins & 0b11) == 0b11)
+                {
+                    // 32-bit instruction.
+                    SetNextPc(pc + 4);
+                }
+                else
+                {
+                    // 16-bit compressed instruction.
+                    SetNextPc(pc + 2);
+                    ins = ins & 0xffff;
+                }
             }
             else
             {
-                // 16-bit compressed instruction.
-                SetNextPc(pc + 2);
-                ins = ins & 0xffff;
+                SetNextPc(pc + 4);
             }
+
             return ins;
         }
 

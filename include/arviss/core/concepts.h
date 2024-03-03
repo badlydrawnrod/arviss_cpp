@@ -31,6 +31,15 @@ namespace arviss
         t.Wf(Reg{}, f32{});   // Writes to a float register.
     };
 
+    // T supports writing to memory without checking if it's allowed to. The use case for this is being able to write
+    // to "ROM" that isn't available to the VM.
+    template<typename T>
+    concept HasUnprotectedWrites = requires(T t, u8 b, u16 h, u32 w) {
+        t.Write8Unprotected(Address{}, u8{});   // Writes a byte to an address, even if it's read-only for the VM.
+        t.Write16Unprotected(Address{}, u16{}); // Writes a halfword to an address, even if it's read-only for the VM.
+        t.Write32Unprotected(Address{}, u32{}); // Writes a word to an address, even if it's read-only for the VM.
+    };
+
     // T supports reading from and writing to memory.
     template<typename T>
     concept HasMemory = requires(T t, u8 b, u16 h, u32 w) {

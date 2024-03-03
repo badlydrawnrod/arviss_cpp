@@ -22,6 +22,7 @@ endfunction()
 
 add_app(bencher)
 add_app(re-encoder)
+add_app(remixer)
 add_app(runner)
 
 add_folders(Apps)

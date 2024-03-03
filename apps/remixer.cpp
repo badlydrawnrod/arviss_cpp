@@ -1,6 +1,10 @@
-#include "arviss/common/types.h"         // Address
-#include "arviss/platforms/basic/cpus.h" // BasicRv32imfCpu
-#include "arviss/rv32/concepts.h"        // IsRv32imfCpu
+#include "arviss/common/types.h"
+#include "arviss/dcode/encoder.h"
+#include "arviss/dcode/executors.h"
+#include "arviss/platforms/basic/cpus.h"
+#include "arviss/remix/encoder.h"
+#include "arviss/remix/executors.h"
+#include "arviss/rv32/concepts.h"
 
 #include <format>
 #include <fstream>
@@ -9,7 +13,7 @@
 
 using namespace arviss;
 
-template<IsRv32imfCpu T>
+template<IsRv32iCpu T>
 auto Run(T& t, size_t count) -> void
 {
     while (count > 0 && !t.IsTrapped())
@@ -40,10 +44,13 @@ auto main(int argc, char* argv[]) -> int
         fileHandle.close();
 
         // Create a CPU.
-        using Cpu = Rv32imfCpuFloatCore<NoIoMem>;
-        static_assert(IsRv32imfCpu<Cpu>);
+        using Cpu = Rv32iCpuIntegerCore<NoIoMem>;
+        // Uncomment the following line if you want actual output.
+        // using Cpu = Rv32iCpuIntegerCore<BasicMem>;
+        static_assert(IsRv32iCpu<Cpu>);
 
-        Cpu cpu{};
+        // Dispatch using the Remix dispatcher.
+        remix::RemixDispatcher<Cpu> cpu;
 
         // Populate its memory with the contents of the image.
         Address addr = 0;
@@ -65,6 +72,7 @@ auto main(int argc, char* argv[]) -> int
                 switch (cpu.TrapCause()->type_)
                 {
                 case TrapType::Breakpoint:
+                    // std::cerr << "ebreak\n";
                     break;
                 case TrapType::EnvironmentCallFromMMode:
                     std::cerr << "ecall from M mode\n";
