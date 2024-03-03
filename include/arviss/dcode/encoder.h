@@ -114,6 +114,11 @@ namespace arviss
         Fnmadd_s,
     };
 
+    // No parameters.
+    struct NoParams
+    {
+    };
+
     // Illegal instruction.
     struct IllegalType
     {
@@ -239,6 +244,7 @@ namespace arviss
         Opcode opcode;
         union
         {
+            NoParams noParams;
             IllegalType illegal;
             BType btype;
             IType itype;
@@ -320,8 +326,8 @@ namespace arviss
         auto Srai(Reg rd, Reg rs1, u32 shamt) -> Item { return {.opcode = Opcode::Srai, .immShiftType{.rd = rd, .rs1 = rs1, .shamt = shamt}}; }
 
         auto Fence(u32 fm, Reg rd, Reg rs1) -> Item { return {.opcode = Opcode::Fence, .fenceType = {.fm = fm, .rd = rd, .rs1 = rs1}}; }
-        auto Ecall() -> Item { return {.opcode = Opcode::Ecall}; }
-        auto Ebreak() -> Item { return {.opcode = Opcode::Ebreak}; }
+        auto Ecall() -> Item { return {.opcode = Opcode::Ecall, .noParams = {}}; }
+        auto Ebreak() -> Item { return {.opcode = Opcode::Ebreak, .noParams = {}}; }
     };
 
     static_assert(IsRv32iInstructionHandler<Rv32iToDCodeConverter>);

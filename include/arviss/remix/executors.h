@@ -175,42 +175,49 @@ namespace arviss::remix
                 {
                     return self.Mul(e.arithType.rd(), e.arithType.rs1(), e.arithType.rs2());
                 }
+                [[fallthrough]];
             case Opcode::Mulh:
                 if constexpr (IsRv32mInstructionHandler<T>)
                 {
                     return self.Mulh(e.arithType.rd(), e.arithType.rs1(), e.arithType.rs2());
                 }
+                [[fallthrough]];
             case Opcode::Mulhsu:
                 if constexpr (IsRv32mInstructionHandler<T>)
                 {
                     return self.Mulhsu(e.arithType.rd(), e.arithType.rs1(), e.arithType.rs2());
                 }
+                [[fallthrough]];
             case Opcode::Mulhu:
                 if constexpr (IsRv32mInstructionHandler<T>)
                 {
                     return self.Mulhu(e.arithType.rd(), e.arithType.rs1(), e.arithType.rs2());
                 }
+                [[fallthrough]];
             case Opcode::Div:
                 if constexpr (IsRv32mInstructionHandler<T>)
                 {
                     return self.Div(e.arithType.rd(), e.arithType.rs1(), e.arithType.rs2());
                 }
+                [[fallthrough]];
             case Opcode::Divu:
                 if constexpr (IsRv32mInstructionHandler<T>)
                 {
                     return self.Divu(e.arithType.rd(), e.arithType.rs1(), e.arithType.rs2());
                 }
+                [[fallthrough]];
             case Opcode::Rem:
                 if constexpr (IsRv32mInstructionHandler<T>)
                 {
                     return self.Rem(e.arithType.rd(), e.arithType.rs1(), e.arithType.rs2());
                 }
+                [[fallthrough]];
             case Opcode::Remu:
                 if constexpr (IsRv32mInstructionHandler<T>)
                 {
                     return self.Remu(e.arithType.rd(), e.arithType.rs1(), e.arithType.rs2());
                 }
-
+                [[fallthrough]];
             // --- RV32f.
 
             // Floating point instructions.
@@ -219,131 +226,157 @@ namespace arviss::remix
                 {
                     return self.Fmv_x_w(e.f5Type.rd(), e.f5Type.rs1());
                 }
+                [[fallthrough]];
             case Opcode::Fclass_s:
                 if constexpr (IsRv32fInstructionHandler<T>)
                 {
                     return self.Fclass_s(e.f5Type.rd(), e.f5Type.rs1());
                 }
+                [[fallthrough]];
             case Opcode::Fmv_w_x:
                 if constexpr (IsRv32fInstructionHandler<T>)
                 {
                     return self.Fmv_w_x(e.f5Type.rd(), e.f5Type.rs1());
                 }
+                [[fallthrough]];
             case Opcode::Fsqrt_s:
                 if constexpr (IsRv32fInstructionHandler<T>)
                 {
                     return self.Fsqrt_s(e.f5rmType.rd(), e.f5rmType.rs1(), e.f5rmType.rm());
                 }
+                [[fallthrough]];
             case Opcode::Fcvt_w_s:
                 if constexpr (IsRv32fInstructionHandler<T>)
                 {
                     return self.Fcvt_w_s(e.f5rmType.rd(), e.f5rmType.rs1(), e.f5rmType.rm());
                 }
+                [[fallthrough]];
             case Opcode::Fcvt_wu_s:
                 if constexpr (IsRv32fInstructionHandler<T>)
                 {
                     return self.Fcvt_wu_s(e.f5rmType.rd(), e.f5rmType.rs1(), e.f5rmType.rm());
                 }
+                [[fallthrough]];
             case Opcode::Fcvt_s_w:
                 if constexpr (IsRv32fInstructionHandler<T>)
                 {
                     return self.Fcvt_s_w(e.f5rmType.rd(), e.f5rmType.rs1(), e.f5rmType.rm());
                 }
+                [[fallthrough]];
             case Opcode::Fcvt_s_wu:
                 if constexpr (IsRv32fInstructionHandler<T>)
                 {
                     return self.Fcvt_s_wu(e.f5rmType.rd(), e.f5rmType.rs1(), e.f5rmType.rm());
                 }
+                [[fallthrough]];
             case Opcode::Fsgnj_s:
                 if constexpr (IsRv32fInstructionHandler<T>)
                 {
                     return self.Fsgnj_s(e.f6Type.rd(), e.f6Type.rs1(), e.f6Type.rs2());
                 }
+                [[fallthrough]];
             case Opcode::Fsgnjn_s:
                 if constexpr (IsRv32fInstructionHandler<T>)
                 {
                     return self.Fsgnjn_s(e.f6Type.rd(), e.f6Type.rs1(), e.f6Type.rs2());
                 }
+                [[fallthrough]];
             case Opcode::Fsgnjx_s:
                 if constexpr (IsRv32fInstructionHandler<T>)
                 {
                     return self.Fsgnjx_s(e.f6Type.rd(), e.f6Type.rs1(), e.f6Type.rs2());
                 }
+                [[fallthrough]];
             case Opcode::Fmin_s:
                 if constexpr (IsRv32fInstructionHandler<T>)
                 {
                     return self.Fmin_s(e.f6Type.rd(), e.f6Type.rs1(), e.f6Type.rs2());
                 }
+                [[fallthrough]];
             case Opcode::Fmax_s:
                 if constexpr (IsRv32fInstructionHandler<T>)
                 {
                     return self.Fmax_s(e.f6Type.rd(), e.f6Type.rs1(), e.f6Type.rs2());
                 }
+                [[fallthrough]];
             case Opcode::Fle_s:
                 if constexpr (IsRv32fInstructionHandler<T>)
                 {
                     return self.Fle_s(e.f6Type.rd(), e.f6Type.rs1(), e.f6Type.rs2());
                 }
+                [[fallthrough]];
             case Opcode::Flt_s:
                 if constexpr (IsRv32fInstructionHandler<T>)
                 {
                     return self.Flt_s(e.f6Type.rd(), e.f6Type.rs1(), e.f6Type.rs2());
                 }
+                [[fallthrough]];
             case Opcode::Feq_s:
                 if constexpr (IsRv32fInstructionHandler<T>)
                 {
                     return self.Feq_s(e.f6Type.rd(), e.f6Type.rs1(), e.f6Type.rs2());
                 }
+                [[fallthrough]];
             case Opcode::Fadd_s:
                 if constexpr (IsRv32fInstructionHandler<T>)
                 {
                     return self.Fadd_s(e.f6rmType.rd(), e.f6rmType.rs1(), e.f6rmType.rs2(), e.f6rmType.rm());
                 }
+                [[fallthrough]];
             case Opcode::Fsub_s:
                 if constexpr (IsRv32fInstructionHandler<T>)
                 {
                     return self.Fsub_s(e.f6rmType.rd(), e.f6rmType.rs1(), e.f6rmType.rs2(), e.f6rmType.rm());
                 }
+                [[fallthrough]];
             case Opcode::Fmul_s:
                 if constexpr (IsRv32fInstructionHandler<T>)
                 {
                     return self.Fmul_s(e.f6rmType.rd(), e.f6rmType.rs1(), e.f6rmType.rs2(), e.f6rmType.rm());
                 }
+                [[fallthrough]];
             case Opcode::Fdiv_s:
                 if constexpr (IsRv32fInstructionHandler<T>)
                 {
                     return self.Fdiv_s(e.f6rmType.rd(), e.f6rmType.rs1(), e.f6rmType.rs2(), e.f6rmType.rm());
                 }
+                [[fallthrough]];
             case Opcode::Flw:
                 if constexpr (IsRv32fInstructionHandler<T>)
                 {
                     return self.Flw(e.itype.rd(), e.itype.rs1(), e.itype.iimm());
                 }
+                [[fallthrough]];
             case Opcode::Fsw:
                 if constexpr (IsRv32fInstructionHandler<T>)
                 {
                     return self.Fsw(e.stype.rs1(), e.stype.rs2(), e.stype.simm());
                 }
+                [[fallthrough]];
             case Opcode::Fmadd_s:
                 if constexpr (IsRv32fInstructionHandler<T>)
                 {
                     return self.Fmadd_s(e.f7Type.rd(), e.f7Type.rs1(), e.f7Type.rs2(), e.f7Type.rs3(), e.f7Type.rm());
                 }
+                [[fallthrough]];
             case Opcode::Fmsub_s:
                 if constexpr (IsRv32fInstructionHandler<T>)
                 {
                     return self.Fmsub_s(e.f7Type.rd(), e.f7Type.rs1(), e.f7Type.rs2(), e.f7Type.rs3(), e.f7Type.rm());
                 }
+                [[fallthrough]];
             case Opcode::Fnmsub_s:
                 if constexpr (IsRv32fInstructionHandler<T>)
                 {
                     return self.Fnmsub_s(e.f7Type.rd(), e.f7Type.rs1(), e.f7Type.rs2(), e.f7Type.rs3(), e.f7Type.rm());
                 }
+                [[fallthrough]];
             case Opcode::Fnmadd_s:
                 if constexpr (IsRv32fInstructionHandler<T>)
                 {
                     return self.Fnmadd_s(e.f7Type.rd(), e.f7Type.rs1(), e.f7Type.rs2(), e.f7Type.rs3(), e.f7Type.rm());
                 }
+                [[fallthrough]];
 
             // If we don't know it then we assume it's RISC-V encoded and try to transcode it.
             default:
