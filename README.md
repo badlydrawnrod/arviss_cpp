@@ -37,7 +37,7 @@ images in `riscv-examples/images/`.
 Run the examples as follows:
 
 ```sh
-$ build/dev/apps/runner riscv-examples/images/hello.bin
+$ build/dev/example/runner riscv-examples/images/hello.bin
 Hello, world from C!
 Hello, world from C!
 ...
