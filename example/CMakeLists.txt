@@ -21,7 +21,6 @@ function(add_example NAME)
 endfunction()
 
 add_example(bencher)
-add_example(re-encoder)
 add_example(remixer)
 add_example(runner)
 

@@ -1,6 +1,4 @@
 #include "arviss/common/types.h"
-#include "arviss/dcode/encoder.h"
-#include "arviss/dcode/executors.h"
 #include "arviss/platforms/basic/cpus.h"
 #include "arviss/remix/encoder.h"
 #include "arviss/remix/executors.h"
