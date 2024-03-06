@@ -1,6 +1,6 @@
 #pragma once
 
-#include "arviss/common/types.h"
+#include "arviss/arviss.h"
 #include "arviss/remix/encoder.h"
 #include "arviss/rv32/concepts.h"
 #include "arviss/rv32/dispatchers.h"

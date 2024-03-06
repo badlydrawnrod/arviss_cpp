@@ -1,7 +1,7 @@
 #pragma once
 
-#include "arviss/common/instruction.h"
-#include "arviss/common/types.h"
+#include "arviss/rv32/instruction.h"
+#include "arviss/arviss.h"
 #include "arviss/rv32/concepts.h"
 
 namespace arviss
