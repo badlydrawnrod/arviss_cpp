@@ -496,7 +496,7 @@ namespace arviss::remix
         auto Ebreak() -> Item { return {.f0 = F0(Opcode::Ebreak)}; }
     };
 
-    static_assert(IsRv32iInstructionHandler<Rv32iToRemixConverter>);
+    static_assert(IsRv32iHandler<Rv32iToRemixConverter>);
 
     // An Rv32im instruction handler that re-encodes instructions for Remix.
     class Rv32imToRemixConverter : public Rv32iToRemixConverter
@@ -514,7 +514,7 @@ namespace arviss::remix
         auto Remu(Reg rd, Reg rs1, Reg rs2) -> Item { return {.arithType = F1a(Opcode::Remu, rd, rs1, rs2)}; }
     };
 
-    static_assert(IsRv32imInstructionHandler<Rv32imToRemixConverter>);
+    static_assert(IsRv32imHandler<Rv32imToRemixConverter>);
 
     // An Rv32imf instruction handler that re-encodes instructions for Remix.
     class Rv32imfToRemixConverter : public Rv32imToRemixConverter
@@ -556,6 +556,6 @@ namespace arviss::remix
         auto Fnmadd_s(Reg rd, Reg rs1, Reg rs2, Reg rs3, u32 rm) -> Item { return {.f7Type = F7(Opcode::Fnmadd_s, rd, rs1, rs2, rs3, rm)}; }
     };
 
-    static_assert(IsRv32imfInstructionHandler<Rv32imfToRemixConverter>);
+    static_assert(IsRv32imfHandler<Rv32imfToRemixConverter>);
 
 } // namespace arviss::remix

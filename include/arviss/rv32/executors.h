@@ -11,7 +11,7 @@ namespace arviss
 {
     // An Rv32i instruction handler that executes instructions on an integer core. BYO core.
     template<IsIntegerCore T>
-    class Rv32iIntegerCoreExecutor : public T
+    class Rv32iExecutor : public T
     {
         auto Self() -> T& { return static_cast<T&>(*this); }
 
@@ -371,12 +371,12 @@ namespace arviss
 
     // An Rv32im instruction handler that executes instructions on an integer core. BYO core.
     template<IsIntegerCore T>
-    class Rv32imIntegerCoreExecutor : public Rv32iIntegerCoreExecutor<T>
+    class Rv32imExecutor : public Rv32iExecutor<T>
     {
         auto Self() -> T& { return static_cast<T&>(*this); }
 
     public:
-        using Item = typename Rv32iIntegerCoreExecutor<T>::Item;
+        using Item = typename Rv32iExecutor<T>::Item;
 
         auto Mul(Reg rd, Reg rs1, Reg rs2) -> Item
         {
@@ -465,12 +465,12 @@ namespace arviss
 
     // An Rv32ic instruction handler that executes instructions on an integer core. BYO core.
     template<IsIntegerCore T>
-    class Rv32icIntegerCoreExecutor : public Rv32iIntegerCoreExecutor<T>
+    class Rv32icExecutor : public Rv32iExecutor<T>
     {
         auto Self() -> T& { return static_cast<T&>(*this); }
 
     public:
-        using Item = typename Rv32iIntegerCoreExecutor<T>::Item;
+        using Item = typename Rv32iExecutor<T>::Item;
 
         auto C_ebreak() -> Item { this->Ebreak(); }
 
@@ -639,12 +639,12 @@ namespace arviss
 
     // An Rv32imf instruction handler that executes instructions on a floating point core. BYO core.
     template<IsFloatCore T>
-    class Rv32imfFloatCoreExecutor : public Rv32imIntegerCoreExecutor<T>
+    class Rv32imfExecutor : public Rv32imExecutor<T>
     {
         auto Self() -> T& { return static_cast<T&>(*this); }
 
     public:
-        using Item = typename Rv32imIntegerCoreExecutor<T>::Item;
+        using Item = typename Rv32imExecutor<T>::Item;
 
         auto Fmv_x_w(Reg rd, Reg rs1) -> Item
         {
