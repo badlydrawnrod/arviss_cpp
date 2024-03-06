@@ -1,7 +1,6 @@
 #pragma once
 
 #include "arviss/common/types.h"
-#include "arviss/core/concepts.h"
 #include "arviss/remix/encoder.h"
 
 namespace arviss::remix

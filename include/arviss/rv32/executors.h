@@ -1,6 +1,6 @@
 #pragma once
 
-#include "arviss/core/concepts.h"
+#include "arviss/common/types.h"
 #include "arviss/rv32/concepts.h"
 
 #include <bit>
@@ -485,7 +485,7 @@ namespace arviss
         {
             // jalr x1, 0(rs1)
             auto& self = Self();
-            auto rs1Before = self.Rx(rs1n0);      // Because rs1 might be RA.
+            auto rs1Before = self.Rx(rs1n0); // Because rs1 might be RA.
             self.Wx(RegNames::RA, self.Pc() + 2);
             self.SetNextPc(rs1Before & ~1);
         }

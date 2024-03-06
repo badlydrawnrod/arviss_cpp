@@ -1,6 +1,6 @@
 #pragma once
 
-#include "arviss/core/concepts.h"
+#include "arviss/common/types.h"
 #include "arviss/remix/concepts.h"
 #include "arviss/remix/encoder.h"
 #include "arviss/rv32/concepts.h"
