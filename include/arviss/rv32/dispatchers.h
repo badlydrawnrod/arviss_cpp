@@ -10,7 +10,7 @@ namespace arviss
 
     // A dispatcher for RV32I instructions. BYO handler.
     template<typename Handler>
-        requires IsRv32iInstructionHandler<Handler>
+        requires IsRv32iHandler<Handler>
     struct Rv32iDispatcher : public Handler
     {
         using Item = typename Handler::Item;
@@ -81,7 +81,7 @@ namespace arviss
 
     // A dispatcher for RV32IC instructions. BYO handler.
     template<typename Handler>
-        requires IsRv32iInstructionHandler<Handler> && IsRv32cInstructionHandler<Handler>
+        requires IsRv32iHandler<Handler> && IsRv32cHandler<Handler>
     struct Rv32icDispatcher : public Handler
     {
         using Item = typename Handler::Item;
@@ -193,7 +193,7 @@ namespace arviss
 
     // A dispatcher for RV32IM instructions. BYO handler.
     template<typename Handler>
-        requires IsRv32iInstructionHandler<Handler> && IsRv32mInstructionHandler<Handler>
+        requires IsRv32iHandler<Handler> && IsRv32mHandler<Handler>
     struct Rv32imDispatcher : public Handler
     {
         using Item = typename Handler::Item;
@@ -272,7 +272,7 @@ namespace arviss
 
     // A dispatcher for RV32IMF instructions. BYO handler.
     template<typename Handler>
-        requires IsRv32iInstructionHandler<Handler> && IsRv32mInstructionHandler<Handler> && IsRv32fInstructionHandler<Handler>
+        requires IsRv32iHandler<Handler> && IsRv32mHandler<Handler> && IsRv32fHandler<Handler>
     struct Rv32imfDispatcher : public Handler
     {
         using Item = typename Handler::Item;
