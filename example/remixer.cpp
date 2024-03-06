@@ -1,5 +1,5 @@
 #include "arviss/common/types.h"
-#include "arviss/platforms/basic/cpus.h"
+#include "arviss/platforms/basic/basic.h"
 #include "arviss/remix/encoder.h"
 #include "arviss/remix/executors.h"
 #include "arviss/rv32/concepts.h"

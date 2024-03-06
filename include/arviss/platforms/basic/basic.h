@@ -1,7 +1,7 @@
 #pragma once
 
 #include "arviss/platforms/basic/mem.h"
-#include "arviss/rv32/cpus.h"
+#include "arviss/rv32/rv32.h"
 
 namespace arviss
 {
