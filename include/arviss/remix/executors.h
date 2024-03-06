@@ -1,7 +1,6 @@
 #pragma once
 
-#include "arviss/core/concepts.h"
-#include "arviss/remix/concepts.h"
+#include "arviss/arviss.h"
 #include "arviss/remix/encoder.h"
 #include "arviss/rv32/concepts.h"
 #include "arviss/rv32/dispatchers.h"
@@ -9,6 +8,9 @@
 
 namespace arviss::remix
 {
+    template<typename T>
+    concept IsRemixDispatchable = IsRv32iInstructionHandler<T> && IsIntegerCore<T> && HasUnprotectedWrites<T>;
+
     namespace
     {
         template<typename T>

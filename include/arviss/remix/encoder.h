@@ -1,6 +1,6 @@
 #pragma once
 
-#include "arviss/core/concepts.h"
+#include "arviss/arviss.h"
 #include "arviss/rv32/concepts.h"
 
 namespace arviss::remix

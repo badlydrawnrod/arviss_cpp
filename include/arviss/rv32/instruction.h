@@ -1,6 +1,6 @@
 #pragma once
 
-#include "arviss/common/types.h"
+#include "arviss/arviss.h"
 
 namespace arviss
 {

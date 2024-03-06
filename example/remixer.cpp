@@ -1,10 +1,7 @@
-#include "arviss/common/types.h"
-#include "arviss/dcode/encoder.h"
-#include "arviss/dcode/executors.h"
-#include "arviss/platforms/basic/cpus.h"
-#include "arviss/remix/encoder.h"
-#include "arviss/remix/executors.h"
-#include "arviss/rv32/concepts.h"
+#include "arviss/arviss.h"
+#include "arviss/platforms/basic/basic.h"
+#include "arviss/remix/remix.h"
+#include "arviss/rv32/rv32.h"
 
 #include <format>
 #include <fstream>
@@ -44,7 +41,7 @@ auto main(int argc, char* argv[]) -> int
         fileHandle.close();
 
         // Create a CPU.
-        using Cpu = Rv32iCpuIntegerCore<NoIoMem>;
+        using Cpu = Rv32iCpu<NoIoMem>;
         // Uncomment the following line if you want actual output.
         // using Cpu = Rv32iCpuIntegerCore<BasicMem>;
         static_assert(IsRv32iCpu<Cpu>);
