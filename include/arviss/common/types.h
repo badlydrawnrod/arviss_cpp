@@ -78,19 +78,44 @@ namespace arviss
         } -> std::same_as<typename T::Item>;
     };
 
-    // T supports reading from and writing to integer registers.
-    template<typename T>
-    concept HasXRegisters = requires(T t, u32 result) {
-        result = t.Rx(Reg{}); // Reads from an integer register.
-        t.Wx(Reg{}, u32{});   // Writes to an integer register.
-    };
+    namespace impl
+    {
 
-    // T supports reading from and writing to floating point registers.
-    template<typename T>
-    concept HasFRegisters = requires(T t, f32 result) {
-        result = t.Rf(Reg{}); // Reads from a float register.
-        t.Wf(Reg{}, f32{});   // Writes to a float register.
-    };
+        // T supports reading from and writing to integer registers.
+        template<typename T>
+        concept HasXRegisters = requires(T t, u32 result) {
+            result = t.Rx(Reg{}); // Reads from an integer register.
+            t.Wx(Reg{}, u32{});   // Writes to an integer register.
+        };
+
+        // T supports reading from and writing to floating point registers.
+        template<typename T>
+        concept HasFRegisters = requires(T t, f32 result) {
+            result = t.Rf(Reg{}); // Reads from a float register.
+            t.Wf(Reg{}, f32{});   // Writes to a float register.
+        };
+
+        // T implements the fetch cycle.
+        template<typename T>
+        concept HasFetch = requires(T t, Address a, u32 w) {
+            a = t.Pc();               // Returns the contents of the program counter.
+            a = t.Transfer();         // Transfers nextPc to the program counter and returns it.
+            w = t.Fetch();            // Transfer, Fetch32(pc), SetNextPc, return instruction.
+            t.SetNextPc(Address{});   // Sets nextPc.
+            w = t.Fetch32(Address{}); // Returns the instruction at the given address.
+        };
+
+        // T has traps.
+        template<typename T>
+        concept HasTraps = requires(T t, TrapType type, u32 context, bool b, std::optional<TrapState> c) {
+            b = t.IsTrapped();          // Returns true if a trap is currently active.
+            c = t.TrapCause();          // Returns the cause of the trap.
+            t.RaiseTrap(type);          // It can raise a trap of the given type.
+            t.RaiseTrap(type, context); // It can raise a trap of the given type with the given context.
+            t.ClearTraps();             // It can clear traps.
+        };
+
+    } // namespace impl
 
     // T supports writing to memory without checking if it's allowed to. The use case for this is being able to write
     // to "ROM" that isn't available to the VM.
@@ -112,51 +137,17 @@ namespace arviss
         t.Write32(Address{}, u32{}); // Writes a word to an address.
     };
 
-    // T implements the fetch cycle.
-    template<typename T>
-    concept HasFetch = requires(T t, Address a, u32 w) {
-        a = t.Pc();               // Returns the contents of the program counter.
-        a = t.Transfer();         // Transfers nextPc to the program counter and returns it.
-        w = t.Fetch();            // Transfer, Fetch32(pc), SetNextPc, return instruction.
-        t.SetNextPc(Address{});   // Sets nextPc.
-        w = t.Fetch32(Address{}); // Returns the instruction at the given address.
-    };
-
-    // T has traps.
-    template<typename T>
-    concept HasTraps = requires(T t, TrapType type, u32 context, bool b, std::optional<TrapState> c) {
-        b = t.IsTrapped();          // Returns true if a trap is currently active.
-        c = t.TrapCause();          // Returns the cause of the trap.
-        t.RaiseTrap(type);          // It can raise a trap of the given type.
-        t.RaiseTrap(type, context); // It can raise a trap of the given type with the given context.
-        t.ClearTraps();             // It can clear traps.
-    };
-
     // T has all the pieces of an integer core.
     template<typename T>
-    concept IsIntegerCore = HasTraps<T> // It has traps.
-            && HasXRegisters<T>         // It has integer registers.
-            && HasFetch<T>              // It has a fetch cycle implementation.
-            && HasMemory<T>;            // It has memory.
+    concept IsIntegerCore = impl::HasTraps<T> // It has traps.
+            && impl::HasXRegisters<T>         // It has integer registers.
+            && impl::HasFetch<T>              // It has a fetch cycle implementation.
+            && HasMemory<T>;                  // It has memory.
 
     // T has all the pieces of a floating point core.
     template<typename T>
     concept IsFloatCore = IsIntegerCore<T> // It's also an integer core
-            && HasFRegisters<T>;           // It has floating point registers.
-
-    // A do-nothing implementation of memory, for concept checking.
-    struct NullMem
-    {
-        auto Read8(Address) -> u8 { return 0; }
-        auto Read16(Address) -> u16 { return 0; }
-        auto Read32(Address) -> u32 { return 0; }
-
-        auto Write8(Address, u8) -> void {}
-        auto Write16(Address, u16) -> void {}
-        auto Write32(Address, u32) -> void {}
-    };
-
-    static_assert(HasMemory<NullMem>);
+            && impl::HasFRegisters<T>;     // It has floating point registers.
 
     template<HasMemory Mem, bool supports_compact_instructions = false>
     class IntegerCore : public Mem
@@ -229,15 +220,10 @@ namespace arviss
         }
 
         auto IsTrapped() const -> bool { return trap_.has_value(); }
-
         auto TrapCause() const -> std::optional<TrapState> { return trap_; }
-
         auto RaiseTrap(TrapType type, u32 context = 0) { trap_ = {.type_ = type, .context_ = context}; }
-
         auto ClearTraps() { trap_ = {}; }
     };
-
-    static_assert(IsIntegerCore<IntegerCore<NullMem>>);
 
     template<HasMemory Mem, bool supports_compact_instructions = false>
     class FloatCore : public IntegerCore<Mem, supports_compact_instructions>
@@ -247,10 +233,28 @@ namespace arviss
 
     public:
         auto Rf(Reg rs) -> f32 { return freg_[rs]; }
-
         auto Wf(Reg rd, f32 val) -> void { freg_[rd] = val; }
     };
 
-    static_assert(IsFloatCore<FloatCore<NullMem>>);
+    namespace impl
+    {
+
+        // A do-nothing implementation of memory, for concept checking.
+        struct NullMem
+        {
+            auto Read8(Address) -> u8 { return 0; }
+            auto Read16(Address) -> u16 { return 0; }
+            auto Read32(Address) -> u32 { return 0; }
+
+            auto Write8(Address, u8) -> void {}
+            auto Write16(Address, u16) -> void {}
+            auto Write32(Address, u32) -> void {}
+        };
+
+        static_assert(HasMemory<NullMem>);
+
+        static_assert(IsIntegerCore<IntegerCore<impl::NullMem>>);
+        static_assert(IsFloatCore<FloatCore<impl::NullMem>>);
+    } // namespace impl
 
 } // namespace arviss
