@@ -40,7 +40,7 @@ auto main(int argc, char* argv[]) -> int
         fileHandle.close();
 
         // Create a CPU.
-        using Cpu = Rv32imfCpuFloatCore<NoIoMem>;
+        using Cpu = Rv32imfCpu<NoIoMem>;
         static_assert(IsRv32imfCpu<Cpu>);
 
         Cpu cpu{};

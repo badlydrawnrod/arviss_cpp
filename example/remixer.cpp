@@ -42,7 +42,7 @@ auto main(int argc, char* argv[]) -> int
         fileHandle.close();
 
         // Create a CPU.
-        using Cpu = Rv32iCpuIntegerCore<NoIoMem>;
+        using Cpu = Rv32iCpu<NoIoMem>;
         // Uncomment the following line if you want actual output.
         // using Cpu = Rv32iCpuIntegerCore<BasicMem>;
         static_assert(IsRv32iCpu<Cpu>);
