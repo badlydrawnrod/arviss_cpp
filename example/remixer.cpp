@@ -1,8 +1,7 @@
 #include "arviss/arviss.h"
 #include "arviss/platforms/basic/basic.h"
-#include "arviss/remix/encoder.h"
-#include "arviss/remix/executors.h"
-#include "arviss/rv32/concepts.h"
+#include "arviss/remix/remix.h"
+#include "arviss/rv32/rv32.h"
 
 #include <format>
 #include <fstream>

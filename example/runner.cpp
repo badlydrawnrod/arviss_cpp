@@ -1,6 +1,6 @@
-#include "arviss/arviss.h"          // Address
+#include "arviss/arviss.h"                // Address
 #include "arviss/platforms/basic/basic.h" // BasicRv32imfCpu
-#include "arviss/rv32/concepts.h"         // IsRv32imfCpu
+#include "arviss/rv32/rv32.h"             // IsRv32imfCpu
 
 #include <format>
 #include <fstream>
