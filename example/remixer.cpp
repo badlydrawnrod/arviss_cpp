@@ -41,9 +41,9 @@ auto main(int argc, char* argv[]) -> int
         fileHandle.close();
 
         // Create a CPU.
-        using Cpu = Rv32iCpu<NoIoMem>;
+        using Cpu = Rv32iCpu<basic::MemoryWithoutIO>;
         // Uncomment the following line if you want actual output.
-        // using Cpu = Rv32iCpuIntegerCore<BasicMem>;
+        // using Cpu = Rv32iCpu<MemoryWithIO>;
         static_assert(IsRv32iCpu<Cpu>);
 
         // Dispatch using the Remix dispatcher.

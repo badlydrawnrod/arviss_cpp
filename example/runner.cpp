@@ -40,7 +40,7 @@ auto main(int argc, char* argv[]) -> int
         fileHandle.close();
 
         // Create a CPU.
-        BasicRv32imfCpu cpu{};
+        basic::BasicRv32imfCpu cpu{};
 
         // Populate its memory with the contents of the image.
         Address addr = 0;

@@ -74,167 +74,33 @@ namespace arviss
     {
         using Item = Rv32iDisassemblingHandler::Item;
 
-        auto C_ebreak() -> Item
-        {
-            // ebreak
-            return Ebreak();
-        }
-
-        auto C_jr(Reg rs1n0) -> Item
-        {
-            // jalr x0, 0(rs1)
-            return Jalr(RegNames::ZERO, rs1n0, 0);
-        }
-
-        auto C_jalr(Reg rs1n0) -> Item
-        {
-            // jalr x1, 0(rs1)
-            return Jalr(RegNames::RA, rs1n0, 0);
-        }
-
-        auto C_nop(u32 u) -> Item
-        {
-            // nop
-            return "c_nop";
-        }
-
-        auto C_addi16sp(u32 imm) -> Item
-        {
-            // addi x2, x2, nzimm[9:4]
-            return Addi(RegNames::SP, RegNames::SP, imm);
-        }
-
-        auto C_sub(Reg rdrs1p, Reg rs2p) -> Item
-        {
-            // sub rdp, rdp, rs2p
-            return Sub(rdrs1p, rdrs1p, rs2p);
-        }
-
-        auto C_xor(Reg rdrs1p, Reg rs2p) -> Item
-        {
-            // xor rdp, rdp, rs2p
-            return Xor(rdrs1p, rdrs1p, rs2p);
-        }
-
-        auto C_or(Reg rdrs1p, Reg rs2p) -> Item
-        {
-            // or rdp, rdp, rs2p
-            return Or(rdrs1p, rdrs1p, rs2p);
-        }
-
-        auto C_and(Reg rdrs1p, Reg rs2p) -> Item
-        {
-            // and rdp, rdp, rs2p
-            return And(rdrs1p, rdrs1p, rs2p);
-        }
-
-        auto C_andi(Reg rsrs1p, u32 imm) -> Item
-        {
-            // andi rdp, rdp, imm[5:0]
-            return Andi(rsrs1p, rsrs1p, imm);
-        }
-
-        auto C_srli(Reg rdrs1p, u32 imm) -> Item
-        {
-            // srli rdp, rdp, shamt[5:0]
-            return Srli(rdrs1p, rdrs1p, imm);
-        }
-
-        auto C_srai(Reg rdrs1p, u32 imm) -> Item
-        {
-            // srai rdp, rdp, shamt[5:0]
-            return Srai(rdrs1p, rdrs1p, imm);
-        }
-
-        auto C_mv(Reg rd, Reg rs2n0) -> Item
-        {
-            // add rd, x0, rs2
-            return Add(rd, RegNames::ZERO, rs2n0);
-        }
-
-        auto C_add(Reg rdrs1, Reg rs2n0) -> Item
-        {
-            // add rd, rd, rs2
-            return Add(rdrs1, rdrs1, rs2n0);
-        }
-
-        auto C_addi4spn(Reg rdp, u32 imm) -> Item
-        {
-            // addi rdp, x2, nzuimm[9:2]
-            return Addi(rdp, RegNames::SP, imm);
-        }
-
-        auto C_lw(Reg rdp, Reg rs1p, u32 imm) -> Item
-        {
-            // lw rdp, offset[6:2](rs1p)
-            return Lw(rdp, rs1p, imm);
-        }
-
-        auto C_sw(Reg rs1p, Reg rs2p, u32 imm) -> Item
-        {
-            // sw rs2p, offset[6:2](rs1p)
-            return Sw(rs1p, rs2p, imm);
-        }
-
-        auto C_addi(Reg rdrs1n0, u32 imm) -> Item
-        {
-            // addi rd, rd, nzimm[5:0]
-            return Addi(rdrs1n0, rdrs1n0, imm);
-        }
-
-        auto C_li(Reg rd, u32 imm) -> Item
-        {
-            // addi rd, x0, imm[5:0]
-            return Addi(rd, RegNames::ZERO, imm);
-        }
-
-        auto C_lui(Reg rdn2, u32 imm) -> Item
-        {
-            // lui rd, nzimm[17:12]
-            return Lui(rdn2, imm);
-        }
-
-        auto C_j(u32 imm) -> Item
-        {
-            // jal x0, offset[11:1]
-            return Jal(RegNames::ZERO, imm);
-        }
-
-        auto C_beqz(Reg rs1p, u32 imm) -> Item
-        {
-            // beq rs1p, x0, offset[8:1]
-            return Beq(rs1p, RegNames::ZERO, imm);
-        }
-
-        auto C_bnez(Reg rs1p, u32 imm) -> Item
-        {
-            // bne rs1p, x0, offset[8:1]
-            return Bne(rs1p, RegNames::ZERO, imm);
-        }
-
-        auto C_lwsp(Reg rdn0, u32 imm) -> Item
-        {
-            // lw rd, offset[7:2](x2)
-            return Lw(rdn0, RegNames::SP, imm);
-        }
-
-        auto C_swsp(Reg rs2, u32 imm) -> Item
-        {
-            // sw rs2, offset[7:2](x2)
-            return Sw(RegNames::SP, rs2, imm);
-        }
-
-        auto C_jal(u32 imm) -> Item
-        {
-            // jal x1, offset[11:1]
-            return Jal(RegNames::RA, imm);
-        }
-
-        auto C_slli(Reg rdrs1n0, u32 imm) -> Item
-        {
-            // slli rd, rd, shamt[5:0]
-            return Slli(rdrs1n0, rdrs1n0, imm);
-        }
+        auto C_ebreak() -> Item { return Ebreak(); }                                       // ebreak
+        auto C_jr(Reg rs1n0) -> Item { return Jalr(RegNames::ZERO, rs1n0, 0); }            // jalr x0, 0(rs1)
+        auto C_jalr(Reg rs1n0) -> Item { return Jalr(RegNames::RA, rs1n0, 0); }            // jalr x1, 0(rs1)
+        auto C_nop(u32 u) -> Item { return "c_nop"; }                                      // nop
+        auto C_addi16sp(u32 imm) -> Item { return Addi(RegNames::SP, RegNames::SP, imm); } // addi x2, x2, nzimm[9:4]
+        auto C_sub(Reg rdrs1p, Reg rs2p) -> Item { return Sub(rdrs1p, rdrs1p, rs2p); }     // sub rdp, rdp, rs2p
+        auto C_xor(Reg rdrs1p, Reg rs2p) -> Item { return Xor(rdrs1p, rdrs1p, rs2p); }     // xor rdp, rdp, rs2p
+        auto C_or(Reg rdrs1p, Reg rs2p) -> Item { return Or(rdrs1p, rdrs1p, rs2p); }       // or rdp, rdp, rs2p
+        auto C_and(Reg rdrs1p, Reg rs2p) -> Item { return And(rdrs1p, rdrs1p, rs2p); }     // and rdp, rdp, rs2p
+        auto C_andi(Reg rsrs1p, u32 imm) -> Item { return Andi(rsrs1p, rsrs1p, imm); }     // andi rdp, rdp, imm[5:0]
+        auto C_srli(Reg rdrs1p, u32 imm) -> Item { return Srli(rdrs1p, rdrs1p, imm); }     // srli rdp, rdp, shamt[5:0]
+        auto C_srai(Reg rdrs1p, u32 imm) -> Item { return Srai(rdrs1p, rdrs1p, imm); }     // srai rdp, rdp, shamt[5:0]
+        auto C_mv(Reg rd, Reg rs2n0) -> Item { return Add(rd, RegNames::ZERO, rs2n0); }    // add rd, x0, rs2
+        auto C_add(Reg rdrs1, Reg rs2n0) -> Item { return Add(rdrs1, rdrs1, rs2n0); }      // add rd, rd, rs2
+        auto C_addi4spn(Reg rdp, u32 imm) -> Item { return Addi(rdp, RegNames::SP, imm); } // addi rdp, x2, nzuimm[9:2]
+        auto C_lw(Reg rdp, Reg rs1p, u32 imm) -> Item { return Lw(rdp, rs1p, imm); }       // lw rdp, offset[6:2](rs1p)
+        auto C_sw(Reg rs1p, Reg rs2p, u32 imm) -> Item { return Sw(rs1p, rs2p, imm); }     // sw rs2p, offset[6:2](rs1p)
+        auto C_addi(Reg rdrs1n0, u32 imm) -> Item { return Addi(rdrs1n0, rdrs1n0, imm); }  // addi rd, rd, nzimm[5:0]
+        auto C_li(Reg rd, u32 imm) -> Item { return Addi(rd, RegNames::ZERO, imm); }       // addi rd, x0, imm[5:0]
+        auto C_lui(Reg rdn2, u32 imm) -> Item { return Lui(rdn2, imm); }                   // lui rd, nzimm[17:12]
+        auto C_j(u32 imm) -> Item { return Jal(RegNames::ZERO, imm); }                     // jal x0, offset[11:1]
+        auto C_beqz(Reg rs1p, u32 imm) -> Item { return Beq(rs1p, RegNames::ZERO, imm); }  // beq rs1p, x0, offset[8:1]
+        auto C_bnez(Reg rs1p, u32 imm) -> Item { return Bne(rs1p, RegNames::ZERO, imm); }  // bne rs1p, x0, offset[8:1]
+        auto C_lwsp(Reg rdn0, u32 imm) -> Item { return Lw(rdn0, RegNames::SP, imm); }     // lw rd, offset[7:2](x2)
+        auto C_swsp(Reg rs2, u32 imm) -> Item { return Sw(RegNames::SP, rs2, imm); }       // sw rs2, offset[7:2](x2)
+        auto C_jal(u32 imm) -> Item { return Jal(RegNames::RA, imm); }                     // jal x1, offset[11:1]
+        auto C_slli(Reg rdrs1n0, u32 imm) -> Item { return Slli(rdrs1n0, rdrs1n0, imm); }  // slli rd, rd, shamt[5:0]
     };
 
     // A disassembler for Rv32ic instructions.
