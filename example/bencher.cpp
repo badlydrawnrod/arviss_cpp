@@ -1,6 +1,6 @@
-#include "arviss/arviss.h"                // Address
-#include "arviss/platforms/basic/basic.h" // BasicRv32imfCpu
-#include "arviss/rv32/rv32.h"             // IsRv32imfCpu
+#include "arviss/arviss.h"
+#include "arviss/platforms/basic/basic.h"
+#include "arviss/rv32/rv32.h"
 
 #include <format>
 #include <fstream>
@@ -40,7 +40,7 @@ auto main(int argc, char* argv[]) -> int
         fileHandle.close();
 
         // Create a CPU.
-        using Cpu = Rv32imfCpu<basic::MemoryWithoutIO>;
+        using Cpu = Rv32imfCpu<platforms::basic::MemoryNoIO>;
         static_assert(IsRv32imfCpu<Cpu>);
 
         Cpu cpu{};
