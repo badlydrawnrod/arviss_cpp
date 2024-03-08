@@ -39,7 +39,7 @@ namespace arviss::remix
 
     */
 
-    enum Opcode : uint32_t
+    enum Opcode : u32
     {
         Illegal,
         Beq,
