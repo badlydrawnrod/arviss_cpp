@@ -40,14 +40,14 @@ auto main(int argc, char* argv[]) -> int
         fileHandle.close();
 
         // Create a CPU.
-        using Cpu = Rv32imfCpu<platforms::basic::MemoryNoIO>;
+        using Cpu = Rv32imfCpu<platforms::basic::Memory>;
         Cpu cpu{};
 
         // Populate its memory with the contents of the image.
         Address addr = 0;
         for (auto b : buf)
         {
-            cpu.Write8(addr, b);
+            cpu.Write8Unprotected(addr, b);
             ++addr;
         }
 

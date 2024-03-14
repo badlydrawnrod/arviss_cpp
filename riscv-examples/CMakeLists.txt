@@ -17,8 +17,10 @@ set(CMAKE_EXE_LINKER_FLAGS_DEBUG "")
 set(CMAKE_EXE_LINKER_FLAGS_RELEASE "")
 
 set(CMAKE_C_FLAGS_INIT "")
-set(CMAKE_C_FLAGS "--target=riscv32 -ffreestanding -nostdlib -nodefaultlibs -march=rv32imf -mabi=ilp32f -ffunction-sections -fdata-sections")
-set(CMAKE_ASM_FLAGS "--target=riscv32 -ffreestanding -nostdlib -nodefaultlibs -march=rv32imf -mabi=ilp32f -ffunction-sections -fdata-sections")
+# set(CMAKE_C_FLAGS "--target=riscv32 -ffreestanding -nostdlib -nodefaultlibs -march=rv32imf -mabi=ilp32f -ffunction-sections -fdata-sections")
+# set(CMAKE_ASM_FLAGS "--target=riscv32 -ffreestanding -nostdlib -nodefaultlibs -march=rv32imf -mabi=ilp32f -ffunction-sections -fdata-sections")
+set(CMAKE_C_FLAGS "--target=riscv32 -ffreestanding -nostdlib -nodefaultlibs -march=rv32imf -mabi=ilp32f -fno-function-sections -fdata-sections")
+set(CMAKE_ASM_FLAGS "--target=riscv32 -ffreestanding -nostdlib -nodefaultlibs -march=rv32imf -mabi=ilp32f -fno-function-sections -fdata-sections")
 
 # Allow the linker to be overridden on the cmake command line, e.g., -DARVISS_LINKER=lld-12
 if (NOT DEFINED ARVISS_LINKER)
@@ -42,4 +44,14 @@ add_custom_command(TARGET hello
         POST_BUILD
         COMMAND ${CMAKE_OBJCOPY} ARGS $<TARGET_FILE:hello> -O binary ${RISCV_IMAGES}/hello.bin
         COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:hello> ${RISCV_IMAGES}/hello
+        )
+
+add_executable(fib crt0.s fib.c printf.c putchar.c)
+target_compile_definitions(fib PRIVATE PRINTF_DISABLE_SUPPORT_FLOAT PRINTF_DISABLE_SUPPORT_LONG_LONG)
+
+# Copy both the ELF file `fib` and the extracted `fib.bin` file to the ${RISCV_IMAGES}/ directory once built.
+add_custom_command(TARGET fib
+        POST_BUILD
+        COMMAND ${CMAKE_OBJCOPY} ARGS $<TARGET_FILE:fib> -O binary ${RISCV_IMAGES}/fib.bin
+        COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:fib> ${RISCV_IMAGES}/fib
         )
